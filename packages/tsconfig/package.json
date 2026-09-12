@@ -1,0 +1,17 @@
+{
+  "name": "@gypsym/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "files": [
+    "base.json",
+    "nest.json",
+    "next.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./nest.json": "./nest.json",
+    "./next.json": "./next.json",
+    "./*.json": "./*.json",
+    "./*": "./*"
+  }
+}

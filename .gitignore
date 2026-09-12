@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+.pnp
+.pnp.js
+
+# Production & Build Outputs
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+.next/
+**/.next/
+.turbo/
+**/.turbo/
+.cache/
+**/.cache/
+
+# Environment Files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+!.env.example
+
+# Logs & Debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Database & SQLite
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+
+# IDE & Editor Files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary & Chrome Files
+.chrome_tmp/
+tmp/
+temp/

@@ -1,0 +1,32 @@
+{
+  "name": "@gypsym/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "db:generate": "dotenv -e ../../.env -- prisma generate",
+    "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
+    "db:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "db:push": "dotenv -e ../../.env -- prisma db push",
+    "db:seed": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed.ts",
+    "db:seed:prod": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed.ts --mode=production",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/dotenv": "^8.2.3",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@gypsym/tsconfig": "workspace:*",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
