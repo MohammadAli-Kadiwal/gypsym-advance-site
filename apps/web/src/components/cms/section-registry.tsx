@@ -7,6 +7,7 @@ import { WhatWeChangeSection } from './what-we-change-section';
 import { DeliveryProcessSection } from './delivery-process-section';
 import { ClientTestimonialsSection } from './client-testimonials-section';
 import { PortfolioSection } from './portfolio-section';
+import { ClientsTrustedBySection } from './clients-trusted-by-section';
 
 export interface SectionProps {
   section: PageSectionDto;
@@ -33,6 +34,10 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   DELIVERY_PROCESS: DeliveryProcessSection,
   TESTIMONIAL_SLIDER: ClientTestimonialsSection,
   CLIENT_TESTIMONIALS: ClientTestimonialsSection,
+  LOGO_CLOUD: ClientsTrustedBySection,
+  CLIENTS: ClientsTrustedBySection,
+  TRUSTED_BY: ClientsTrustedBySection,
+  CLIENTS_TRUSTED_BY: ClientsTrustedBySection,
 };
 
 /**
@@ -79,6 +84,13 @@ export function getSectionComponent(
     return PortfolioSection;
   }
   if (sectionIdentifier === 'delivery-process') return DeliveryProcessSection;
+  if (
+    sectionIdentifier === 'clients-trusted-by' ||
+    sectionIdentifier === 'trusted-by' ||
+    sectionIdentifier === 'clients'
+  ) {
+    return ClientsTrustedBySection;
+  }
   const normalized = componentType.toUpperCase();
   return sectionRegistry[normalized] || UnregisteredSection;
 }

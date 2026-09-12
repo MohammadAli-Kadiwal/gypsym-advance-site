@@ -11,6 +11,7 @@ import type {
   PortfolioPayload,
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
+  ClientsPayload,
 } from './types';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
@@ -22,7 +23,8 @@ export type ActiveTab =
   | 'whatWeChange'
   | 'portfolio'
   | 'deliveryProcess'
-  | 'clientTestimonials';
+  | 'clientTestimonials'
+  | 'clients';
 
 interface SectionPreviewProps {
   activeTab: ActiveTab;
@@ -33,6 +35,7 @@ interface SectionPreviewProps {
   portfolioPayload?: PortfolioPayload;
   deliveryProcessPayload?: DeliveryProcessPayload;
   clientTestimonialsPayload?: ClientTestimonialsPayload;
+  clientsPayload?: ClientsPayload;
   heroHeadlineText: string;
   metricsHeadlineText: string;
 }
@@ -71,6 +74,7 @@ export function SectionPreview({
   portfolioPayload,
   deliveryProcessPayload,
   clientTestimonialsPayload,
+  clientsPayload,
   heroHeadlineText,
   metricsHeadlineText,
 }: SectionPreviewProps) {
@@ -84,6 +88,7 @@ export function SectionPreview({
   const showPortfolio = activeTab === 'portfolio' || previewScope === 'full';
   const showDeliveryProcess = activeTab === 'deliveryProcess' || previewScope === 'full';
   const showClientTestimonials = activeTab === 'clientTestimonials' || previewScope === 'full';
+  const showClients = activeTab === 'clients' || previewScope === 'full';
 
   return (
     <Card className="rounded-2xl border-slate-200/90 bg-white shadow-sm overflow-hidden">
@@ -529,7 +534,78 @@ export function SectionPreview({
               </div>
             )}
 
-            {/* 6. CLIENT TESTIMONIALS PREVIEW */}
+            {/* 7. CLIENTS / TRUSTED BY PREVIEW (Right after Delivery Process) */}
+            {showClients && (
+              <div className="p-4 space-y-3 bg-white border-t border-slate-100 text-center">
+                <div className="space-y-1 max-w-[85%] mx-auto">
+                  <span className="inline-flex items-center gap-1 text-[7px] font-bold text-[#d9287c] uppercase tracking-wider">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
+                    <span>{clientsPayload?.eyebrow || 'TRUSTED BY'}</span>
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 leading-snug">
+                    {renderPreviewTitleWithHighlight(
+                      clientsPayload?.title || 'Trusted by 100+ brands worldwide',
+                      clientsPayload?.titleHighlight || '100+ brands worldwide'
+                    )}
+                  </h4>
+                  {(clientsPayload?.description || 'We partner with ambitious enterprises and high-growth innovators to engineer scalable, high-performance digital platforms.') && (
+                    <p className="text-[7.5px] text-slate-500 leading-tight line-clamp-2">
+                      {clientsPayload?.description || 'We partner with ambitious enterprises and high-growth innovators to engineer scalable, high-performance digital platforms.'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 6 per line (desktop) / 3 per line (mobile) - Compact Floating Logos */}
+                <div className="pt-1">
+                  {(() => {
+                    const allItems = clientsPayload?.clients || clientsPayload?.selectedClients || [];
+                    const seenNames = new Set<string>();
+                    const uniqueItems = allItems.filter((item: any) => {
+                      const n = (item.name || '').trim().toLowerCase();
+                      if (n && seenNames.has(n)) return false;
+                      if (n) seenNames.add(n);
+                      return true;
+                    });
+
+                    if (uniqueItems.length === 0) {
+                      return (
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 justify-items-center">
+                          {Array.from({ length: 6 }).map((_, cIdx) => (
+                            <div
+                              key={cIdx}
+                              className="w-8 h-4 rounded bg-slate-200/50"
+                            />
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-1 gap-y-1.5 items-center justify-items-center">
+                        {uniqueItems.map((item: any, iIdx: number) => (
+                          <div
+                            key={iIdx}
+                            className="h-6 px-0.5 flex items-center justify-center text-[7px] font-medium text-slate-600 truncate w-full max-w-[75px] bg-transparent border-0 shadow-none"
+                          >
+                            {item.logoUrl ? (
+                              <img
+                                src={item.logoUrl}
+                                alt={item.name || 'Client'}
+                                className="w-full max-h-5 max-w-[65px] object-contain opacity-85 [mix-blend-mode:multiply]"
+                              />
+                            ) : (
+                              <span>{item.name || `Client ${iIdx + 1}`}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* 8. CLIENT TESTIMONIALS PREVIEW */}
             {showClientTestimonials && (
               <div className="p-4 space-y-3 bg-[#faf9f6] border-t border-slate-100 text-left">
                 {/* Header Row */}

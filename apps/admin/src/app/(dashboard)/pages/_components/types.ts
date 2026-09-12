@@ -262,6 +262,59 @@ export interface PortfolioSection {
   contentPayload: PortfolioPayload;
 }
 
+export interface SelectedClientRef {
+  clientId: string;
+  displayOrder: number;
+  visibility?: boolean;
+}
+
+export interface ClientsLayoutSettings {
+  preset?: '8/6/4' | '6/4/2' | '8/8' | '6/6/6' | 'equal' | 'custom';
+  rowPattern?: number[];
+  overflowBehavior?: 'continue' | 'limit';
+  rowAlignment?: 'center' | 'left';
+  logoStyle?: 'muted' | 'grayscale' | 'monochrome' | 'original';
+  logoSize?: 'small' | 'medium' | 'large';
+  gap?: 'compact' | 'medium' | 'relaxed';
+}
+
+export interface ClientsAnimationSettings {
+  enableReveal?: boolean;
+  revealStyle?: 'stagger' | 'fade';
+  hoverEffect?: boolean;
+}
+
+export interface ClientsPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+  cta?: {
+    enabled?: boolean;
+    label?: string;
+    url?: string;
+    target?: '_self' | '_blank';
+  };
+  layout?: ClientsLayoutSettings;
+  animation?: ClientsAnimationSettings;
+  selectedClients?: SelectedClientRef[];
+  clients?: Array<{
+    id: string;
+    name: string;
+    logoUrl?: string;
+    websiteUrl?: string | null;
+    tier?: string;
+    displayOrder?: number;
+  }>;
+}
+
+export interface ClientsSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: ClientsPayload;
+}
+
 export interface PageData {
   id?: string;
   slug?: string;

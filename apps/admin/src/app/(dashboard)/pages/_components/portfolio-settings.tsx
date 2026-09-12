@@ -1,26 +1,24 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { useCmsCollection } from '@/lib/store';
 import {
   Sparkles,
   Layers,
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-  Plus,
   Box,
   Eye,
+  Briefcase,
+  ExternalLink,
 } from 'lucide-react';
 import type {
   PortfolioSection,
   PortfolioPayload,
-  PortfolioProject,
 } from './types';
 
 const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
@@ -34,6 +32,7 @@ interface PortfolioSettingsProps {
 
 export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps) {
   const p: PortfolioPayload = section.contentPayload || {};
+  const { data: portfolioItems } = useCmsCollection('portfolio');
 
   const update = (partial: Partial<PortfolioPayload>) => {
     onChange({
@@ -45,54 +44,12 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
     });
   };
 
-  const projects: PortfolioProject[] = Array.isArray(p.projects) ? p.projects : [];
-
-  const updateProject = (index: number, partial: Partial<PortfolioProject>) => {
-    const updated = [...projects];
-    updated[index] = {
-      ...updated[index],
-      ...partial,
-    };
-    update({ projects: updated });
-  };
-
-  const addProject = () => {
-    const nextIndex = projects.length + 1;
-    const newProject: PortfolioProject = {
-      id: `proj-${Date.now()}`,
-      orderNumber: String(nextIndex).padStart(2, '0'),
-      title: `Showcase Project ${nextIndex}`,
-      client: 'Enterprise Client',
-      category: 'Digital Architecture',
-      description: 'High-performance mission-critical platform engineered for global scale.',
-      imageUrl: 'https://images.unsplash.com/photo-1642543492481-44e81e3914a7?q=80&w=1200&auto=format&fit=crop',
-      altText: `Showcase project ${nextIndex} interface`,
-      projectUrl: `/portfolio/project-${nextIndex}`,
-      tags: ['Next.js', 'Turborepo'],
-      metrics: '+35% Efficiency',
-    };
-    update({ projects: [...projects, newProject] });
-  };
-
-  const deleteProject = (index: number) => {
-    if (projects.length <= 1) {
-      alert('The portfolio section must contain at least one project.');
-      return;
-    }
-    const updated = projects.filter((_, i) => i !== index);
-    update({ projects: updated });
-  };
-
-  const moveProject = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= projects.length) return;
-
-    const updated = [...projects];
-    const temp = updated[index]!;
-    updated[index] = updated[targetIndex]!;
-    updated[targetIndex] = temp;
-    update({ projects: updated });
-  };
+  const catalogCount =
+    portfolioItems && portfolioItems.length > 0
+      ? portfolioItems.length
+      : Array.isArray(p.projects) && p.projects.length > 0
+      ? p.projects.length
+      : 5;
 
   return (
     <div className="space-y-6">
@@ -199,22 +156,61 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
               <Input
                 type="number"
                 min={1}
-                max={projects.length || 50}
+                max={catalogCount || 50}
                 value={p.maxDisplayCount !== undefined && p.maxDisplayCount !== null ? p.maxDisplayCount : ''}
                 onChange={(e) => {
                   const val = e.target.value.trim() === '' ? undefined : parseInt(e.target.value, 10);
                   update({ maxDisplayCount: isNaN(val as number) ? undefined : val });
                 }}
-                placeholder={`All (${projects.length})`}
+                placeholder={`All (${catalogCount})`}
                 className="text-xs h-9 w-36"
               />
               <span className="text-xs text-slate-500">
-                {p.maxDisplayCount ? `Displaying top ${p.maxDisplayCount} of ${projects.length} projects` : `Displaying all ${projects.length} projects`}
+                {p.maxDisplayCount ? `Displaying top ${p.maxDisplayCount} of ${catalogCount} projects` : `Displaying all ${catalogCount} projects`}
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Enter a number (e.g. 3, 4, 5) to restrict the number of projects shown on the home page, or leave blank to display all {projects.length} projects.
+              Enter a number (e.g. 3, 4, 5) to restrict the number of projects shown on the home page, or leave blank to display all {catalogCount} projects.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── PORTFOLIO CATALOG LINK CARD ────────────────────────────────── */}
+      <Card className="rounded-2xl border border-slate-200/80 shadow-xs bg-gradient-to-br from-white via-slate-50/50 to-slate-100/30">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-[#d9127b]/10 border border-[#d9127b]/20 flex items-center justify-center shrink-0 text-[#d9127b] mt-0.5">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Portfolio Projects Managed in Dedicated Menu
+                  </h4>
+                  <span className="font-mono text-[10px] font-bold text-[#d9127b] bg-[#d9127b]/10 px-2 py-0.5 rounded-full">
+                    {catalogCount} Active Projects
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
+                  Showcase projects, enterprise case studies, client names, impact metrics, project URLs, and cover images are managed centrally in the dedicated <strong className="font-semibold text-slate-800">Portfolio</strong> menu.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:self-center shrink-0">
+              <Button
+                asChild
+                variant="default"
+                size="sm"
+                className="text-xs font-semibold bg-[#d9127b] hover:bg-[#b00e63] text-white shadow-xs gap-1.5 h-9 px-4"
+              >
+                <Link href="/content/portfolio">
+                  <span>Manage Portfolio</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -278,7 +274,7 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 col-span-1 sm:col-span-2">
               <div>
                 <Label>Image Zoom</Label>
                 <p className="text-[11px] text-slate-500">Subtle 1.04x scale inside card</p>
@@ -290,36 +286,17 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div className="space-y-1.5">
-              <Label>View Button Label</Label>
-              <Input
-                value={p.viewButtonLabel || 'View'}
-                onChange={(e) => update({ viewButtonLabel: e.target.value })}
-                placeholder="View"
-                className="text-xs h-9"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>View Button Position</Label>
-              <select
-                value={p.viewButtonPosition || 'center'}
-                onChange={(e) =>
-                  update({
-                    viewButtonPosition: e.target.value as
-                      | 'center'
-                      | 'bottom-center'
-                      | 'bottom-right',
-                  })
-                }
-                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="center">Center (Recommended)</option>
-                <option value="bottom-center">Bottom Center</option>
-                <option value="bottom-right">Bottom Right</option>
-              </select>
-            </div>
+          <div className="max-w-md space-y-1.5 pt-2">
+            <Label>View Button Label</Label>
+            <Input
+              value={p.viewButtonLabel || 'View'}
+              onChange={(e) => update({ viewButtonLabel: e.target.value })}
+              placeholder="View"
+              className="text-xs h-9"
+            />
+            <p className="text-[11px] text-slate-400">
+              Text displayed inside the floating interaction button when hovering over project cards.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -379,209 +356,7 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
           </div>
         </CardContent>
       </Card>
-
-      {/* ── PROJECTS LIST (2 -> 1 -> 2 LAYOUT) ─────────────────────────── */}
-      <Card className="rounded-2xl border border-slate-200/80 shadow-xs">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#d9127b]" />
-              <div>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Showcase Projects (2 → 1 → 2 Layout)
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Card 1 & 2: Row 1 | Card 3: Full-width Spotlight Row 2 | Card 4 & 5: Row 3
-                </CardDescription>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addProject}
-              className="text-xs h-8 gap-1 border-dashed"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Project Card
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {projects.map((project, idx) => {
-            const isFullWidth = idx % 5 === 2;
-            const layoutPositionLabel = isFullWidth
-              ? 'Row 2 (Full Width Spotlight)'
-              : idx % 5 < 2
-              ? `Row 1 (Card ${(idx % 5) + 1})`
-              : `Row 3 (Card ${(idx % 5) - 1})`;
-
-            return (
-              <div
-                key={project.id || idx}
-                className="p-4 rounded-xl border border-slate-200 bg-white space-y-3 shadow-2xs"
-              >
-                {/* Header with layout tag & move controls */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-[#d9127b] bg-[#d9127b]/10 px-2 py-0.5 rounded">
-                      #{idx + 1}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-xs">
-                      {project.title || 'Untitled Project'}
-                    </span>
-                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                      {layoutPositionLabel}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => moveProject(idx, 'up')}
-                      disabled={idx === 0}
-                      className="h-7 w-7 text-slate-500 hover:text-slate-800 disabled:opacity-30"
-                    >
-                      <ArrowUp className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => moveProject(idx, 'down')}
-                      disabled={idx === projects.length - 1}
-                      className="h-7 w-7 text-slate-500 hover:text-slate-800 disabled:opacity-30"
-                    >
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteProject(idx)}
-                      disabled={projects.length <= 1}
-                      className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Form fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label>Numeric Badge (.01, .02)</Label>
-                    <Input
-                      value={project.orderNumber || ''}
-                      onChange={(e) => updateProject(idx, { orderNumber: e.target.value })}
-                      placeholder=".01"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label>Project Title</Label>
-                    <Input
-                      value={project.title || ''}
-                      onChange={(e) => updateProject(idx, { title: e.target.value })}
-                      placeholder="Apex Capital Derivatives Exchange"
-                      className="text-xs h-8 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label>Client Name</Label>
-                    <Input
-                      value={project.client || ''}
-                      onChange={(e) => updateProject(idx, { client: e.target.value })}
-                      placeholder="Apex Capital Management"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Industry / Category</Label>
-                    <Input
-                      value={project.category || ''}
-                      onChange={(e) => updateProject(idx, { category: e.target.value })}
-                      placeholder="Financial Infrastructure"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Key Metric Pill</Label>
-                    <Input
-                      value={project.metrics || ''}
-                      onChange={(e) => updateProject(idx, { metrics: e.target.value })}
-                      placeholder="$40B+ Daily Volume · 99.999% SLA"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label>Project Summary</Label>
-                  <Textarea
-                    value={project.description || ''}
-                    onChange={(e) => updateProject(idx, { description: e.target.value })}
-                    placeholder="Short description of the technical achievement and enterprise business impact."
-                    rows={2}
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Project Target URL</Label>
-                    <Input
-                      value={project.projectUrl || ''}
-                      onChange={(e) => updateProject(idx, { projectUrl: e.target.value })}
-                      placeholder="/portfolio/apex-capital"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Tech Stack Tags (comma separated)</Label>
-                    <Input
-                      value={Array.isArray(project.tags) ? project.tags.join(', ') : ''}
-                      onChange={(e) =>
-                        updateProject(idx, {
-                          tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
-                        })
-                      }
-                      placeholder="Rust, eBPF, Kafka"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                </div>
-
-                {/* Project Image upload & Alt text */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="space-y-1">
-                    <Label>Showcase Image</Label>
-                    <ImageUploadField
-                      value={project.imageUrl || ''}
-                      onChange={(url) => updateProject(idx, { imageUrl: url })}
-                      label="Upload Project Cover"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Image Alt Text</Label>
-                    <Input
-                      value={project.altText || ''}
-                      onChange={(e) => updateProject(idx, { altText: e.target.value })}
-                      placeholder="Detailed visual description for accessibility"
-                      className="text-xs h-8 mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
     </div>
   );
 }
+

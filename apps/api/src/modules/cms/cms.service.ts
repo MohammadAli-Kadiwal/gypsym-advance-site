@@ -433,32 +433,76 @@ export class CmsService {
       throw new NotFoundException(`Page '${slug}' not found or not published`);
     }
 
-    // Inject live clients from the clients table into any hero section's clientStrip
+    // Inject live clients from the clients table into hero and clients-trusted-by sections
     const liveClients = await this.getClients();
+
     const sections = page.sections.map((section: any) => {
       const cType = (section.componentType || '').toUpperCase();
-      if (cType !== 'HERO') return section;
-      const payload = (section.contentPayload as Record<string, any>) || {};
-      const clientStrip = payload.clientStrip || {};
-      return {
-        ...section,
-        contentPayload: {
-          ...payload,
-          clientStrip: {
-            ...clientStrip,
-            enabled: clientStrip.enabled ?? true,
-            title: clientStrip.title || 'The agency behind ..',
-            clients: liveClients
-              .filter((c: any) => c.logoUrl && !c.logoUrl.includes('apex-bank-logo'))
-              .map((c: any) => ({
-                id: c.id,
-                name: c.name,
-                logoUrl: c.logoUrl ?? '',
-                websiteUrl: c.websiteUrl ?? '',
-              })),
+      const sId = (section.sectionIdentifier || '').toLowerCase();
+
+      // 1. Hero client strip
+      if (cType === 'HERO') {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+        const clientStrip = payload.clientStrip || {};
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
+            clientStrip: {
+              ...clientStrip,
+              enabled: clientStrip.enabled ?? true,
+              title: clientStrip.title || 'The agency behind ..',
+              clients: liveClients
+                .filter((c: any) => c.logoUrl && !c.logoUrl.includes('apex-bank-logo'))
+                .map((c: any) => ({
+                  id: c.id,
+                  name: c.name,
+                  logoUrl: c.logoUrl ?? '',
+                  websiteUrl: c.websiteUrl ?? '',
+                })),
+            },
           },
-        },
-      };
+        };
+      }
+
+      // 2. Dedicated Clients / Trusted By section (LOGO_CLOUD)
+      if (cType === 'LOGO_CLOUD' || sId === 'clients-trusted-by' || sId === 'trusted-by') {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+
+        // Show all active live clients by default from Clients module
+        const seenNames = new Set<string>();
+        const seenLogos = new Set<string>();
+
+        const allClients = liveClients
+          .filter((c: any) => {
+            if (!c.logoUrl) return false;
+            if (c.logoUrl.includes('apex-bank-logo')) return false;
+            const n = (c.name || '').trim().toLowerCase();
+            const l = (c.logoUrl || '').trim();
+            if (seenNames.has(n) || seenLogos.has(l)) return false;
+            seenNames.add(n);
+            seenLogos.add(l);
+            return true;
+          })
+          .map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            logoUrl: c.logoUrl,
+            websiteUrl: c.websiteUrl ?? null,
+            tier: c.tier,
+            displayOrder: c.displayOrder,
+          }));
+
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
+            clients: allClients,
+          },
+        };
+      }
+
+      return section;
     });
 
     return { ...page, sections };

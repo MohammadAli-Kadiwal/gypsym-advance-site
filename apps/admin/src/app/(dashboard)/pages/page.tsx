@@ -14,6 +14,7 @@ import { WhatWeChangeSettings } from './_components/what-we-change-settings';
 import { PortfolioSettings } from './_components/portfolio-settings';
 import { DeliveryProcessSettings } from './_components/delivery-process-settings';
 import { ClientTestimonialsSettings } from './_components/client-testimonials-settings';
+import { ClientsSettings } from './_components/clients-settings';
 import { SectionPreview, ActiveTab } from './_components/section-preview';
 import type {
   HeroSection,
@@ -23,6 +24,7 @@ import type {
   PortfolioSection,
   DeliveryProcessSection,
   ClientTestimonialsSection,
+  ClientsSection,
   PageData,
   HeroPayload,
   MetricsPayload,
@@ -31,6 +33,7 @@ import type {
   PortfolioPayload,
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
+  ClientsPayload,
 } from './_components/types';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -71,6 +74,7 @@ export default function PagesManagementPage() {
   const [portfolioSection, setPortfolioSection] = React.useState<PortfolioSection | null>(null);
   const [deliveryProcessSection, setDeliveryProcessSection] = React.useState<DeliveryProcessSection | null>(null);
   const [clientTestimonialsSection, setClientTestimonialsSection] = React.useState<ClientTestimonialsSection | null>(null);
+  const [clientsSection, setClientsSection] = React.useState<ClientsSection | null>(null);
 
   // ── Fetch page & sections from backend API ─────────────────────────────────
   const loadBackendData = React.useCallback(async () => {
@@ -113,6 +117,12 @@ export default function PagesManagementPage() {
           (s) =>
             s.sectionIdentifier === 'client-testimonials' ||
             s.componentType === 'TESTIMONIAL_SLIDER'
+        );
+        const clientsRaw = res.sections?.find(
+          (s) =>
+            s.sectionIdentifier === 'clients-trusted-by' ||
+            s.sectionIdentifier === 'trusted-by' ||
+            s.componentType === 'LOGO_CLOUD'
         );
 
         if (heroRaw) {
@@ -177,6 +187,15 @@ export default function PagesManagementPage() {
             contentPayload: clientTestimonialsRaw.contentPayload as ClientTestimonialsPayload,
           });
         }
+
+        if (clientsRaw) {
+          setClientsSection({
+            id: clientsRaw.id,
+            componentType: clientsRaw.componentType,
+            isActive: clientsRaw.isActive,
+            contentPayload: clientsRaw.contentPayload as ClientsPayload,
+          });
+        }
       }
     } catch {
       notify.error('Could not load page data from backend. Check server connection.');
@@ -198,6 +217,7 @@ export default function PagesManagementPage() {
   const portfolioPayload: PortfolioPayload = portfolioSection?.contentPayload ?? {};
   const deliveryProcessPayload: DeliveryProcessPayload = deliveryProcessSection?.contentPayload ?? {};
   const clientTestimonialsPayload: ClientTestimonialsPayload = clientTestimonialsSection?.contentPayload ?? {};
+  const clientsPayload: ClientsPayload = clientsSection?.contentPayload ?? {};
 
   // ── Save handler ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -317,10 +337,28 @@ export default function PagesManagementPage() {
           });
         }
         notify.success('Client Testimonials updated successfully.');
+      } else if (activeTab === 'clients') {
+        if (!clientsPayload.title?.trim()) {
+          notify.error('Validation: Section title cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (clientsSection && !clientsSection.id.startsWith('local-')) {
+          await fetchApi(`/sections/${clientsSection.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: clientsSection.contentPayload,
+              isActive: clientsSection.isActive,
+            }),
+          });
+        }
+        notify.success('✓ Client section updated successfully.');
       }
     } catch {
       if (activeTab === 'portfolio') {
         notify.error('Unable to update portfolio display settings.');
+      } else if (activeTab === 'clients') {
+        notify.error('Unable to update the client section.');
       } else {
         notify.error('Unable to update the section settings.');
       }
@@ -367,7 +405,7 @@ export default function PagesManagementPage() {
                 onValueChange={(v) => setActiveTab(v as ActiveTab)}
                 className="w-full space-y-4"
               >
-                <TabsList className="w-full grid grid-cols-2 sm:grid-cols-7 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
+                <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
                   <TabsTrigger
                     value="hero"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
@@ -405,10 +443,16 @@ export default function PagesManagementPage() {
                     6. Process
                   </TabsTrigger>
                   <TabsTrigger
+                    value="clients"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    7. Clients
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="clientTestimonials"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    7. Reviews
+                    8. Reviews
                   </TabsTrigger>
                 </TabsList>
 
@@ -496,7 +540,21 @@ export default function PagesManagementPage() {
                   )}
                 </TabsContent>
 
-                {/* 7. Client Testimonials Tab */}
+                {/* 7. Clients Tab */}
+                <TabsContent value="clients" className="focus-visible:outline-none">
+                  {clientsSection ? (
+                    <ClientsSettings
+                      section={clientsSection}
+                      onChange={setClientsSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading Clients section…' : 'Clients section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 8. Client Testimonials Tab */}
                 <TabsContent value="clientTestimonials" className="focus-visible:outline-none">
                   {clientTestimonialsSection ? (
                     <ClientTestimonialsSettings
@@ -523,6 +581,7 @@ export default function PagesManagementPage() {
                 portfolioPayload={portfolioPayload}
                 deliveryProcessPayload={deliveryProcessPayload}
                 clientTestimonialsPayload={clientTestimonialsPayload}
+                clientsPayload={clientsPayload}
                 heroHeadlineText={extractHeroHeadline(heroPayload)}
                 metricsHeadlineText={extractMetricsHeadline(metricsPayload)}
               />
