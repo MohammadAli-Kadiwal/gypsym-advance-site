@@ -6,6 +6,7 @@ import { RevenueExperimentSection } from './revenue-experiment-section';
 import { WhatWeChangeSection } from './what-we-change-section';
 import { DeliveryProcessSection } from './delivery-process-section';
 import { ClientTestimonialsSection } from './client-testimonials-section';
+import { PortfolioSection } from './portfolio-section';
 
 export interface SectionProps {
   section: PageSectionDto;
@@ -25,6 +26,9 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   CRO_REVENUE_EXPERIMENT: RevenueExperimentSection,
   FEATURE_GRID: WhatWeChangeSection,
   WHAT_WE_CHANGE: WhatWeChangeSection,
+  PORTFOLIO: PortfolioSection,
+  OUR_WORK: PortfolioSection,
+  PORTFOLIO_SHOWCASE: PortfolioSection,
   TABBED_SOLUTIONS: DeliveryProcessSection,
   DELIVERY_PROCESS: DeliveryProcessSection,
   TESTIMONIAL_SLIDER: ClientTestimonialsSection,
@@ -67,6 +71,13 @@ export function getSectionComponent(
 ): React.ComponentType<SectionProps> {
   if (sectionIdentifier === 'cro-revenue-experiment') return RevenueExperimentSection;
   if (sectionIdentifier === 'what-we-actually-change') return WhatWeChangeSection;
+  if (
+    sectionIdentifier === 'portfolio-showcase' ||
+    sectionIdentifier === 'our-work' ||
+    sectionIdentifier === 'portfolio'
+  ) {
+    return PortfolioSection;
+  }
   if (sectionIdentifier === 'delivery-process') return DeliveryProcessSection;
   const normalized = componentType.toUpperCase();
   return sectionRegistry[normalized] || UnregisteredSection;

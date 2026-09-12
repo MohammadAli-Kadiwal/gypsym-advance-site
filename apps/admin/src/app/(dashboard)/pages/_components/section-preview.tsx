@@ -8,6 +8,7 @@ import type {
   MetricsPayload,
   RevenueExperimentPayload,
   WhatWeChangePayload,
+  PortfolioPayload,
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
 } from './types';
@@ -19,6 +20,7 @@ export type ActiveTab =
   | 'verifiedResults'
   | 'croExperiment'
   | 'whatWeChange'
+  | 'portfolio'
   | 'deliveryProcess'
   | 'clientTestimonials';
 
@@ -28,6 +30,7 @@ interface SectionPreviewProps {
   metricsPayload: MetricsPayload;
   croPayload?: RevenueExperimentPayload;
   whatWeChangePayload?: WhatWeChangePayload;
+  portfolioPayload?: PortfolioPayload;
   deliveryProcessPayload?: DeliveryProcessPayload;
   clientTestimonialsPayload?: ClientTestimonialsPayload;
   heroHeadlineText: string;
@@ -49,12 +52,12 @@ function renderPreviewTitleWithHighlight(
   const parts = title.split(regex);
 
   return parts.map((part, i) =>
-    part.toLowerCase() === trimmed.toLowerCase() ? (
-      <span key={i} className="font-serif italic font-normal text-[1.12em] tracking-normal">
+    regex.test(part) ? (
+      <span key={i} className="text-[#d9287c] font-extrabold underline decoration-[#d9287c]/30">
         {part}
       </span>
     ) : (
-      <React.Fragment key={i}>{part}</React.Fragment>
+      part
     )
   );
 }
@@ -65,6 +68,7 @@ export function SectionPreview({
   metricsPayload,
   croPayload,
   whatWeChangePayload,
+  portfolioPayload,
   deliveryProcessPayload,
   clientTestimonialsPayload,
   heroHeadlineText,
@@ -77,6 +81,7 @@ export function SectionPreview({
   const showMetrics = activeTab === 'verifiedResults' || previewScope === 'full';
   const showCro = activeTab === 'croExperiment' || previewScope === 'full';
   const showWhatWeChange = activeTab === 'whatWeChange' || previewScope === 'full';
+  const showPortfolio = activeTab === 'portfolio' || previewScope === 'full';
   const showDeliveryProcess = activeTab === 'deliveryProcess' || previewScope === 'full';
   const showClientTestimonials = activeTab === 'clientTestimonials' || previewScope === 'full';
 
@@ -381,6 +386,75 @@ export function SectionPreview({
                       </span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4b. PORTFOLIO / OUR WORK PREVIEW (2 -> 1 -> 2 Layout) */}
+            {showPortfolio && (
+              <div className="p-4 space-y-3 bg-[#0a0a0a] text-white text-center border-t border-slate-800">
+                <div className="space-y-1 max-w-[90%] mx-auto">
+                  <span className="inline-flex items-center gap-1 text-[7px] font-bold text-[#d9287c] uppercase tracking-wider">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
+                    <span>{portfolioPayload?.eyebrow || 'PORTFOLIO'}</span>
+                  </span>
+                  <h4 className="text-xs font-bold text-white leading-snug">
+                    {renderPreviewTitleWithHighlight(
+                      portfolioPayload?.title || 'Our Work In Production',
+                      portfolioPayload?.titleHighlight || 'Our Work'
+                    )}
+                  </h4>
+                  {portfolioPayload?.description && (
+                    <p className="text-[7.5px] text-neutral-400 leading-tight line-clamp-2">
+                      {portfolioPayload.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* 2 -> 1 -> 2 interactive mini cards */}
+                <div className="grid grid-cols-2 gap-2 text-left">
+                  {(portfolioPayload?.projects || [])
+                    .slice(
+                      0,
+                      typeof portfolioPayload?.maxDisplayCount === 'number' && portfolioPayload.maxDisplayCount > 0
+                        ? portfolioPayload.maxDisplayCount
+                        : (portfolioPayload?.projects || []).length || 5
+                    )
+                    .map((proj, pIdx) => {
+                    const isFull = pIdx === 2;
+                    return (
+                      <div
+                        key={pIdx}
+                        className={`relative rounded-xl overflow-hidden border border-white/10 bg-neutral-900 group/card p-2.5 flex flex-col justify-between ${
+                          isFull ? 'col-span-2 h-24' : 'h-24'
+                        }`}
+                      >
+                        {/* Background image preview */}
+                        {proj.imageUrl && (
+                          <div
+                            className="absolute inset-0 bg-cover bg-center opacity-40 group-hover/card:scale-105 transition-transform duration-500"
+                            style={{ backgroundImage: `url(${proj.imageUrl})` }}
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Hover View Button simulation (⚪ View) */}
+                        <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900/80 text-white text-[8px] font-medium shadow-md border border-white/20 backdrop-blur-md">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
+                            <span>{portfolioPayload?.viewButtonLabel || 'View'}</span>
+                          </span>
+                        </div>
+
+                        {/* Bottom: Only Project Name */}
+                        <div className="relative z-10 mt-auto">
+                          <span className="text-[8.5px] font-bold text-white line-clamp-1 block drop-shadow-xs">
+                            {proj.title}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

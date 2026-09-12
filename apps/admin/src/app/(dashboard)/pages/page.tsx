@@ -11,6 +11,7 @@ import { HeroSettings } from './_components/hero-settings';
 import { MetricsSettings } from './_components/metrics-settings';
 import { RevenueExperimentSettings } from './_components/revenue-experiment-settings';
 import { WhatWeChangeSettings } from './_components/what-we-change-settings';
+import { PortfolioSettings } from './_components/portfolio-settings';
 import { DeliveryProcessSettings } from './_components/delivery-process-settings';
 import { ClientTestimonialsSettings } from './_components/client-testimonials-settings';
 import { SectionPreview, ActiveTab } from './_components/section-preview';
@@ -19,6 +20,7 @@ import type {
   MetricsSection,
   RevenueExperimentSection,
   WhatWeChangeSection,
+  PortfolioSection,
   DeliveryProcessSection,
   ClientTestimonialsSection,
   PageData,
@@ -26,6 +28,7 @@ import type {
   MetricsPayload,
   RevenueExperimentPayload,
   WhatWeChangePayload,
+  PortfolioPayload,
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
 } from './_components/types';
@@ -65,6 +68,7 @@ export default function PagesManagementPage() {
   const [metricsSection, setMetricsSection] = React.useState<MetricsSection | null>(null);
   const [croSection, setCroSection] = React.useState<RevenueExperimentSection | null>(null);
   const [whatWeChangeSection, setWhatWeChangeSection] = React.useState<WhatWeChangeSection | null>(null);
+  const [portfolioSection, setPortfolioSection] = React.useState<PortfolioSection | null>(null);
   const [deliveryProcessSection, setDeliveryProcessSection] = React.useState<DeliveryProcessSection | null>(null);
   const [clientTestimonialsSection, setClientTestimonialsSection] = React.useState<ClientTestimonialsSection | null>(null);
 
@@ -93,6 +97,12 @@ export default function PagesManagementPage() {
           (s) =>
             s.sectionIdentifier === 'what-we-actually-change' ||
             s.componentType === 'FEATURE_GRID'
+        );
+        const portfolioRaw = res.sections?.find(
+          (s) =>
+            s.sectionIdentifier === 'portfolio-showcase' ||
+            s.sectionIdentifier === 'our-work' ||
+            s.sectionIdentifier === 'portfolio'
         );
         const deliveryProcessRaw = res.sections?.find(
           (s) =>
@@ -141,6 +151,15 @@ export default function PagesManagementPage() {
           });
         }
 
+        if (portfolioRaw) {
+          setPortfolioSection({
+            id: portfolioRaw.id,
+            componentType: portfolioRaw.componentType,
+            isActive: portfolioRaw.isActive,
+            contentPayload: portfolioRaw.contentPayload as PortfolioPayload,
+          });
+        }
+
         if (deliveryProcessRaw) {
           setDeliveryProcessSection({
             id: deliveryProcessRaw.id,
@@ -176,6 +195,7 @@ export default function PagesManagementPage() {
   const metricsPayload: MetricsPayload = metricsSection?.contentPayload ?? {};
   const croPayload: RevenueExperimentPayload = croSection?.contentPayload ?? {};
   const whatWeChangePayload: WhatWeChangePayload = whatWeChangeSection?.contentPayload ?? {};
+  const portfolioPayload: PortfolioPayload = portfolioSection?.contentPayload ?? {};
   const deliveryProcessPayload: DeliveryProcessPayload = deliveryProcessSection?.contentPayload ?? {};
   const clientTestimonialsPayload: ClientTestimonialsPayload = clientTestimonialsSection?.contentPayload ?? {};
 
@@ -249,6 +269,22 @@ export default function PagesManagementPage() {
           });
         }
         notify.success('What We Actually Change settings saved and synchronized.');
+      } else if (activeTab === 'portfolio') {
+        if (!portfolioPayload.title?.trim()) {
+          notify.error('Validation: Portfolio section title cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (portfolioSection && !portfolioSection.id.startsWith('local-')) {
+          await fetchApi(`/sections/${portfolioSection.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: portfolioSection.contentPayload,
+              isActive: portfolioSection.isActive,
+            }),
+          });
+        }
+        notify.success('Portfolio display settings updated successfully.');
       } else if (activeTab === 'deliveryProcess') {
         if (!deliveryProcessPayload.title?.trim()) {
           notify.error('Validation: Delivery process title cannot be empty.');
@@ -283,7 +319,11 @@ export default function PagesManagementPage() {
         notify.success('Client Testimonials updated successfully.');
       }
     } catch {
-      notify.error('Unable to update the section settings.');
+      if (activeTab === 'portfolio') {
+        notify.error('Unable to update portfolio display settings.');
+      } else {
+        notify.error('Unable to update the section settings.');
+      }
     } finally {
       setSaving(false);
     }
@@ -327,7 +367,7 @@ export default function PagesManagementPage() {
                 onValueChange={(v) => setActiveTab(v as ActiveTab)}
                 className="w-full space-y-4"
               >
-                <TabsList className="w-full grid grid-cols-2 sm:grid-cols-6 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
+                <TabsList className="w-full grid grid-cols-2 sm:grid-cols-7 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
                   <TabsTrigger
                     value="hero"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
@@ -353,16 +393,22 @@ export default function PagesManagementPage() {
                     4. Change
                   </TabsTrigger>
                   <TabsTrigger
+                    value="portfolio"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    5. Work
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="deliveryProcess"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    5. Process
+                    6. Process
                   </TabsTrigger>
                   <TabsTrigger
                     value="clientTestimonials"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    6. Reviews
+                    7. Reviews
                   </TabsTrigger>
                 </TabsList>
 
@@ -422,7 +468,21 @@ export default function PagesManagementPage() {
                   )}
                 </TabsContent>
 
-                {/* 5. Delivery Process Tab */}
+                {/* 5. Portfolio Tab */}
+                <TabsContent value="portfolio" className="focus-visible:outline-none">
+                  {portfolioSection ? (
+                    <PortfolioSettings
+                      section={portfolioSection}
+                      onChange={setPortfolioSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading Portfolio section…' : 'Portfolio section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 6. Delivery Process Tab */}
                 <TabsContent value="deliveryProcess" className="focus-visible:outline-none">
                   {deliveryProcessSection ? (
                     <DeliveryProcessSettings
@@ -436,7 +496,7 @@ export default function PagesManagementPage() {
                   )}
                 </TabsContent>
 
-                {/* 6. Client Testimonials Tab */}
+                {/* 7. Client Testimonials Tab */}
                 <TabsContent value="clientTestimonials" className="focus-visible:outline-none">
                   {clientTestimonialsSection ? (
                     <ClientTestimonialsSettings
@@ -460,6 +520,7 @@ export default function PagesManagementPage() {
                 metricsPayload={metricsPayload}
                 croPayload={croPayload}
                 whatWeChangePayload={whatWeChangePayload}
+                portfolioPayload={portfolioPayload}
                 deliveryProcessPayload={deliveryProcessPayload}
                 clientTestimonialsPayload={clientTestimonialsPayload}
                 heroHeadlineText={extractHeroHeadline(heroPayload)}

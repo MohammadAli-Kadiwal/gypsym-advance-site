@@ -10,6 +10,7 @@ import {
   Layers,
   Building2,
   MessageSquareQuote,
+  Briefcase,
   Palette,
   Sliders,
   Settings,
@@ -71,6 +72,11 @@ export function Sidebar() {
           label: 'Clients',
           href: '/content/clients',
           icon: Building2,
+        },
+        {
+          label: 'Portfolio',
+          href: '/content/portfolio',
+          icon: Briefcase,
         },
         {
           label: 'Testimonials',

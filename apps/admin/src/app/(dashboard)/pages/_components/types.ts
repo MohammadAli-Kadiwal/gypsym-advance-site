@@ -215,6 +215,53 @@ export interface ClientTestimonialsSection {
   contentPayload: ClientTestimonialsPayload;
 }
 
+export interface PortfolioProject {
+  id?: string;
+  orderNumber?: string;
+  title?: string;
+  client?: string;
+  category?: string;
+  description?: string;
+  imageUrl?: string;
+  altText?: string;
+  projectUrl?: string;
+  tags?: string[];
+  metrics?: string;
+}
+
+export interface PortfolioPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+
+  // Hover settings
+  hoverEffectsEnabled?: boolean;
+  viewButtonEnabled?: boolean;
+  viewButtonLabel?: string;
+  viewButtonPosition?: 'center' | 'bottom-center' | 'bottom-right';
+  overlayEnabled?: boolean;
+  backdropBlurEnabled?: boolean;
+  imageZoomEnabled?: boolean;
+
+  // 3D Animation settings
+  threeDScrollEnabled?: boolean;
+  threeDIntensity?: 'subtle' | 'premium';
+  mouseParallaxEnabled?: boolean;
+
+  // Display limits
+  maxDisplayCount?: number;
+
+  projects?: PortfolioProject[];
+}
+
+export interface PortfolioSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: PortfolioPayload;
+}
+
 export interface PageData {
   id?: string;
   slug?: string;
