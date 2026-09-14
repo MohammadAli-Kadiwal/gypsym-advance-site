@@ -8,6 +8,7 @@ import { AppModule } from './app.module';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
+// NestJS Application Bootstrap - Reloaded
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 

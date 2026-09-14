@@ -12,6 +12,9 @@ import type {
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
   ClientsPayload,
+  PartnersPayload,
+  ContactPayload,
+  CtaPayload,
 } from './types';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
@@ -23,8 +26,11 @@ export type ActiveTab =
   | 'whatWeChange'
   | 'portfolio'
   | 'deliveryProcess'
+  | 'clients'
   | 'clientTestimonials'
-  | 'clients';
+  | 'partners'
+  | 'contact'
+  | 'cta';
 
 interface SectionPreviewProps {
   activeTab: ActiveTab;
@@ -36,6 +42,9 @@ interface SectionPreviewProps {
   deliveryProcessPayload?: DeliveryProcessPayload;
   clientTestimonialsPayload?: ClientTestimonialsPayload;
   clientsPayload?: ClientsPayload;
+  partnersPayload?: PartnersPayload;
+  contactPayload?: ContactPayload;
+  ctaPayload?: CtaPayload;
   heroHeadlineText: string;
   metricsHeadlineText: string;
 }
@@ -75,6 +84,9 @@ export function SectionPreview({
   deliveryProcessPayload,
   clientTestimonialsPayload,
   clientsPayload,
+  partnersPayload,
+  contactPayload,
+  ctaPayload,
   heroHeadlineText,
   metricsHeadlineText,
 }: SectionPreviewProps) {
@@ -87,8 +99,11 @@ export function SectionPreview({
   const showWhatWeChange = activeTab === 'whatWeChange' || previewScope === 'full';
   const showPortfolio = activeTab === 'portfolio' || previewScope === 'full';
   const showDeliveryProcess = activeTab === 'deliveryProcess' || previewScope === 'full';
-  const showClientTestimonials = activeTab === 'clientTestimonials' || previewScope === 'full';
   const showClients = activeTab === 'clients' || previewScope === 'full';
+  const showClientTestimonials = activeTab === 'clientTestimonials' || previewScope === 'full';
+  const showPartners = activeTab === 'partners' || previewScope === 'full';
+  const showContact = activeTab === 'contact' || previewScope === 'full';
+  const showCta = activeTab === 'cta' || previewScope === 'full';
 
   return (
     <Card className="rounded-2xl border-slate-200/90 bg-white shadow-sm overflow-hidden">
@@ -677,6 +692,200 @@ export function SectionPreview({
                 <div className="rounded-lg bg-pink-50 p-1.5 border border-pink-100 flex items-center justify-between text-[6.5px] text-slate-700">
                   <span className="font-semibold truncate">85% retention · 24h response</span>
                   <span className="text-pink-600 font-bold shrink-0">Book Call →</span>
+                </div>
+              </div>
+            )}
+
+            {showPartners && (
+              <div className="p-4 space-y-3 bg-white border-t border-slate-100 text-center">
+                <div className="space-y-1">
+                  <span className="inline-flex items-center gap-1 text-[7px] font-bold text-[#d9287c] uppercase tracking-wider">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
+                    <span>{partnersPayload?.eyebrow || 'GLOBAL ALLIANCES'}</span>
+                  </span>
+                  <h4 className="text-xs font-extrabold text-slate-900">
+                    {renderPreviewTitleWithHighlight(
+                      partnersPayload?.title || 'Strategic Cloud & Enterprise Partners',
+                      partnersPayload?.titleHighlight || 'Enterprise Partners'
+                    )}
+                  </h4>
+                  {(partnersPayload?.description ||
+                    'We collaborate closely with leading cloud, commerce, and infrastructure providers to engineer resilient digital systems at global scale.') && (
+                    <p className="text-[7px] text-slate-500 max-w-[280px] mx-auto leading-tight line-clamp-2">
+                      {partnersPayload?.description ||
+                        'We collaborate closely with leading cloud, commerce, and infrastructure providers to engineer resilient digital systems at global scale.'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Structured Centered Rows Preview */}
+                {(() => {
+                  const allItems = partnersPayload?.partners || [
+                    { name: 'Amazon Web Services', logoUrl: '/aws-partner-badge.svg' },
+                    { name: 'Google Cloud', logoUrl: '/aws-partner-badge.svg' },
+                  ];
+
+                  const r1 = partnersPayload?.layout?.desktopRow1 ?? 8;
+                  const r2 = partnersPayload?.layout?.desktopRow2 ?? 6;
+                  const r3 = partnersPayload?.layout?.desktopRow3 ?? 4;
+
+                  const row1Items = allItems.slice(0, r1);
+                  const row2Items = allItems.slice(r1, r1 + r2);
+                  const row3Items = allItems.slice(r1 + r2, r1 + r2 + r3);
+
+                  const renderRow = (rowItems: typeof allItems, key: string) => {
+                    if (rowItems.length === 0) return null;
+                    return (
+                      <div key={key} className="flex flex-wrap items-center justify-center gap-1">
+                        {rowItems.map((item, i) => (
+                          <div
+                            key={i}
+                            className="h-6 px-2 rounded-md bg-slate-50 border border-slate-200/80 flex items-center justify-center text-[7px] font-semibold text-slate-700 shadow-2xs"
+                          >
+                            {item.logoUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.logoUrl}
+                                alt={item.name}
+                                className="h-3.5 max-w-[45px] object-contain"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="truncate max-w-[40px]">{item.name}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <div className="space-y-1 py-1">
+                      {renderRow(row1Items, 'r1')}
+                      {renderRow(row2Items, 'r2')}
+                      {renderRow(row3Items, 'r3')}
+                    </div>
+                  );
+                })()}
+
+                {partnersPayload?.cta?.enabled && (
+                  <div className="pt-1">
+                    <span className="inline-block px-2.5 py-1 rounded-full bg-blue-600 text-white text-[7px] font-bold shadow-2xs">
+                      {partnersPayload?.cta?.label || 'Become a Partner'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 10. Contact / Inquiry Section Preview */}
+            {showContact && (
+              <div
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  activeTab === 'contact'
+                    ? 'ring-2 ring-[#d9287c]/30 border-[#d9287c]'
+                    : 'border-slate-200/80 bg-white'
+                } shadow-xs`}
+              >
+                <div className="grid grid-cols-2 gap-3 text-left">
+                  {/* Left Column Preview */}
+                  <div className="space-y-1.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d9287c]/8 border border-[#d9287c]/20 text-[#d9287c] font-mono text-[7px] uppercase font-bold">
+                      <span className="w-1 h-1 rounded-full bg-[#d9287c]" />
+                      {contactPayload?.eyebrow || 'DIRECT ENGAGEMENT'}
+                    </span>
+                    <h4 className="text-[10px] font-bold text-neutral-900 leading-tight">
+                      {renderPreviewTitleWithHighlight(
+                        contactPayload?.title || 'Initiate an Architectural Consultation',
+                        contactPayload?.titleHighlight || 'Consultation'
+                      )}
+                    </h4>
+                    <p className="text-[7px] text-neutral-500 leading-tight line-clamp-2">
+                      {contactPayload?.description ||
+                        'Engage directly with our technical leadership. Strict non-disclosure terms.'}
+                    </p>
+                    <div className="pt-1 space-y-1 text-[7px] text-neutral-600">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <span className="truncate font-medium">Desk: briefings@gypsym.com</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#d9287c]" />
+                        <span className="truncate font-medium">NYC HQ · 24h SLA</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column Form Card Preview */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs space-y-1.5">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-1">
+                      <span className="text-[8px] font-bold text-neutral-900">
+                        {contactPayload?.form?.formTitle || 'Direct Inquiry'}
+                      </span>
+                      <span className="text-[6px] text-[#d9287c] font-bold bg-[#d9287c]/10 px-1.5 py-0.2 rounded-full">
+                        24H SLA
+                      </span>
+                    </div>
+                    <div className="space-y-1 py-0.5">
+                      <div className="h-3.5 rounded-lg bg-white border border-slate-200 px-1.5 flex items-center text-[6px] text-slate-400">
+                        Full Name *
+                      </div>
+                      <div className="h-3.5 rounded-lg bg-white border border-slate-200 px-1.5 flex items-center text-[6px] text-slate-400">
+                        Work Email *
+                      </div>
+                      <div className="h-4 rounded-lg bg-white border border-slate-200 px-1.5 flex items-center text-[6px] text-slate-400">
+                        Project Scope *
+                      </div>
+                    </div>
+                    <div className="pt-0.5">
+                      <div className="h-4 rounded-full bg-neutral-900 text-white font-bold text-[7px] flex items-center justify-center shadow-xs">
+                        {contactPayload?.form?.submitButtonText || 'Submit Inquiry'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 11. CTA Banner Section Preview (Last Section) */}
+            {showCta && (
+              <div
+                className={`p-5 rounded-2xl border text-center transition-all ${
+                  activeTab === 'cta'
+                    ? 'ring-2 ring-[#d9287c]/30 border-[#d9287c]'
+                    : 'border-slate-200/80 bg-white'
+                } shadow-xs relative overflow-hidden`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#d9287c]/5 via-transparent to-transparent pointer-events-none" />
+                <div className="relative z-10 space-y-2">
+                  {ctaPayload?.eyebrow && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d9287c]/8 border border-[#d9287c]/20 text-[#d9287c] font-mono text-[7px] tracking-wider uppercase font-bold">
+                      <span className="w-1 h-1 rounded-full bg-[#d9287c]" />
+                      {ctaPayload.eyebrow}
+                    </span>
+                  )}
+                  <h4 className="text-xs font-bold text-neutral-900 leading-tight">
+                    {renderPreviewTitleWithHighlight(
+                      ctaPayload?.title || 'Ready to Accelerate Your Digital Transformation?',
+                      ctaPayload?.titleHighlight || 'Transformation'
+                    )}
+                  </h4>
+                  <p className="text-[7.5px] text-neutral-600 max-w-[280px] mx-auto leading-tight line-clamp-2">
+                    {ctaPayload?.description ||
+                      'Partner with our systems engineers and cloud architects to build resilient, distributed digital infrastructure.'}
+                  </p>
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <span className="inline-block px-3 py-1.5 rounded-full bg-neutral-900 text-white text-[7.5px] font-bold shadow-xs">
+                      {ctaPayload?.primaryButton?.label || 'Schedule an Architectural Briefing'}
+                    </span>
+                    {ctaPayload?.secondaryButton?.enabled && (
+                      <span className="inline-block px-3 py-1.5 rounded-full bg-white border border-slate-200 text-neutral-800 text-[7.5px] font-medium">
+                        {ctaPayload?.secondaryButton?.label || 'Explore Radar'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

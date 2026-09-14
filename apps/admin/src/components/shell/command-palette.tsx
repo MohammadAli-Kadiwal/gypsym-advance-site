@@ -15,6 +15,7 @@ import {
   Users,
   BookOpen,
   Building2,
+  Handshake,
   MessageSquareQuote,
   Palette,
   Compass,
@@ -46,6 +47,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { title: 'Case Studies', path: '/content/case-studies', category: 'Content', icon: ShieldCheck },
     { title: 'Blog Articles', path: '/editorial/blog', category: 'Editorial', icon: BookOpen },
     { title: 'Client Roster & Logos', path: '/content/clients', category: 'Content', icon: Building2 },
+    { title: 'Global Partners & Alliances', path: '/content/partners', category: 'Content', icon: Handshake },
     { title: 'Client Testimonials & Reviews', path: '/content/testimonials', category: 'Content', icon: MessageSquareQuote },
     { title: 'Site Branding & Tokens', path: '/site/branding', category: 'Site', icon: Palette },
     { title: 'Site Navigation Menus', path: '/site/navigation', category: 'Site', icon: Compass },
@@ -54,7 +56,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { title: 'RBAC Permission Matrix', path: '/system/permissions', category: 'System', icon: Shield },
     { title: 'Compliance Audit Ledger', path: '/system/audit', category: 'System', icon: History },
     { title: 'Notification Center', path: '/system/notifications', category: 'System', icon: Bell },
-    { title: 'Briefing Inquiries', path: '/system/inbox', category: 'System', icon: Mail },
+    { title: 'Contact Submissions & Inquiries', path: '/content/submissions', category: 'Content', icon: Mail },
+    { title: 'Email & SMTP Infrastructure', path: '/site/settings/email', category: 'Site', icon: Mail },
   ];
 
   const filteredCommands = commands.filter((c) =>

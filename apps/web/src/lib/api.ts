@@ -116,3 +116,72 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
   };
 }
 
+export interface PortfolioCategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  displayOrder: number;
+  status: string;
+  projectCount: number;
+}
+
+export interface PortfolioProjectItemDto {
+  id: string;
+  orderNumber?: string;
+  title: string;
+  slug: string;
+  client?: string;
+  category?: string;
+  categorySlug?: string;
+  categoryId?: string;
+  description?: string;
+  imageUrl: string;
+  altText?: string;
+  projectUrl?: string;
+  tags?: string[];
+  metrics?: string;
+  displayOrder: number;
+  status: string;
+}
+
+/**
+ * Fetch portfolio categories from NestJS API.
+ * Server-side, zero hardcoded fallback data.
+ */
+export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/portfolio/categories`, {
+      cache: 'no-store',
+      next: { tags: ['portfolio-categories'], revalidate: 0 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch published portfolio projects from NestJS API with optional category filter.
+ * Server-side, zero hardcoded fallback data.
+ */
+export async function getPortfolioProjects(categorySlug?: string): Promise<PortfolioProjectItemDto[]> {
+  try {
+    const url = new URL(`${API_BASE_URL}/portfolio`);
+    if (categorySlug && categorySlug !== 'all') {
+      url.searchParams.set('category', categorySlug);
+    }
+    const res = await fetch(url.toString(), {
+      cache: 'no-store',
+      next: { tags: ['portfolio-projects'], revalidate: 0 },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json?.projects) ? json.projects : [];
+  } catch {
+    return [];
+  }
+}
+

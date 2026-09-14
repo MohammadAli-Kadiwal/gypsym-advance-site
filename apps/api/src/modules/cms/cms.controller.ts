@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
 import { CmsService } from './cms.service';
 
 @Controller()
@@ -138,5 +138,55 @@ export class CmsController {
   @Delete('clients/:id')
   async deleteClient(@Param('id') id: string): Promise<void> {
     return this.cmsService.deleteClient(id);
+  }
+
+  // ── Partners ────────────────────────────────────────────────────────────────
+
+  @Get('partners')
+  async getPartners(@Query() query: any): Promise<any[]> {
+    return this.cmsService.getPartners(query);
+  }
+
+  @Put('partners/reorder')
+  async reorderPartners(@Body() body: { items: Array<{ id: string; displayOrder: number }> }): Promise<void> {
+    return this.cmsService.reorderPartners(body.items);
+  }
+
+  @Put('partners/bulk-status')
+  async bulkUpdatePartnerStatus(@Body() body: { ids: string[]; status: any }): Promise<{ count: number }> {
+    return this.cmsService.bulkUpdatePartnerStatus(body.ids, body.status);
+  }
+
+  @Post('partners/bulk-delete')
+  async bulkDeletePartners(@Body() body: { ids: string[] }): Promise<{ count: number }> {
+    return this.cmsService.bulkDeletePartners(body.ids);
+  }
+
+  @Get('partners/:id')
+  async getPartnerById(@Param('id') id: string): Promise<any> {
+    return this.cmsService.getPartnerById(id);
+  }
+
+  @Post('partners')
+  async createPartner(@Body() body: any): Promise<any> {
+    return this.cmsService.createPartner(body);
+  }
+
+  @Put('partners/:id')
+  async updatePartner(@Param('id') id: string, @Body() body: any): Promise<any> {
+    return this.cmsService.updatePartner(id, body);
+  }
+
+  @Patch('partners/:id/homepage')
+  async updatePartnerHomepageVisibility(
+    @Param('id') id: string,
+    @Body() body: { showOnHomepage: boolean },
+  ): Promise<any> {
+    return this.cmsService.updatePartnerHomepageVisibility(id, body.showOnHomepage);
+  }
+
+  @Delete('partners/:id')
+  async deletePartner(@Param('id') id: string): Promise<void> {
+    return this.cmsService.deletePartner(id);
   }
 }

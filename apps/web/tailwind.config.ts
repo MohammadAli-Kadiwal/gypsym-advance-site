@@ -88,9 +88,14 @@ const config: Config = {
           from: { transform: 'translateX(0%)' },
           to: { transform: 'translateX(-50%)' },
         },
+        'marquee-infinite': {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
       },
       animation: {
         marquee: 'marquee 30s linear infinite',
+        'marquee-infinite': 'marquee-infinite 35s linear infinite',
       },
     },
   },

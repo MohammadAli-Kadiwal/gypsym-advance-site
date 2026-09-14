@@ -1,0 +1,11 @@
+<svg viewBox="0 0 110 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(1, 1) scale(1.05)">
+    <rect x="3" y="11" width="3.5" height="3.5" rx="0.5" fill="#2496ED"/>
+    <rect x="7.5" y="11" width="3.5" height="3.5" rx="0.5" fill="#2496ED"/>
+    <rect x="12" y="11" width="3.5" height="3.5" rx="0.5" fill="#2496ED"/>
+    <rect x="7.5" y="6.5" width="3.5" height="3.5" rx="0.5" fill="#2496ED"/>
+    <rect x="12" y="6.5" width="3.5" height="3.5" rx="0.5" fill="#2496ED"/>
+    <path d="M22 12c-.4-.8-1.2-1.2-2-1.2-.8 0-1.5.4-1.8 1-1.2-.2-2.4.4-2.8 1.5H2c-.4 3.2 2 6 6 6 5.5 0 10-2.8 12.4-7.2l.6-.1z" fill="#2496ED"/>
+  </g>
+  <text x="31" y="18.5" fill="#2496ED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="15.5">docker</text>
+</svg>

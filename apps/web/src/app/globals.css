@@ -110,3 +110,38 @@
     scroll-behavior: smooth;
   }
 }
+
+/* ==========================================================================
+   INFINITE MARQUEE AUTO-SLIDER ANIMATION
+   ========================================================================== */
+@keyframes marqueeInfinite {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.marquee-track {
+  display: flex !important;
+  flex-shrink: 0 !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+  animation: marqueeInfinite 30s linear infinite !important;
+  will-change: transform;
+}
+
+.marquee-wrapper:hover .marquee-track {
+  animation-play-state: paused !important;
+}
+
+.animate-marquee-infinite {
+  display: flex !important;
+  flex-shrink: 0 !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+  animation: marqueeInfinite 30s linear infinite !important;
+  will-change: transform;
+}
+

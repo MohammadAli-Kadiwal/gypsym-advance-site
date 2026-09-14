@@ -1,0 +1,5 @@
+<svg viewBox="0 0 126 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="22" height="22" x="2" y="2" rx="5" fill="#632CA6"/>
+  <path d="M8.5 7.5c0-.9.8-1.6 1.6-1.6s1.6.7 1.6 1.6v5.5h-3.2v-5.5zm4.4 3.3h2.2v2.2h-2.2v-2.2z" fill="#fff"/>
+  <text x="31" y="18" fill="#632CA6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="14.5" letter-spacing="0.6">DATADOG</text>
+</svg>

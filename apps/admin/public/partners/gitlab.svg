@@ -1,0 +1,8 @@
+<svg viewBox="0 0 102 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(1, 0) scale(0.92)">
+    <path d="M14 4l4 10H6l4-10z" fill="#FC6D26"/>
+    <path d="M3 14l11 14L6 14H3z" fill="#E24329"/>
+    <path d="M25 14l-11 14 8-14h3z" fill="#E24329"/>
+  </g>
+  <text x="30" y="18.5" fill="currentColor" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="15.5">GitLab</text>
+</svg>

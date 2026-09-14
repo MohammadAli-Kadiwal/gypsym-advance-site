@@ -433,8 +433,18 @@ export class CmsService {
       throw new NotFoundException(`Page '${slug}' not found or not published`);
     }
 
-    // Inject live clients from the clients table into hero and clients-trusted-by sections
-    const liveClients = await this.getClients();
+    // Load live dependencies concurrently
+    const [liveClients, livePartners, livePortfolioProjects, siteSettingsRow, brandSettingsRow] = await Promise.all([
+      this.getClients(),
+      this.getPartners({ status: 'PUBLISHED', showOnHomepage: true }),
+      (this.prisma as any).portfolioProjectItem.findMany({
+        where: { status: 'PUBLISHED' },
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
+        include: { category: true },
+      }),
+      this.prisma.siteSetting.findUnique({ where: { key: 'site_settings' } }).catch(() => null),
+      this.prisma.brandSetting.findFirst({ where: { isActive: true } }).catch(() => null),
+    ]);
 
     const sections = page.sections.map((section: any) => {
       const cType = (section.componentType || '').toUpperCase();
@@ -466,7 +476,7 @@ export class CmsService {
       }
 
       // 2. Dedicated Clients / Trusted By section (LOGO_CLOUD)
-      if (cType === 'LOGO_CLOUD' || sId === 'clients-trusted-by' || sId === 'trusted-by') {
+      if (cType === 'LOGO_CLOUD' && (sId === 'clients-trusted-by' || sId === 'trusted-by')) {
         const payload = (section.contentPayload as Record<string, any>) || {};
 
         // Show all active live clients by default from Clients module
@@ -498,6 +508,83 @@ export class CmsService {
           contentPayload: {
             ...payload,
             clients: allClients,
+          },
+        };
+      }
+
+      // 3. Dedicated Partners section (PARTNERS or sectionIdentifier: homepage-partners / our-partners / partners)
+      if (cType === 'PARTNERS' || sId === 'homepage-partners' || sId === 'our-partners' || sId === 'partners') {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
+            // Sourced automatically from Partners module (no selector allowed)
+            partners: livePartners,
+          },
+        };
+      }
+
+      // 3b. Dedicated Portfolio / Our Work section (PORTFOLIO / OUR_WORK / FEATURE_GRID with portfolio-showcase / our-work-portfolio)
+      if (
+        cType === 'PORTFOLIO' ||
+        cType === 'OUR_WORK' ||
+        sId === 'portfolio-showcase' ||
+        sId === 'our-work-portfolio' ||
+        sId === 'portfolio' ||
+        sId === 'our-work'
+      ) {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
+            projects: livePortfolioProjects.map((p: any) => ({
+              id: p.id,
+              orderNumber: p.orderNumber,
+              title: p.title,
+              slug: p.slug,
+              client: p.client,
+              category: p.category?.name || '',
+              categorySlug: p.category?.slug || '',
+              categoryId: p.categoryId,
+              description: p.description,
+              imageUrl: p.imageUrl,
+              altText: p.altText || p.title,
+              projectUrl: p.projectUrl || `/portfolio/${p.slug}`,
+              tags: p.tags,
+              metrics: p.metrics,
+              displayOrder: p.displayOrder,
+            })),
+          },
+        };
+      }
+
+      // 4. Dedicated Contact / Inquiry section
+      if (cType === 'CONTACT' || sId === 'contact-inquiry' || sId === 'contact') {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+        const siteVal = (siteSettingsRow?.value as Record<string, any>) || {};
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
+            globalContactDetails: {
+              email: siteVal.primaryEmail || 'briefing@gypsym.com',
+              phone: siteVal.primaryPhone || '+44 20 7946 0991',
+              address: siteVal.headquarters || '100 Bishopsgate, London EC2N 4AG, United Kingdom',
+              socialLinks: brandSettingsRow?.socialLinks || [],
+            },
+          },
+        };
+      }
+
+      // 5. Dedicated CTA section
+      if (cType === 'CTA' || sId === 'cta' || sId === 'cta-banner' || sId === 'homepage-cta') {
+        const payload = (section.contentPayload as Record<string, any>) || {};
+        return {
+          ...section,
+          contentPayload: {
+            ...payload,
           },
         };
       }
@@ -790,5 +877,359 @@ export class CmsService {
     await this.prisma.client.delete({ where: { id } });
     const mediaIds = [...new Set([existing.logoLightId, existing.logoDarkId])];
     await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } });
+  }
+
+  // ── Partners ──────────────────────────────────────────────────────────────────
+
+  async getPartners(filters?: {
+    status?: string;
+    showOnHomepage?: boolean | string;
+    partnerType?: string;
+    search?: string;
+  }): Promise<any[]> {
+    const where: any = {};
+
+    if (filters?.status && filters.status !== 'ALL') {
+      where.status = filters.status;
+    }
+    if (filters?.showOnHomepage !== undefined && filters.showOnHomepage !== 'ALL') {
+      where.showOnHomepage = filters.showOnHomepage === true || filters.showOnHomepage === 'true';
+    }
+    if (filters?.partnerType && filters.partnerType !== 'ALL') {
+      where.partnerType = filters.partnerType;
+    }
+    if (filters?.search && filters.search.trim()) {
+      where.OR = [
+        { name: { contains: filters.search.trim(), mode: 'insensitive' } },
+        { shortDescription: { contains: filters.search.trim(), mode: 'insensitive' } },
+        { partnerType: { contains: filters.search.trim(), mode: 'insensitive' } },
+        { industry: { contains: filters.search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
+    const partners = await this.prisma.partner.findMany({
+      where,
+      orderBy: { displayOrder: 'asc' },
+      include: {
+        logo: { select: { variants: true } },
+        logoDark: { select: { variants: true } },
+      },
+    });
+
+    return partners.map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      tier: p.tier,
+      logoUrl: this.logoUrlFromMedia(p.logo),
+      logoDarkUrl: this.logoUrlFromMedia(p.logoDark),
+      partnershipOverview: p.partnershipOverview,
+      shortDescription: p.shortDescription,
+      description: p.description,
+      websiteUrl: p.websiteUrl ?? null,
+      partnerType: p.partnerType ?? null,
+      industry: p.industry ?? null,
+      displayOrder: p.displayOrder,
+      status: p.status,
+      showOnHomepage: p.showOnHomepage,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+  }
+
+  async getPartnerById(id: string): Promise<any> {
+    const p = await this.prisma.partner.findUnique({
+      where: { id },
+      include: {
+        logo: { select: { variants: true } },
+        logoDark: { select: { variants: true } },
+      },
+    });
+    if (!p) throw new NotFoundException(`Partner '${id}' not found`);
+
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      tier: p.tier,
+      logoUrl: this.logoUrlFromMedia(p.logo),
+      logoDarkUrl: this.logoUrlFromMedia(p.logoDark),
+      partnershipOverview: p.partnershipOverview,
+      shortDescription: p.shortDescription,
+      description: p.description,
+      websiteUrl: p.websiteUrl ?? null,
+      partnerType: p.partnerType ?? null,
+      industry: p.industry ?? null,
+      displayOrder: p.displayOrder,
+      status: p.status,
+      showOnHomepage: p.showOnHomepage,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    };
+  }
+
+  async createPartner(body: {
+    name: string;
+    slug?: string;
+    tier?: any;
+    logoUrl?: string;
+    logoDarkUrl?: string;
+    shortDescription?: string;
+    description?: string;
+    websiteUrl?: string;
+    partnerType?: string;
+    industry?: string;
+    displayOrder?: number;
+    status?: any;
+    showOnHomepage?: boolean;
+  }): Promise<any> {
+    const slugBase = (body.slug || body.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const slug = slugBase || `partner-${Date.now()}`;
+
+    // Ensure unique slug
+    const existingSlug = await this.prisma.partner.findUnique({ where: { slug } });
+    const finalSlug = existingSlug ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
+
+    // Create logo Media record
+    const logoMedia = await this.prisma.media.create({
+      data: {
+        originalFilename: `${body.name.toLowerCase().replace(/\s+/g, '-')}-logo`,
+        mimeType: 'image/svg+xml',
+        fileSizeBytes: BigInt(0),
+        storageKey: `partners/logo-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        altText: `${body.name} logo`,
+        variants: body.logoUrl ? { original: body.logoUrl } : {},
+      },
+    });
+
+    // Create dark logo Media record if provided
+    let logoDarkMediaId: string | null = null;
+    if (body.logoDarkUrl) {
+      const darkMedia = await this.prisma.media.create({
+        data: {
+          originalFilename: `${body.name.toLowerCase().replace(/\s+/g, '-')}-logo-dark`,
+          mimeType: 'image/svg+xml',
+          fileSizeBytes: BigInt(0),
+          storageKey: `partners/logo-dark-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          altText: `${body.name} dark logo`,
+          variants: { original: body.logoDarkUrl },
+        },
+      });
+      logoDarkMediaId = darkMedia.id;
+    }
+
+    let displayOrder = body.displayOrder;
+    if (displayOrder === undefined || displayOrder === null) {
+      const lastPartner = await this.prisma.partner.findFirst({
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+      displayOrder = (lastPartner?.displayOrder ?? 0) + 1;
+    }
+
+    const partner = await this.prisma.partner.create({
+      data: {
+        slug: finalSlug,
+        name: body.name,
+        tier: body.tier || 'TECHNOLOGY',
+        logoId: logoMedia.id,
+        logoDarkId: logoDarkMediaId,
+        shortDescription: body.shortDescription || null,
+        description: body.description || null,
+        websiteUrl: body.websiteUrl || null,
+        partnerType: body.partnerType || null,
+        industry: body.industry || null,
+        displayOrder,
+        status: body.status || 'PUBLISHED',
+        showOnHomepage: body.showOnHomepage ?? true,
+      },
+      include: {
+        logo: { select: { variants: true } },
+        logoDark: { select: { variants: true } },
+      },
+    });
+
+    return {
+      id: partner.id,
+      slug: partner.slug,
+      name: partner.name,
+      tier: partner.tier,
+      logoUrl: this.logoUrlFromMedia(partner.logo),
+      logoDarkUrl: this.logoUrlFromMedia(partner.logoDark),
+      shortDescription: partner.shortDescription,
+      description: partner.description,
+      websiteUrl: partner.websiteUrl ?? null,
+      partnerType: partner.partnerType ?? null,
+      industry: partner.industry ?? null,
+      displayOrder: partner.displayOrder,
+      status: partner.status,
+      showOnHomepage: partner.showOnHomepage,
+      createdAt: partner.createdAt,
+      updatedAt: partner.updatedAt,
+    };
+  }
+
+  async updatePartner(
+    id: string,
+    body: {
+      name?: string;
+      slug?: string;
+      tier?: any;
+      logoUrl?: string;
+      logoDarkUrl?: string;
+      shortDescription?: string;
+      description?: string;
+      websiteUrl?: string;
+      partnerType?: string;
+      industry?: string;
+      displayOrder?: number;
+      status?: any;
+      showOnHomepage?: boolean;
+    },
+  ): Promise<any> {
+    const existing = await this.prisma.partner.findUnique({
+      where: { id },
+      select: { id: true, logoId: true, logoDarkId: true },
+    });
+    if (!existing) throw new NotFoundException(`Partner '${id}' not found`);
+
+    // Update logo media
+    if (body.logoUrl !== undefined) {
+      if (existing.logoId) {
+        await this.prisma.media.update({
+          where: { id: existing.logoId },
+          data: { variants: { original: body.logoUrl } },
+        });
+      }
+    }
+
+    // Update or create logoDark media
+    let logoDarkId = existing.logoDarkId;
+    if (body.logoDarkUrl !== undefined) {
+      if (body.logoDarkUrl) {
+        if (existing.logoDarkId) {
+          await this.prisma.media.update({
+            where: { id: existing.logoDarkId },
+            data: { variants: { original: body.logoDarkUrl } },
+          });
+        } else {
+          const darkMedia = await this.prisma.media.create({
+            data: {
+              originalFilename: `partner-dark-logo-${id}`,
+              mimeType: 'image/svg+xml',
+              fileSizeBytes: BigInt(0),
+              storageKey: `partners/logo-dark-${Date.now()}`,
+              variants: { original: body.logoDarkUrl },
+            },
+          });
+          logoDarkId = darkMedia.id;
+        }
+      } else if (existing.logoDarkId) {
+        logoDarkId = null;
+      }
+    }
+
+    const partner = await this.prisma.partner.update({
+      where: { id },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.slug !== undefined && { slug: body.slug }),
+        ...(body.tier !== undefined && { tier: body.tier }),
+        ...(body.shortDescription !== undefined && { shortDescription: body.shortDescription }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.websiteUrl !== undefined && { websiteUrl: body.websiteUrl }),
+        ...(body.partnerType !== undefined && { partnerType: body.partnerType }),
+        ...(body.industry !== undefined && { industry: body.industry }),
+        ...(body.displayOrder !== undefined && { displayOrder: body.displayOrder }),
+        ...(body.status !== undefined && { status: body.status }),
+        ...(body.showOnHomepage !== undefined && { showOnHomepage: body.showOnHomepage }),
+        ...(logoDarkId !== existing.logoDarkId && { logoDarkId }),
+      },
+      include: {
+        logo: { select: { variants: true } },
+        logoDark: { select: { variants: true } },
+      },
+    });
+
+    return {
+      id: partner.id,
+      slug: partner.slug,
+      name: partner.name,
+      tier: partner.tier,
+      logoUrl: this.logoUrlFromMedia(partner.logo),
+      logoDarkUrl: this.logoUrlFromMedia(partner.logoDark),
+      shortDescription: partner.shortDescription,
+      description: partner.description,
+      websiteUrl: partner.websiteUrl ?? null,
+      partnerType: partner.partnerType ?? null,
+      industry: partner.industry ?? null,
+      displayOrder: partner.displayOrder,
+      status: partner.status,
+      showOnHomepage: partner.showOnHomepage,
+      createdAt: partner.createdAt,
+      updatedAt: partner.updatedAt,
+    };
+  }
+
+  async deletePartner(id: string): Promise<void> {
+    const existing = await this.prisma.partner.findUnique({
+      where: { id },
+      select: { logoId: true, logoDarkId: true },
+    });
+    if (!existing) throw new NotFoundException(`Partner '${id}' not found`);
+
+    await this.prisma.partner.delete({ where: { id } });
+
+    const mediaIds = [existing.logoId, existing.logoDarkId].filter(Boolean) as string[];
+    if (mediaIds.length > 0) {
+      await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } }).catch(() => {});
+    }
+  }
+
+  async reorderPartners(items: Array<{ id: string; displayOrder: number }>): Promise<void> {
+    await this.prisma.$transaction(
+      items.map((item) =>
+        this.prisma.partner.update({
+          where: { id: item.id },
+          data: { displayOrder: item.displayOrder },
+        }),
+      ),
+    );
+  }
+
+  async updatePartnerHomepageVisibility(id: string, showOnHomepage: boolean): Promise<any> {
+    return this.prisma.partner.update({
+      where: { id },
+      data: { showOnHomepage },
+      select: { id: true, name: true, showOnHomepage: true },
+    });
+  }
+
+  async bulkUpdatePartnerStatus(ids: string[], status: any): Promise<{ count: number }> {
+    return this.prisma.partner.updateMany({
+      where: { id: { in: ids } },
+      data: { status },
+    });
+  }
+
+  async bulkDeletePartners(ids: string[]): Promise<{ count: number }> {
+    const existing = await this.prisma.partner.findMany({
+      where: { id: { in: ids } },
+      select: { logoId: true, logoDarkId: true },
+    });
+    const mediaIds = existing.flatMap((e) => [e.logoId, e.logoDarkId]).filter(Boolean) as string[];
+
+    const result = await this.prisma.partner.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    if (mediaIds.length > 0) {
+      await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } }).catch(() => {});
+    }
+
+    return result;
   }
 }

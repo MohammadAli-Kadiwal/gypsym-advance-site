@@ -8,6 +8,13 @@ import { DeliveryProcessSection } from './delivery-process-section';
 import { ClientTestimonialsSection } from './client-testimonials-section';
 import { PortfolioSection } from './portfolio-section';
 import { ClientsTrustedBySection } from './clients-trusted-by-section';
+import { PartnersSection } from './partners-section';
+import { ContactSection } from './contact-section';
+import { CtaSection } from './cta-section';
+
+export { BrandLogosSection } from './brand-logos-section';
+export { BrandLogoCard } from './shared/brand-logo-card';
+export { BrandLogosGrid } from './shared/brand-logos-grid';
 
 export interface SectionProps {
   section: PageSectionDto;
@@ -38,6 +45,17 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   CLIENTS: ClientsTrustedBySection,
   TRUSTED_BY: ClientsTrustedBySection,
   CLIENTS_TRUSTED_BY: ClientsTrustedBySection,
+  PARTNERS: PartnersSection,
+  HOMEPAGE_PARTNERS: PartnersSection,
+  OUR_PARTNERS: PartnersSection,
+  BRAND_LOGOS: ClientsTrustedBySection,
+  CONTACT: ContactSection,
+  CONTACT_INQUIRY: ContactSection,
+  CONTACT_US: ContactSection,
+  INQUIRY: ContactSection,
+  CTA: CtaSection,
+  CTA_BANNER: CtaSection,
+  CALL_TO_ACTION: CtaSection,
 };
 
 /**
@@ -90,6 +108,27 @@ export function getSectionComponent(
     sectionIdentifier === 'clients'
   ) {
     return ClientsTrustedBySection;
+  }
+  if (
+    sectionIdentifier === 'homepage-partners' ||
+    sectionIdentifier === 'our-partners' ||
+    sectionIdentifier === 'partners'
+  ) {
+    return PartnersSection;
+  }
+  if (
+    sectionIdentifier === 'homepage-cta' ||
+    sectionIdentifier === 'cta-banner' ||
+    sectionIdentifier === 'cta'
+  ) {
+    return CtaSection;
+  }
+  if (
+    sectionIdentifier === 'contact-inquiry' ||
+    sectionIdentifier === 'contact' ||
+    sectionIdentifier === 'inquiry'
+  ) {
+    return ContactSection;
   }
   const normalized = componentType.toUpperCase();
   return sectionRegistry[normalized] || UnregisteredSection;

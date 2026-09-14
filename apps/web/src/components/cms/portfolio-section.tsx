@@ -3,29 +3,47 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 
-interface PortfolioProject {
+export interface PortfolioCategoryFilterItem {
+  id: string;
+  name: string;
+  slug: string;
+  displayOrder?: number;
+  projectCount?: number;
+}
+
+export interface PortfolioProject {
   id: string;
   orderNumber?: string;
   title: string;
+  slug?: string;
   client?: string;
   category?: string;
+  categorySlug?: string;
+  categoryId?: string;
   description?: string;
   imageUrl: string;
   altText?: string;
   projectUrl?: string;
   tags?: string[];
   metrics?: string;
+  displayOrder?: number;
 }
 
-interface PortfolioPayload {
+export interface PortfolioPayload {
   eyebrow?: string;
   title?: string;
   titleHighlight?: string;
   description?: string;
+
+  // Category filter
+  showCategoryFilter?: boolean;
+  defaultCategory?: string;
+  categories?: PortfolioCategoryFilterItem[];
 
   // Display limit
   maxDisplayCount?: number;
@@ -47,17 +65,52 @@ interface PortfolioPayload {
   projects?: PortfolioProject[];
 }
 
-interface PortfolioSectionProps {
+export interface PortfolioSectionProps {
   section: PageSectionDto;
+  activeCategory?: string;
+  onCategoryChange?: (slug: string) => void;
+  categories?: PortfolioCategoryFilterItem[];
+  overrideProjects?: PortfolioProject[];
 }
 
-export function PortfolioSection({ section }: PortfolioSectionProps) {
+export function PortfolioSection({
+  section,
+  activeCategory: activeCategoryProp,
+  onCategoryChange,
+  categories: categoriesProp,
+  overrideProjects,
+}: PortfolioSectionProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const p = (section.contentPayload as PortfolioPayload) || {};
 
   const eyebrow = p.eyebrow;
   const title = p.title || '';
   const titleHighlight = p.titleHighlight || 'Our Work';
   const description = p.description || '';
+
+  const showCategoryFilter = p.showCategoryFilter ?? false;
+  const filterCategories = categoriesProp || p.categories || [];
+
+  // Determine active category with URL sync
+  const urlCategory = searchParams.get('category');
+  const [activeCategoryState, setActiveCategoryState] = React.useState<string>(
+    activeCategoryProp || urlCategory || p.defaultCategory || 'all',
+  );
+
+  React.useEffect(() => {
+    if (activeCategoryProp !== undefined) {
+      setActiveCategoryState(activeCategoryProp);
+    } else if (urlCategory) {
+      setActiveCategoryState(urlCategory);
+    } else {
+      setActiveCategoryState(p.defaultCategory || 'all');
+    }
+  }, [activeCategoryProp, urlCategory, p.defaultCategory]);
+
+  const activeCategory = activeCategoryProp || activeCategoryState;
 
   const hoverEffectsEnabled = p.hoverEffectsEnabled !== false;
   const viewButtonEnabled = p.viewButtonEnabled !== false;
@@ -70,17 +123,56 @@ export function PortfolioSection({ section }: PortfolioSectionProps) {
   const threeDIntensity = p.threeDIntensity || 'premium';
   const mouseParallaxEnabled = p.mouseParallaxEnabled !== false;
 
-  const rawProjects: PortfolioProject[] = Array.isArray(p.projects) ? p.projects : [];
-  const validProjects = rawProjects.filter((pr) => pr && pr.title);
+  // Source projects
+  const sourceProjects: PortfolioProject[] = overrideProjects || (Array.isArray(p.projects) ? p.projects : []);
+  const validProjects = sourceProjects.filter((pr) => pr && pr.title);
+
+  // Filter projects by category
+  const filteredProjects = React.useMemo(() => {
+    if (!activeCategory || activeCategory === 'all') {
+      return validProjects;
+    }
+    return validProjects.filter((pr) => {
+      const prSlug = pr.categorySlug || pr.category?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return prSlug === activeCategory;
+    });
+  }, [validProjects, activeCategory]);
+
   const maxDisplayCount =
     typeof p.maxDisplayCount === 'number' && p.maxDisplayCount > 0
       ? p.maxDisplayCount
-      : validProjects.length;
-  const projects = validProjects.slice(0, maxDisplayCount);
+      : filteredProjects.length;
+  const projects = filteredProjects.slice(0, maxDisplayCount);
+
+  // Handle Category Filter Click
+  const handleCategorySelect = (slug: string) => {
+    setActiveCategoryState(slug);
+    if (onCategoryChange) {
+      onCategoryChange(slug);
+    } else {
+      const params = new URLSearchParams(searchParams.toString());
+      if (slug === 'all') {
+        params.delete('category');
+      } else {
+        params.set('category', slug);
+      }
+      const qs = params.toString();
+      const targetUrl = qs ? `${pathname}?${qs}` : pathname;
+      router.push(targetUrl, { scroll: false });
+    }
+  };
 
   // ── Mobile Slider Controls ────────────────────────────────────────────────
   const mobileSliderRef = React.useRef<HTMLDivElement>(null);
   const [activeMobileSlide, setActiveMobileSlide] = React.useState<number>(0);
+
+  // Reset mobile slide index on category switch
+  React.useEffect(() => {
+    setActiveMobileSlide(0);
+    if (mobileSliderRef.current) {
+      mobileSliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [activeCategory]);
 
   const handleMobileSliderScroll = () => {
     if (!mobileSliderRef.current) return;
@@ -140,19 +232,6 @@ export function PortfolioSection({ section }: PortfolioSectionProps) {
     };
   }, []);
 
-  if (!projects || projects.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      return (
-        <div className="container mx-auto px-4 py-8">
-          <div className="p-4 border border-dashed border-amber-500/50 bg-amber-500/10 rounded-lg text-xs font-mono text-amber-500">
-            [PortfolioSection] No showcase projects configured in CMS payload.
-          </div>
-        </div>
-      );
-    }
-    return null;
-  }
-
   return (
     <section className="relative w-full py-12 sm:py-16 lg:py-20 bg-background overflow-hidden">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
@@ -174,148 +253,215 @@ export function PortfolioSection({ section }: PortfolioSectionProps) {
               {description}
             </p>
           )}
+
+          {/* ── Dynamic Category Filter Bar (Rules 5, 12, 17, 21, 55) ── */}
+          {showCategoryFilter && (
+            <div className="pt-4 sm:pt-6 w-full">
+              {/* Mobile: Horizontal scroll only container (page overflow prevented) */}
+              {/* Tablet & Desktop: Centered wrapped pill list */}
+              <div
+                className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 py-1 flex-nowrap md:flex-wrap"
+                role="tablist"
+                aria-label="Filter portfolio by category"
+              >
+                {/* Virtual 'All' Filter Pill (Rule 21: not in DB) */}
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeCategory === 'all'}
+                  onClick={() => handleCategorySelect('all')}
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none ${
+                    activeCategory === 'all'
+                      ? 'bg-[#d9287c] text-white shadow-md shadow-[#d9287c]/25 ring-2 ring-[#d9287c]/20'
+                      : 'bg-neutral-100 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700/90 border border-neutral-200/60 dark:border-neutral-700/60'
+                  }`}
+                >
+                  All
+                </button>
+
+                {/* Dynamic Category Pills */}
+                {filterCategories.map((cat) => {
+                  const isSelected = activeCategory === cat.slug;
+                  return (
+                    <button
+                      key={cat.id || cat.slug}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => handleCategorySelect(cat.slug)}
+                      className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none ${
+                        isSelected
+                          ? 'bg-[#d9287c] text-white shadow-md shadow-[#d9287c]/25 ring-2 ring-[#d9287c]/20'
+                          : 'bg-neutral-100 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700/90 border border-neutral-200/60 dark:border-neutral-700/60'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Mobile Layout: Touch-Swipeable Project Slider (< 1024px) ── */}
-        <div className="block lg:hidden space-y-4">
-          <div
-            ref={mobileSliderRef}
-            onScroll={handleMobileSliderScroll}
-            className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-3 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
-          >
-            {projects.map((project, idx) => (
-              <div
-                key={project.id || idx}
-                className="w-[86vw] sm:w-[75vw] max-w-[420px] shrink-0 snap-center"
-              >
-                <Link
-                  href={project.projectUrl || '#'}
-                  className="group relative block w-full h-[360px] sm:h-[400px] rounded-[22px] overflow-hidden bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/80 shadow-md active:scale-[0.99] transition-transform"
-                  aria-label={`View project: ${project.title}`}
-                >
-                  {/* Project Image */}
-                  <div className="absolute inset-0 w-full h-full overflow-hidden">
-                    <Image
-                      src={project.imageUrl}
-                      alt={project.altText || project.title}
-                      fill
-                      sizes="(max-width: 640px) 86vw, 420px"
-                      className="object-cover"
-                      priority={idx === 0}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  </div>
-
-                  {/* View Button (⚪ View) */}
-                  {viewButtonEnabled && (
-                    <div className="absolute top-4 right-4 z-20 pointer-events-none">
-                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/55 text-white text-xs font-medium backdrop-blur-md border border-white/20 shadow-lg">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-xs" />
-                        <span>{viewButtonLabel}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ONLY Project Name at Bottom */}
-                  <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end">
-                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-md">
-                      {project.title}
-                    </h3>
-                  </div>
-                </Link>
-              </div>
-            ))}
+        {/* ── Empty Category State (Rule 30) ── */}
+        {projects.length === 0 && (
+          <div className="w-full py-16 text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
+              No projects available in this category yet.
+            </h3>
+            <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+              New enterprise showcase projects are published regularly. Please select another category or view all work.
+            </p>
           </div>
+        )}
 
-          {/* Mobile Slider Controls: Prev/Next Buttons + Dot Pagination */}
-          <div className="flex items-center justify-between pt-1 px-1">
-            {/* Dots indicator */}
-            <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] [scrollbar-width:none]">
-              {projects.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => scrollToMobileSlide(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    activeMobileSlide === i
-                      ? 'w-6 bg-[#d9287c]'
-                      : 'w-2 bg-neutral-300 dark:bg-neutral-700'
-                  }`}
-                  aria-label={`Go to project ${i + 1}`}
-                />
+        {/* ── Mobile Layout: Touch-Swipeable Project Slider (< 1024px) ── */}
+        {projects.length > 0 && (
+          <div className="block lg:hidden space-y-4 transition-opacity duration-300">
+            <div
+              ref={mobileSliderRef}
+              onScroll={handleMobileSliderScroll}
+              className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-3 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
+            >
+              {projects.map((project, idx) => (
+                <div
+                  key={project.id || idx}
+                  className="w-[86vw] sm:w-[75vw] max-w-[420px] shrink-0 snap-center"
+                >
+                  <Link
+                    href={project.projectUrl || '#'}
+                    className="group relative block w-full h-[360px] sm:h-[400px] rounded-[22px] overflow-hidden bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/80 shadow-md active:scale-[0.99] transition-transform"
+                    aria-label={`View project: ${project.title}`}
+                  >
+                    {/* Project Image */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
+                      <Image
+                        src={project.imageUrl}
+                        alt={project.altText || project.title}
+                        fill
+                        sizes="(max-width: 640px) 86vw, 420px"
+                        className="object-cover"
+                        priority={idx === 0}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    </div>
+
+                    {/* View Button (⚪ View) */}
+                    {viewButtonEnabled && (
+                      <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/55 text-white text-xs font-medium backdrop-blur-md border border-white/20 shadow-lg">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-xs" />
+                          <span>{viewButtonLabel}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Project Name & Category Tag at Bottom */}
+                    <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end space-y-1">
+                      {project.category && (
+                        <div className="text-[11px] font-medium tracking-wide uppercase text-neutral-300/90">
+                          {project.category}
+                        </div>
+                      )}
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-md">
+                        {project.title}
+                      </h3>
+                    </div>
+                  </Link>
+                </div>
               ))}
             </div>
 
-            {/* Arrow Navigation */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={scrollMobilePrev}
-                disabled={activeMobileSlide === 0}
-                className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                aria-label="Previous project"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={scrollMobileNext}
-                disabled={activeMobileSlide === projects.length - 1}
-                className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                aria-label="Next project"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            {/* Mobile Slider Controls: Prev/Next Buttons + Dot Pagination */}
+            <div className="flex items-center justify-between pt-1 px-1">
+              {/* Dots indicator */}
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] [scrollbar-width:none]">
+                {projects.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => scrollToMobileSlide(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      activeMobileSlide === i
+                        ? 'w-6 bg-[#d9287c]'
+                        : 'w-2 bg-neutral-300 dark:bg-neutral-700'
+                    }`}
+                    aria-label={`Go to project ${i + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Arrow Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={scrollMobilePrev}
+                  disabled={activeMobileSlide === 0}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                  aria-label="Previous project"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollMobileNext}
+                  disabled={activeMobileSlide === projects.length - 1}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                  aria-label="Next project"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Desktop Layout: Compact 2 -> 1 -> 2 Portfolio Grid Container (>= 1024px) ── */}
-        <div
-          className="hidden lg:grid lg:grid-cols-12 gap-3 sm:gap-4 md:gap-5 w-full"
-          style={{
-            perspective: threeDScrollEnabled && isDesktop && !prefersReducedMotion ? '1200px' : 'none',
-          }}
-        >
-          {projects.map((project, index) => {
-            // 2 -> 1 -> 2 layout assignment:
-            // index 0: Row 1 Left (col-span-6)
-            // index 1: Row 1 Right (col-span-6)
-            // index 2: Row 2 Center Spotlight (col-span-12)
-            // index 3: Row 3 Left (col-span-6)
-            // index 4: Row 3 Right (col-span-6)
-            const isFullWidth = index % 5 === 2;
-            const isLeftCard = index % 5 === 0 || index % 5 === 3;
-            const isRightCard = index % 5 === 1 || index % 5 === 4;
+        {projects.length > 0 && (
+          <div
+            className="hidden lg:grid lg:grid-cols-12 gap-3 sm:gap-4 md:gap-5 w-full transition-opacity duration-300"
+            style={{
+              perspective: threeDScrollEnabled && isDesktop && !prefersReducedMotion ? '1200px' : 'none',
+            }}
+          >
+            {projects.map((project, index) => {
+              const isFullWidth = index % 5 === 2;
+              const isLeftCard = index % 5 === 0 || index % 5 === 3;
+              const isRightCard = index % 5 === 1 || index % 5 === 4;
 
-            const colSpanClass = isFullWidth
-              ? 'lg:col-span-12'
-              : 'lg:col-span-6';
+              const colSpanClass = isFullWidth
+                ? 'lg:col-span-12'
+                : 'lg:col-span-6';
 
-            return (
-              <PortfolioCard
-                key={project.id || index}
-                project={project}
-                index={index}
-                isFullWidth={isFullWidth}
-                isLeftCard={isLeftCard}
-                isRightCard={isRightCard}
-                colSpanClass={colSpanClass}
-                hoverEffectsEnabled={hoverEffectsEnabled}
-                viewButtonEnabled={viewButtonEnabled}
-                viewButtonLabel={viewButtonLabel}
-                overlayEnabled={overlayEnabled}
-                backdropBlurEnabled={backdropBlurEnabled}
-                imageZoomEnabled={imageZoomEnabled}
-                threeDScrollEnabled={threeDScrollEnabled}
-                threeDIntensity={threeDIntensity}
-                mouseParallaxEnabled={mouseParallaxEnabled}
-                prefersReducedMotion={prefersReducedMotion}
-                isDesktop={isDesktop}
-              />
-            );
-          })}
-        </div>
+              return (
+                <PortfolioCard
+                  key={project.id || index}
+                  project={project}
+                  index={index}
+                  isFullWidth={isFullWidth}
+                  isLeftCard={isLeftCard}
+                  isRightCard={isRightCard}
+                  colSpanClass={colSpanClass}
+                  hoverEffectsEnabled={hoverEffectsEnabled}
+                  viewButtonEnabled={viewButtonEnabled}
+                  viewButtonLabel={viewButtonLabel}
+                  overlayEnabled={overlayEnabled}
+                  backdropBlurEnabled={backdropBlurEnabled}
+                  imageZoomEnabled={imageZoomEnabled}
+                  threeDScrollEnabled={threeDScrollEnabled}
+                  threeDIntensity={threeDIntensity}
+                  mouseParallaxEnabled={mouseParallaxEnabled}
+                  prefersReducedMotion={prefersReducedMotion}
+                  isDesktop={isDesktop}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -530,7 +676,7 @@ function PortfolioCard({
             priority={index === 0}
           />
           {/* Base gradient at bottom for clean typography readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent transition-opacity duration-300" />
         </div>
 
         {/* ── Layer 2: Hover Backdrop Glass Overlay ──────────────────── */}
@@ -571,8 +717,13 @@ function PortfolioCard({
           </div>
         )}
 
-        {/* ── Layer 4: ONLY Project Name at Bottom ─────────────────────── */}
-        <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end">
+        {/* ── Layer 4: Project Category & Title at Bottom ──────────────── */}
+        <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end space-y-1">
+          {project.category && (
+            <div className="text-[11px] sm:text-xs font-semibold tracking-wide uppercase text-neutral-300 drop-shadow-sm">
+              {project.category}
+            </div>
+          )}
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-white drop-shadow-md transition-transform duration-300 group-hover:translate-x-1">
             {project.title}
           </h3>

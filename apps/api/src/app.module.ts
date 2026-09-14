@@ -16,6 +16,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { CmsModule } from './modules/cms/cms.module';
+import { EmailModule } from './modules/email/email.module';
+import { InquiriesModule } from './modules/inquiries/inquiries.module';
+import { PortfolioModule } from './modules/portfolio/portfolio.module';
 
 @Module({
   imports: [
@@ -57,6 +60,9 @@ import { CmsModule } from './modules/cms/cms.module';
     DatabaseModule,
     HealthModule,
     CmsModule,
+    EmailModule,
+    InquiriesModule,
+    PortfolioModule,
   ],
 })
 export class AppModule implements NestModule {

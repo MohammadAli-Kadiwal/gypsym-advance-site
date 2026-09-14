@@ -178,57 +178,71 @@ export function HeroSection({ section }: HeroSectionProps) {
               {/* Marquee track */}
               <div className="relative flex-1 overflow-hidden h-full flex items-center">
                 {/* Fade edges */}
-                <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-white to-transparent z-10" />
-                <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-white to-transparent z-10" />
+                <div className="pointer-events-none absolute left-0 top-0 h-full w-12 sm:w-16 bg-gradient-to-r from-white to-transparent z-10" />
+                <div className="pointer-events-none absolute right-0 top-0 h-full w-12 sm:w-16 bg-gradient-to-l from-white to-transparent z-10" />
 
-                {/* Scrolling track — doubled for seamless loop */}
-                <div
-                  className="flex items-center gap-10 sm:gap-14 lg:gap-16 animate-marquee hover:[animation-play-state:paused] whitespace-nowrap"
-                  style={{ width: 'max-content' }}
-                >
-                  {/* First set */}
-                  {clientStrip.clients.map((client, idx) => (
-                    client.logoUrl ? (
-                      <img
-                        key={`a-${idx}`}
-                        src={client.logoUrl}
-                        alt={client.name}
-                        className="h-[52px] sm:h-[58px] lg:h-[64px] w-auto object-contain select-none"
-                        loading="lazy"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span
-                        key={`a-${idx}`}
-                        className="inline-flex items-center px-5 h-[52px] sm:h-[58px] rounded-lg border border-neutral-200 bg-white text-[13px] sm:text-[14px] font-semibold text-neutral-600 select-none whitespace-nowrap"
+                {/* Truly infinite seamless marquee using two identical synchronized tracks */}
+                {(() => {
+                  const clientList = clientStrip.clients || [];
+                  const trackItems = clientList.length < 15 ? [...clientList, ...clientList] : clientList;
+
+                  return (
+                    <div className="flex w-full overflow-hidden select-none marquee-wrapper group">
+                      {/* Track 1 */}
+                      <div
+                        className="marquee-track flex shrink-0 items-center gap-10 sm:gap-14 lg:gap-16 pr-10 sm:pr-14 lg:pr-16 animate-marquee-infinite whitespace-nowrap"
+                        style={{ animation: 'marqueeInfinite 30s linear infinite' }}
                       >
-                        {client.name}
-                      </span>
-                    )
-                  ))}
-                  {/* Duplicate set for seamless loop */}
-                  {clientStrip.clients.map((client, idx) => (
-                    client.logoUrl ? (
-                      <img
-                        key={`b-${idx}`}
-                        src={client.logoUrl}
-                        alt={client.name}
-                        className="h-[52px] sm:h-[58px] lg:h-[64px] w-auto object-contain select-none"
-                        loading="lazy"
-                        draggable={false}
+                        {trackItems.map((client, idx) => (
+                          client.logoUrl ? (
+                            <img
+                              key={`t1-${idx}`}
+                              src={client.logoUrl}
+                              alt={client.name}
+                              className="h-9 sm:h-11 lg:h-12 max-w-[130px] sm:max-w-[155px] lg:max-w-[175px] w-auto object-contain select-none transition-all duration-300"
+                              loading="lazy"
+                              draggable={false}
+                            />
+                          ) : (
+                            <span
+                              key={`t1-${idx}`}
+                              className="inline-flex items-center px-4 h-9 sm:h-11 lg:h-12 rounded-lg border border-neutral-200 bg-white text-xs sm:text-sm font-semibold text-neutral-600 select-none whitespace-nowrap"
+                            >
+                              {client.name}
+                            </span>
+                          )
+                        ))}
+                      </div>
+
+                      {/* Track 2 (Pixel-identical duplicate for seamless infinite loop) */}
+                      <div
                         aria-hidden="true"
-                      />
-                    ) : (
-                      <span
-                        key={`b-${idx}`}
-                        className="inline-flex items-center px-5 h-[52px] sm:h-[58px] rounded-lg border border-neutral-200 bg-white text-[13px] sm:text-[14px] font-semibold text-neutral-600 select-none whitespace-nowrap"
-                        aria-hidden="true"
+                        className="marquee-track flex shrink-0 items-center gap-10 sm:gap-14 lg:gap-16 pr-10 sm:pr-14 lg:pr-16 animate-marquee-infinite whitespace-nowrap"
+                        style={{ animation: 'marqueeInfinite 30s linear infinite' }}
                       >
-                        {client.name}
-                      </span>
-                    )
-                  ))}
-                </div>
+                        {trackItems.map((client, idx) => (
+                          client.logoUrl ? (
+                            <img
+                              key={`t2-${idx}`}
+                              src={client.logoUrl}
+                              alt={client.name}
+                              className="h-9 sm:h-11 lg:h-12 max-w-[130px] sm:max-w-[155px] lg:max-w-[175px] w-auto object-contain select-none transition-all duration-300"
+                              loading="lazy"
+                              draggable={false}
+                            />
+                          ) : (
+                            <span
+                              key={`t2-${idx}`}
+                              className="inline-flex items-center px-4 h-9 sm:h-11 lg:h-12 rounded-lg border border-neutral-200 bg-white text-xs sm:text-sm font-semibold text-neutral-600 select-none whitespace-nowrap"
+                            >
+                              {client.name}
+                            </span>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

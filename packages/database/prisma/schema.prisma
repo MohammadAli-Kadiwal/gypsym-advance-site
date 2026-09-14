@@ -46,6 +46,8 @@ enum ComponentType {
   ACCORDION_FAQ
   TABBED_SOLUTIONS
   CUSTOM_HTML
+  CONTACT
+  CTA
 }
 
 enum MediaStatus {
@@ -113,6 +115,8 @@ enum InquiryStatus {
   CONTACTED
   OPPORTUNITY
   DISQUALIFIED
+  READ
+  ARCHIVED
 }
 
 enum NotificationType {
@@ -433,6 +437,7 @@ model Media {
   certBadges       Certification[]  @relation("CertBadge")
   awardBadges      Award[]          @relation("AwardBadge")
   partnerLogos     Partner[]        @relation("PartnerLogo")
+  partnerLogosDark Partner[]        @relation("PartnerLogoDark")
   blogCovers       BlogPost[]       @relation("BlogFeaturedImage")
   resumes          JobApplication[] @relation("ApplicantResume")
   ogImages         SeoMetadata[]    @relation("SeoOgImage")
@@ -614,6 +619,46 @@ model Project {
   @@map("projects")
 }
 
+model PortfolioCategory {
+  id           String                 @id @default(uuid()) @db.Uuid
+  slug         String                 @unique @db.VarChar(100)
+  name         String                 @db.VarChar(100)
+  description  String?                @db.Text
+  displayOrder Int                    @default(0) @map("display_order")
+  status       ContentStatus          @default(PUBLISHED)
+  createdAt    DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  projects     PortfolioProjectItem[]
+
+  @@index([status, displayOrder])
+  @@map("portfolio_categories")
+}
+
+model PortfolioProjectItem {
+  id           String             @id @default(uuid()) @db.Uuid
+  orderNumber  String?            @map("order_number") @db.VarChar(50)
+  title        String             @db.VarChar(200)
+  slug         String             @unique @db.VarChar(200)
+  client       String?            @db.VarChar(150)
+  categoryId   String?            @map("category_id") @db.Uuid
+  category     PortfolioCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  description  String?            @db.Text
+  imageUrl     String             @map("image_url") @db.Text
+  altText      String?            @map("alt_text") @db.VarChar(255)
+  projectUrl   String?            @map("project_url") @db.VarChar(500)
+  tags         String[]           @default([])
+  metrics      String?            @db.VarChar(150)
+  displayOrder Int                @default(0) @map("display_order")
+  status       ContentStatus      @default(PUBLISHED)
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([categoryId, status, displayOrder])
+  @@index([status, displayOrder])
+  @@map("portfolio_projects")
+}
+
 model Testimonial {
   id            String   @id @default(uuid()) @db.Uuid
   clientId      String?  @map("client_id") @db.Uuid
@@ -718,16 +763,28 @@ model Award {
 }
 
 model Partner {
-  id                  String      @id @default(uuid()) @db.Uuid
-  name                String      @db.VarChar(150)
-  tier                PartnerTier @default(TECHNOLOGY)
-  logoId              String      @map("logo_id") @db.Uuid
-  logo                Media       @relation("PartnerLogo", fields: [logoId], references: [id], onDelete: Restrict)
-  partnershipOverview String?     @map("partnership_overview") @db.Text
-  websiteUrl          String?     @map("website_url") @db.VarChar(500)
-  displayOrder        Int         @default(0) @map("display_order")
+  id                  String        @id @default(uuid()) @db.Uuid
+  slug                String?       @unique @db.VarChar(150)
+  name                String        @db.VarChar(150)
+  tier                PartnerTier   @default(TECHNOLOGY)
+  logoId              String        @map("logo_id") @db.Uuid
+  logo                Media         @relation("PartnerLogo", fields: [logoId], references: [id], onDelete: Restrict)
+  logoDarkId          String?       @map("logo_dark_id") @db.Uuid
+  logoDark            Media?        @relation("PartnerLogoDark", fields: [logoDarkId], references: [id], onDelete: SetNull)
+  partnershipOverview String?       @map("partnership_overview") @db.Text
+  shortDescription    String?       @map("short_description") @db.Text
+  description         String?       @db.Text
+  websiteUrl          String?       @map("website_url") @db.VarChar(500)
+  partnerType         String?       @map("partner_type") @db.VarChar(100)
+  industry            String?       @db.VarChar(100)
+  displayOrder        Int           @default(0) @map("display_order")
+  status              ContentStatus @default(PUBLISHED)
+  showOnHomepage      Boolean       @default(true) @map("show_on_homepage")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   @@index([tier, displayOrder])
+  @@index([status, showOnHomepage, displayOrder])
   @@map("partners")
 }
 
@@ -889,13 +946,16 @@ model ContactSubmission {
   fullName           String        @map("full_name") @db.VarChar(120)
   businessEmail      String        @map("business_email") @db.VarChar(255)
   phone              String?       @db.VarChar(40)
-  companyName        String        @map("company_name") @db.VarChar(150)
+  companyName        String?       @map("company_name") @db.VarChar(150)
   jobTitle           String?       @map("job_title") @db.VarChar(100)
   serviceId          String?       @map("service_id") @db.Uuid
   service            Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   budgetRange        String?       @map("budget_range") @db.VarChar(60)
   timeline           String?       @db.VarChar(60)
-  projectDescription String        @map("project_description") @db.Text
+  projectDescription String?       @map("project_description") @db.Text
+  formId             String?       @map("form_id") @db.VarChar(100)
+  source             String?       @db.VarChar(100)
+  submittedData      Json?         @map("submitted_data")
   status             InquiryStatus @default(NEW)
   assignedTo         String?       @map("assigned_to") @db.Uuid
   assignee           User?         @relation("AssignedInquiries", fields: [assignedTo], references: [id], onDelete: SetNull)

@@ -1,0 +1,5 @@
+<svg viewBox="0 0 110 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="13" cy="13" r="10.5" stroke="#10a37f" stroke-width="2.5" fill="none"/>
+  <circle cx="13" cy="13" r="4.2" fill="#10a37f"/>
+  <text x="31" y="18.5" fill="currentColor" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="15.5">OpenAI</text>
+</svg>

@@ -269,13 +269,15 @@ export interface SelectedClientRef {
 }
 
 export interface ClientsLayoutSettings {
-  preset?: '8/6/4' | '6/4/2' | '8/8' | '6/6/6' | 'equal' | 'custom';
+  preset?: '8/6/4' | '6/4/2' | '8/8' | '6/6/6' | '5/5' | 'equal' | 'custom';
   rowPattern?: number[];
   overflowBehavior?: 'continue' | 'limit';
   rowAlignment?: 'center' | 'left';
   logoStyle?: 'muted' | 'grayscale' | 'monochrome' | 'original';
   logoSize?: 'small' | 'medium' | 'large';
   gap?: 'compact' | 'medium' | 'relaxed';
+  displayMode?: 'cards' | 'minimal' | 'marquee';
+  showMetricsBar?: boolean;
 }
 
 export interface ClientsAnimationSettings {
@@ -315,6 +317,160 @@ export interface ClientsSection {
   contentPayload: ClientsPayload;
 }
 
+export interface PartnersLayoutSettings {
+  preset?: '8/6/4' | '6/4/2' | '8/8' | '6/6/6' | '5/5' | 'custom';
+  rowPattern?: number[];
+  desktopRow1?: number;
+  desktopRow2?: number;
+  desktopRow3?: number;
+  mobileCols?: 2 | 3;
+  logoStyle?: 'muted' | 'grayscale' | 'monochrome' | 'original';
+  logoSize?: 'small' | 'medium' | 'large';
+  gap?: 'compact' | 'medium' | 'relaxed';
+  rowAlignment?: 'center' | 'left';
+}
+
+export interface PartnersAnimationSettings {
+  enableReveal?: boolean;
+  hoverEffect?: boolean;
+}
+
+export interface PartnersPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+  cta?: {
+    enabled?: boolean;
+    label?: string;
+    url?: string;
+    target?: '_self' | '_blank';
+  };
+  layout?: PartnersLayoutSettings;
+  animation?: PartnersAnimationSettings;
+  partners?: Array<{
+    id: string;
+    slug?: string | null;
+    name: string;
+    logoUrl?: string | null;
+    logoDarkUrl?: string | null;
+    shortDescription?: string | null;
+    description?: string | null;
+    websiteUrl?: string | null;
+    partnerType?: string | null;
+    industry?: string | null;
+    tier?: string;
+    displayOrder?: number;
+    showOnHomepage?: boolean;
+  }>;
+}
+
+export interface PartnersSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: PartnersPayload;
+}
+
+export interface ContactFieldConfig {
+  id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox';
+  placeholder?: string;
+  helperText?: string;
+  required?: boolean;
+  options?: string[];
+  width?: 'full' | 'half';
+}
+
+export interface ContactPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+  contactInfo?: {
+    useGlobalDefaults?: boolean;
+    email?: string;
+    phone?: string;
+    address?: string;
+    officeHours?: string;
+  };
+  supportCard?: {
+    enabled?: boolean;
+    title?: string;
+    description?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+  };
+  form?: {
+    formTitle?: string;
+    formSubtitle?: string;
+    submitButtonText?: string;
+    privacyNote?: string;
+    successTitle?: string;
+    successMessage?: string;
+    fields?: ContactFieldConfig[];
+  };
+  globalContactDetails?: {
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    socialLinks?: Array<{ platform: string; url: string }> | null;
+  };
+}
+
+export interface ContactSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: ContactPayload;
+}
+
+export interface CtaButton {
+  label: string;
+  url: string;
+  variant?: 'primary' | 'secondary' | 'outline' | 'glow';
+  target?: '_self' | '_blank';
+}
+
+export interface CtaAppearance {
+  backgroundType?: 'brand' | 'surface' | 'gradient' | 'image';
+  backgroundImageUrl?: string;
+  overlayOpacity?: number;
+  enableGlow?: boolean;
+}
+
+export interface CtaLayout {
+  alignment?: 'left' | 'center' | 'right';
+  containerWidth?: 'narrow' | 'contained' | 'wide';
+  borderRadius?: 'none' | 'md' | 'xl' | '2xl' | '3xl';
+}
+
+export interface CtaPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+  primaryButton?: CtaButton;
+  secondaryButton?: {
+    enabled?: boolean;
+    label?: string;
+    url?: string;
+    variant?: 'primary' | 'secondary' | 'outline' | 'glow';
+    target?: '_self' | '_blank';
+  };
+  appearance?: CtaAppearance;
+  layout?: CtaLayout;
+}
+
+export interface CtaSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: CtaPayload;
+}
+
 export interface PageData {
   id?: string;
   slug?: string;
@@ -329,3 +485,4 @@ export interface PageData {
     isActive: boolean;
   }>;
 }
+

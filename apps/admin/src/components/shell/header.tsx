@@ -49,6 +49,7 @@ export function Header() {
     if (pathname.startsWith('/editorial/blog')) return 'Blog Posts';
     if (pathname.startsWith('/content/services')) return 'Services';
     if (pathname.startsWith('/content/clients')) return 'Clients';
+    if (pathname.startsWith('/content/partners')) return 'Partners';
     if (pathname.startsWith('/content/testimonials')) return 'Testimonials';
     if (pathname.startsWith('/site/branding')) return 'Branding & Identity';
     if (pathname.startsWith('/site/navigation')) return 'Navigation';

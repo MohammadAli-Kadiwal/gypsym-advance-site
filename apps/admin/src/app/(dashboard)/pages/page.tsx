@@ -15,6 +15,9 @@ import { PortfolioSettings } from './_components/portfolio-settings';
 import { DeliveryProcessSettings } from './_components/delivery-process-settings';
 import { ClientTestimonialsSettings } from './_components/client-testimonials-settings';
 import { ClientsSettings } from './_components/clients-settings';
+import { PartnersSettings } from './_components/partners-settings';
+import { CtaSettings } from './_components/cta-settings';
+import { ContactSettings } from './_components/contact-settings';
 import { SectionPreview, ActiveTab } from './_components/section-preview';
 import type {
   HeroSection,
@@ -25,6 +28,9 @@ import type {
   DeliveryProcessSection,
   ClientTestimonialsSection,
   ClientsSection,
+  PartnersSection,
+  CtaSection,
+  ContactSection,
   PageData,
   HeroPayload,
   MetricsPayload,
@@ -34,6 +40,9 @@ import type {
   DeliveryProcessPayload,
   ClientTestimonialsPayload,
   ClientsPayload,
+  PartnersPayload,
+  CtaPayload,
+  ContactPayload,
 } from './_components/types';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -75,6 +84,9 @@ export default function PagesManagementPage() {
   const [deliveryProcessSection, setDeliveryProcessSection] = React.useState<DeliveryProcessSection | null>(null);
   const [clientTestimonialsSection, setClientTestimonialsSection] = React.useState<ClientTestimonialsSection | null>(null);
   const [clientsSection, setClientsSection] = React.useState<ClientsSection | null>(null);
+  const [partnersSection, setPartnersSection] = React.useState<PartnersSection | null>(null);
+  const [ctaSection, setCtaSection] = React.useState<CtaSection | null>(null);
+  const [contactSection, setContactSection] = React.useState<ContactSection | null>(null);
 
   // ── Fetch page & sections from backend API ─────────────────────────────────
   const loadBackendData = React.useCallback(async () => {
@@ -122,7 +134,26 @@ export default function PagesManagementPage() {
           (s) =>
             s.sectionIdentifier === 'clients-trusted-by' ||
             s.sectionIdentifier === 'trusted-by' ||
-            s.componentType === 'LOGO_CLOUD'
+            (s.componentType === 'LOGO_CLOUD' && s.sectionIdentifier !== 'homepage-partners')
+        );
+        const partnersRaw = res.sections?.find(
+          (s) =>
+            s.sectionIdentifier === 'homepage-partners' ||
+            s.sectionIdentifier === 'our-partners' ||
+            s.sectionIdentifier === 'partners' ||
+            s.componentType === 'PARTNERS'
+        );
+        const ctaRaw = res.sections?.find(
+          (s) =>
+            s.componentType === 'CTA' ||
+            s.sectionIdentifier === 'homepage-cta' ||
+            s.sectionIdentifier === 'cta-banner'
+        );
+        const contactRaw = res.sections?.find(
+          (s) =>
+            s.componentType === 'CONTACT' ||
+            s.sectionIdentifier === 'contact-inquiry' ||
+            s.sectionIdentifier === 'contact'
         );
 
         if (heroRaw) {
@@ -196,6 +227,166 @@ export default function PagesManagementPage() {
             contentPayload: clientsRaw.contentPayload as ClientsPayload,
           });
         }
+
+        if (partnersRaw) {
+          setPartnersSection({
+            id: partnersRaw.id,
+            componentType: partnersRaw.componentType,
+            isActive: partnersRaw.isActive,
+            contentPayload: partnersRaw.contentPayload as PartnersPayload,
+          });
+        }
+
+        if (ctaRaw) {
+          setCtaSection({
+            id: ctaRaw.id,
+            componentType: ctaRaw.componentType,
+            isActive: ctaRaw.isActive,
+            contentPayload: ctaRaw.contentPayload as CtaPayload,
+          });
+        } else {
+          setCtaSection({
+            id: 'local-cta',
+            componentType: 'CTA',
+            isActive: true,
+            contentPayload: {
+              eyebrow: 'ENTERPRISE ARCHITECTURE',
+              title: 'Ready to Accelerate Your Digital Transformation?',
+              titleHighlight: 'Transformation',
+              description:
+                'Partner with our systems engineers and cloud architects to build resilient, distributed digital infrastructure engineered for uncompromising scale.',
+              primaryButton: {
+                label: 'Schedule an Architectural Briefing',
+                url: '#contact-inquiry',
+                variant: 'glow',
+                target: '_self',
+              },
+              secondaryButton: {
+                enabled: true,
+                label: 'Explore Technology Radar',
+                url: '/technologies',
+                variant: 'outline',
+                target: '_self',
+              },
+              appearance: {
+                backgroundType: 'gradient',
+                overlayOpacity: 40,
+                enableGlow: true,
+              },
+              layout: {
+                alignment: 'center',
+                containerWidth: 'contained',
+                borderRadius: '2xl',
+              },
+            },
+          });
+        }
+
+        if (contactRaw) {
+          setContactSection({
+            id: contactRaw.id,
+            componentType: contactRaw.componentType,
+            isActive: contactRaw.isActive,
+            contentPayload: contactRaw.contentPayload as ContactPayload,
+          });
+        } else {
+          setContactSection({
+            id: 'local-contact',
+            componentType: 'CONTACT',
+            isActive: true,
+            contentPayload: {
+              eyebrow: 'DIRECT ENGAGEMENT',
+              title: 'Initiate an Architectural Consultation',
+              titleHighlight: 'Consultation',
+              description:
+                'Engage directly with our technical leadership. We evaluate system architecture, scale bottlenecks, and enterprise implementation scopes under strict non-disclosure terms.',
+              contactInfo: {
+                useGlobalDefaults: true,
+              },
+              supportCard: {
+                enabled: false,
+                title: 'Rapid Architecture Assessment',
+                description:
+                  'Qualifying enterprise projects receive a 45-minute technical roadmap briefing with our CTO office.',
+                ctaLabel: 'Book Priority Session',
+                ctaUrl: '#inquiry-form',
+              },
+              form: {
+                formTitle: 'Direct Engineering Inquiry',
+                formSubtitle: 'Connect with a principal architect within 24 business hours.',
+                submitButtonText: 'Submit Inquiry',
+                privacyNote: 'Protected by enterprise NDA standards. No solicitation.',
+                successTitle: 'Inquiry Transmitted',
+                successMessage:
+                  'Thank you. Our engineering desk has received your briefing and will review specifications shortly.',
+                fields: [
+                  {
+                    id: 'f-name',
+                    name: 'fullName',
+                    label: 'Full Name',
+                    type: 'text',
+                    placeholder: 'Dr. Evelyn Reed',
+                    required: true,
+                    width: 'full',
+                  },
+                  {
+                    id: 'f-email',
+                    name: 'email',
+                    label: 'Work Email',
+                    type: 'email',
+                    placeholder: 'evelyn@enterprise.com',
+                    required: true,
+                    width: 'full',
+                  },
+                  {
+                    id: 'f-company',
+                    name: 'companyName',
+                    label: 'Company Name',
+                    type: 'text',
+                    placeholder: 'Apex Cloud Systems',
+                    required: false,
+                    width: 'half',
+                  },
+                  {
+                    id: 'f-phone',
+                    name: 'phone',
+                    label: 'Phone Number',
+                    type: 'tel',
+                    placeholder: '+1 (555) 019-2834',
+                    required: false,
+                    width: 'half',
+                  },
+                  {
+                    id: 'f-service',
+                    name: 'serviceInterest',
+                    label: 'Area of Interest',
+                    type: 'select',
+                    placeholder: 'Select solution area...',
+                    required: false,
+                    options: [
+                      'Cloud Architecture & Migration',
+                      'AI & Data Engineering',
+                      'Enterprise Application Modernization',
+                      'Cybersecurity & Compliance',
+                      'General Partnership Inquiry',
+                    ],
+                    width: 'full',
+                  },
+                  {
+                    id: 'f-message',
+                    name: 'message',
+                    label: 'Project Details & Scope',
+                    type: 'textarea',
+                    placeholder:
+                      'Briefly describe your systems architecture, requirements, and target timeline...',
+                    required: true,
+                    width: 'full',
+                  },
+                ],
+              },
+            },
+          });
+        }
       }
     } catch {
       notify.error('Could not load page data from backend. Check server connection.');
@@ -216,8 +407,11 @@ export default function PagesManagementPage() {
   const whatWeChangePayload: WhatWeChangePayload = whatWeChangeSection?.contentPayload ?? {};
   const portfolioPayload: PortfolioPayload = portfolioSection?.contentPayload ?? {};
   const deliveryProcessPayload: DeliveryProcessPayload = deliveryProcessSection?.contentPayload ?? {};
-  const clientTestimonialsPayload: ClientTestimonialsPayload = clientTestimonialsSection?.contentPayload ?? {};
   const clientsPayload: ClientsPayload = clientsSection?.contentPayload ?? {};
+  const clientTestimonialsPayload: ClientTestimonialsPayload = clientTestimonialsSection?.contentPayload ?? {};
+  const partnersPayload: PartnersPayload = partnersSection?.contentPayload ?? {};
+  const ctaPayload: CtaPayload = ctaSection?.contentPayload ?? {};
+  const contactPayload: ContactPayload = contactSection?.contentPayload ?? {};
 
   // ── Save handler ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -353,12 +547,98 @@ export default function PagesManagementPage() {
           });
         }
         notify.success('✓ Client section updated successfully.');
+      } else if (activeTab === 'partners') {
+        if (!partnersPayload.title?.trim()) {
+          notify.error('Validation: Section title cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (partnersSection && !partnersSection.id.startsWith('local-')) {
+          await fetchApi(`/sections/${partnersSection.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: partnersSection.contentPayload,
+              isActive: partnersSection.isActive,
+            }),
+          });
+        }
+        notify.success('✓ Partners section updated successfully.');
+      } else if (activeTab === 'cta') {
+        if (!ctaPayload.title?.trim()) {
+          notify.error('Validation: CTA headline cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (ctaSection) {
+          if (!ctaSection.id.startsWith('local-')) {
+            await fetchApi(`/sections/${ctaSection.id}`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                contentPayload: ctaSection.contentPayload,
+                isActive: ctaSection.isActive,
+              }),
+            });
+          } else {
+            const created = await fetchApi<{ id: string }>('/pages/home/sections', {
+              method: 'POST',
+              body: JSON.stringify({
+                componentType: 'CTA',
+                sectionIdentifier: 'homepage-cta',
+                contentPayload: ctaSection.contentPayload,
+                isActive: ctaSection.isActive,
+                displayOrder: 10,
+              }),
+            });
+            if (created?.id) {
+              setCtaSection({ ...ctaSection, id: created.id });
+            }
+          }
+        }
+        notify.success('✓ Call to Action section updated successfully.');
+      } else if (activeTab === 'contact') {
+        if (!contactPayload.title?.trim()) {
+          notify.error('Validation: Contact headline cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (contactSection) {
+          if (!contactSection.id.startsWith('local-')) {
+            await fetchApi(`/sections/${contactSection.id}`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                contentPayload: contactSection.contentPayload,
+                isActive: contactSection.isActive,
+              }),
+            });
+          } else {
+            const created = await fetchApi<{ id: string }>('/pages/home/sections', {
+              method: 'POST',
+              body: JSON.stringify({
+                componentType: 'CONTACT',
+                sectionIdentifier: 'contact-inquiry',
+                contentPayload: contactSection.contentPayload,
+                isActive: contactSection.isActive,
+                displayOrder: 11,
+              }),
+            });
+            if (created?.id) {
+              setContactSection({ ...contactSection, id: created.id });
+            }
+          }
+        }
+        notify.success('✓ Contact & Inquiry section updated successfully.');
       }
     } catch {
       if (activeTab === 'portfolio') {
         notify.error('Unable to update portfolio display settings.');
       } else if (activeTab === 'clients') {
         notify.error('Unable to update the client section.');
+      } else if (activeTab === 'partners') {
+        notify.error('Unable to update the partners section.');
+      } else if (activeTab === 'cta') {
+        notify.error('Unable to update the CTA section.');
+      } else if (activeTab === 'contact') {
+        notify.error('Unable to update the Contact section.');
       } else {
         notify.error('Unable to update the section settings.');
       }
@@ -405,7 +685,7 @@ export default function PagesManagementPage() {
                 onValueChange={(v) => setActiveTab(v as ActiveTab)}
                 className="w-full space-y-4"
               >
-                <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
+                <TabsList className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
                   <TabsTrigger
                     value="hero"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
@@ -453,6 +733,24 @@ export default function PagesManagementPage() {
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
                     8. Reviews
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="partners"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    9. Partners
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="contact"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    10. Contact
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="cta"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    11. CTA
                   </TabsTrigger>
                 </TabsList>
 
@@ -567,6 +865,48 @@ export default function PagesManagementPage() {
                     </div>
                   )}
                 </TabsContent>
+
+                {/* 9. Partners Tab */}
+                <TabsContent value="partners" className="focus-visible:outline-none">
+                  {partnersSection ? (
+                    <PartnersSettings
+                      section={partnersSection}
+                      onChange={setPartnersSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading Partners section…' : 'Partners section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 10. CTA Tab */}
+                <TabsContent value="cta" className="focus-visible:outline-none">
+                  {ctaSection ? (
+                    <CtaSettings
+                      section={ctaSection}
+                      onChange={setCtaSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading CTA section…' : 'CTA section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 11. Contact Tab */}
+                <TabsContent value="contact" className="focus-visible:outline-none">
+                  {contactSection ? (
+                    <ContactSettings
+                      section={contactSection}
+                      onChange={setContactSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading Contact section…' : 'Contact section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
 
@@ -582,6 +922,9 @@ export default function PagesManagementPage() {
                 deliveryProcessPayload={deliveryProcessPayload}
                 clientTestimonialsPayload={clientTestimonialsPayload}
                 clientsPayload={clientsPayload}
+                partnersPayload={partnersPayload}
+                ctaPayload={ctaPayload}
+                contactPayload={contactPayload}
                 heroHeadlineText={extractHeroHeadline(heroPayload)}
                 metricsHeadlineText={extractMetricsHeadline(metricsPayload)}
               />

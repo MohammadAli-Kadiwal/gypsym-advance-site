@@ -411,7 +411,20 @@ export function ClientsSettings({ section, onChange }: ClientsSettingsProps) {
           </div>
 
           {/* Styling & Alignment Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Display Presentation</Label>
+              <select
+                value={layout.displayMode || 'cards'}
+                onChange={(e) => updateLayout({ displayMode: e.target.value as any })}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="cards">Glass Cards Grid (Centered)</option>
+                <option value="minimal">Minimalist Floating Logos</option>
+                <option value="marquee">Continuous Smooth Marquee</option>
+              </select>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Overflow Behavior</Label>
               <select
@@ -419,7 +432,7 @@ export function ClientsSettings({ section, onChange }: ClientsSettingsProps) {
                 onChange={(e) => updateLayout({ overflowBehavior: e.target.value as any })}
                 className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="continue">Continue additional rows (Recommended)</option>
+                <option value="continue">Continue additional rows</option>
                 <option value="limit">Limit to configured rows</option>
               </select>
             </div>
@@ -449,6 +462,20 @@ export function ClientsSettings({ section, onChange }: ClientsSettingsProps) {
                 <option value="large">Large (High Prominence)</option>
               </select>
             </div>
+          </div>
+
+          {/* Trust Metrics Ribbon Toggle */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 mt-2">
+            <div>
+              <Label>Trust Metrics Ribbon</Label>
+              <p className="text-[11px] text-slate-500">
+                Display enterprise social proof stats below logos (100+ Enterprise Brands, 99.98% SLA, 15+ Markets, $2B+ Scale)
+              </p>
+            </div>
+            <Switch
+              checked={layout.showMetricsBar !== false}
+              onCheckedChange={(checked) => updateLayout({ showMetricsBar: checked })}
+            />
           </div>
         </CardContent>
       </Card>
