@@ -107,6 +107,160 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="space-y-1.5"><p className="text-[11px] font-medium text-white/40">{label}</p>{children}</div>;
 }
 
+// ─── Animation & Motion Card ──────────────────────────────────────────────────
+function AnimationCard({
+  value,
+  onChange,
+}: {
+  value?: {
+    enabled?: boolean;
+    direction?: 'up' | 'down' | 'left' | 'right' | 'fade' | 'scale';
+    intensity?: 'subtle' | 'normal' | 'expressive';
+    stagger?: 'none' | 'fast' | 'normal' | 'slow';
+    repeat?: boolean;
+  };
+  onChange: (anim: any) => void;
+}) {
+  const anim = value || {};
+  const enabled = anim.enabled !== false;
+  const direction = anim.direction || 'up';
+  const intensity = anim.intensity || 'normal';
+  const stagger = anim.stagger || 'normal';
+  const repeat = !!anim.repeat;
+
+  const [previewKey, setPreviewKey] = React.useState(0);
+  const triggerPreview = () => setPreviewKey((k) => k + 1);
+
+  return (
+    <Card title="Animation & Motion" Icon={Sparkles as any} open={false}>
+      <style>{`
+        @keyframes motionPreview-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes motionPreview-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes motionPreview-left { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes motionPreview-right { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes motionPreview-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes motionPreview-scale { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-white/70 font-medium">Enable Motion</span>
+          <Switch
+            checked={enabled}
+            onCheckedChange={(v) => onChange({ ...anim, enabled: v })}
+          />
+        </div>
+
+        {enabled && (
+          <>
+            <Field label="Direction">
+              <div className="grid grid-cols-3 gap-1.5">
+                {(['up', 'down', 'left', 'right', 'fade', 'scale'] as const).map((dir) => (
+                  <button
+                    key={dir}
+                    type="button"
+                    onClick={() => {
+                      onChange({ ...anim, direction: dir });
+                      triggerPreview();
+                    }}
+                    className={`py-1 text-[10px] font-mono rounded capitalize transition-all border ${
+                      direction === dir
+                        ? 'bg-[#9ae625] text-neutral-950 font-bold border-[#9ae625]'
+                        : 'bg-white/5 text-white/50 border-white/8 hover:bg-white/10'
+                    }`}
+                  >
+                    {dir}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Intensity">
+              <div className="grid grid-cols-3 gap-1.5">
+                {(['subtle', 'normal', 'expressive'] as const).map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      onChange({ ...anim, intensity: lvl });
+                      triggerPreview();
+                    }}
+                    className={`py-1 text-[10px] font-mono rounded capitalize transition-all border ${
+                      intensity === lvl
+                        ? 'bg-[#9ae625] text-neutral-950 font-bold border-[#9ae625]'
+                        : 'bg-white/5 text-white/50 border-white/8 hover:bg-white/10'
+                    }`}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Stagger">
+              <div className="grid grid-cols-4 gap-1">
+                {(['none', 'fast', 'normal', 'slow'] as const).map((stg) => (
+                  <button
+                    key={stg}
+                    type="button"
+                    onClick={() => {
+                      onChange({ ...anim, stagger: stg });
+                      triggerPreview();
+                    }}
+                    className={`py-1 text-[10px] font-mono rounded capitalize transition-all border ${
+                      stagger === stg
+                        ? 'bg-[#9ae625] text-neutral-950 font-bold border-[#9ae625]'
+                        : 'bg-white/5 text-white/50 border-white/8 hover:bg-white/10'
+                    }`}
+                  >
+                    {stg}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <span className="text-xs text-white/60 block">Repeat On Scroll</span>
+                <span className="text-[10px] text-white/30 block">Bidirectional reveal</span>
+              </div>
+              <Switch
+                checked={repeat}
+                onCheckedChange={(v) => onChange({ ...anim, repeat: v })}
+              />
+            </div>
+
+            {/* Live Interactive Preview Box */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between text-[10px] text-white/40 mb-1.5">
+                <span>Live Motion Preview</span>
+                <button
+                  type="button"
+                  onClick={triggerPreview}
+                  className="text-[#9ae625] hover:underline"
+                >
+                  Replay ↺
+                </button>
+              </div>
+              <div className="h-16 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden p-2">
+                <div
+                  key={previewKey}
+                  style={{
+                    animation: `motionPreview-${direction} 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards`,
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs text-white font-mono flex items-center gap-1.5 shadow-sm"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9ae625]" />
+                  <span>{direction.toUpperCase()} · {intensity}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 // ─── Main Page Builder ────────────────────────────────────────────────────────
 export default function PageBuilderView() {
   const params = useParams();
@@ -612,6 +766,12 @@ export default function PageBuilderView() {
                   </>}
                 </Card>
 
+                {/* Animation Settings */}
+                <AnimationCard
+                  value={raw.animation}
+                  onChange={anim => patch({ animation: anim })}
+                />
+
               </div>
             ) : active?.componentType === 'METRICS_BANNER' ? (
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0">
@@ -813,6 +973,41 @@ export default function PageBuilderView() {
                   </button>
                 </Card>
 
+                {/* Animation Settings */}
+                <AnimationCard
+                  value={mPayload.animation}
+                  onChange={anim => patch({ animation: anim })}
+                />
+
+              </div>
+            ) : active ? (
+              <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0">
+                <Card title="Section Info" Icon={Settings2 as any}>
+                  <div className="space-y-2">
+                    <Field label="Identifier">
+                      <div className="text-xs font-mono text-[#9ae625] bg-white/5 border border-white/10 rounded px-2.5 py-1.5 truncate">
+                        {active.sectionIdentifier}
+                      </div>
+                    </Field>
+                    <Field label="Component Type">
+                      <div className="text-xs font-mono text-white/70 bg-white/5 border border-white/10 rounded px-2.5 py-1.5 truncate">
+                        {active.componentType}
+                      </div>
+                    </Field>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-white/60">Section Active</span>
+                      <Switch
+                        checked={active.isActive}
+                        onCheckedChange={v => setSections(p => p.map(s => s.id === active.id ? { ...s, isActive: v } : s))}
+                      />
+                    </div>
+                  </div>
+                </Card>
+
+                <AnimationCard
+                  value={active.contentPayload?.animation}
+                  onChange={anim => patch({ animation: anim })}
+                />
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center p-8">

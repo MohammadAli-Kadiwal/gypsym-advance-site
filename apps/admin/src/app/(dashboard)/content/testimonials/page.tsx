@@ -42,6 +42,8 @@ import {
 } from '@/components/ui/table';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import type {
   ClientTestimonialsSection,
   ClientTestimonialsPayload,
@@ -81,6 +83,11 @@ export default function TestimonialsManagementPage() {
     index: -1,
     title: '',
   });
+
+  // Reviews Bulk Selection State
+  const [selectedReviews, setSelectedReviews] = React.useState<Set<number>>(new Set());
+  const [bulkDeleteReviewConfirm, setBulkDeleteReviewConfirm] = React.useState(false);
+  const [isBulkProcessingReviews, setIsBulkProcessingReviews] = React.useState(false);
 
   // ─── Fetch Homepage Section from API ───────────────────────────────────────────
   const loadSection = React.useCallback(async () => {
@@ -324,6 +331,84 @@ export default function TestimonialsManagementPage() {
     updated[target] = temp;
     const nextPayload = updatePayload({ textTestimonials: updated });
     if (nextPayload) await handleSaveAll(nextPayload);
+  };
+
+  // ─── Bulk Review Handlers ──────────────────────────────────────────────────
+  const isAllReviewsSelected =
+    reviews.length > 0 && reviews.every((_, idx) => selectedReviews.has(idx));
+
+  const handleSelectAllReviews = (checked: boolean) => {
+    if (checked) {
+      setSelectedReviews(new Set(reviews.map((_, idx) => idx)));
+    } else {
+      setSelectedReviews(new Set());
+    }
+  };
+
+  const handleToggleSelectReview = (idx: number, checked: boolean) => {
+    const next = new Set(selectedReviews);
+    if (checked) {
+      next.add(idx);
+    } else {
+      next.delete(idx);
+    }
+    setSelectedReviews(next);
+  };
+
+  const handleBulkDeleteReviews = async () => {
+    if (selectedReviews.size === 0) return;
+    setIsBulkProcessingReviews(true);
+    try {
+      const count = selectedReviews.size;
+      const updated = reviews.filter((_, idx) => !selectedReviews.has(idx));
+      const nextPayload = updatePayload({ textTestimonials: updated });
+      if (nextPayload) await handleSaveAll(nextPayload);
+      setSelectedReviews(new Set());
+      setBulkDeleteReviewConfirm(false);
+      notify.success(`${count} client reviews deleted successfully.`);
+    } catch {
+      notify.error('Failed to delete selected reviews.');
+    } finally {
+      setIsBulkProcessingReviews(false);
+    }
+  };
+
+  const handleBulkFeatureReviews = async (featured: boolean) => {
+    if (selectedReviews.size === 0) return;
+    setIsBulkProcessingReviews(true);
+    try {
+      const count = selectedReviews.size;
+      const updated = reviews.map((rev, idx) =>
+        selectedReviews.has(idx) ? { ...rev, isFeatured: featured } : rev
+      );
+      const nextPayload = updatePayload({ textTestimonials: updated });
+      if (nextPayload) await handleSaveAll(nextPayload);
+      setSelectedReviews(new Set());
+      notify.success(`${count} client reviews updated.`);
+    } catch {
+      notify.error('Failed to update review features.');
+    } finally {
+      setIsBulkProcessingReviews(false);
+    }
+  };
+
+  const handleBulkRepeatReviews = async (isRepeat: boolean) => {
+    if (selectedReviews.size === 0) return;
+    setIsBulkProcessingReviews(true);
+    try {
+      const count = selectedReviews.size;
+      const updated = reviews.map((rev, idx) =>
+        selectedReviews.has(idx) ? { ...rev, isRepeatClient: isRepeat } : rev
+      );
+      const nextPayload = updatePayload({ textTestimonials: updated });
+      if (nextPayload) await handleSaveAll(nextPayload);
+      setSelectedReviews(new Set());
+      notify.success(`${count} client reviews updated.`);
+    } catch {
+      notify.error('Failed to update repeat client status.');
+    } finally {
+      setIsBulkProcessingReviews(false);
+    }
   };
 
   if (!mounted) {
@@ -610,6 +695,13 @@ export default function TestimonialsManagementPage() {
             <Table>
               <TableHeader className="bg-slate-50/75">
                 <TableRow className="border-slate-100 hover:bg-transparent">
+                  <TableHead className="w-10 text-center">
+                    <Checkbox
+                      checked={isAllReviewsSelected}
+                      onCheckedChange={(c) => handleSelectAllReviews(!!c)}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead className="w-12 text-center text-xs font-bold text-slate-600">#</TableHead>
                   <TableHead className="text-xs font-bold text-slate-600">Client / Executive</TableHead>
                   <TableHead className="text-xs font-bold text-slate-600">Rating</TableHead>
@@ -628,7 +720,19 @@ export default function TestimonialsManagementPage() {
                   const quote = rev.content || rev.quote || '';
 
                   return (
-                    <TableRow key={rev.id || idx} className="border-slate-100 hover:bg-slate-50/50">
+                    <TableRow
+                      key={rev.id || idx}
+                      className={`border-slate-100 hover:bg-slate-50/50 transition-colors ${
+                        selectedReviews.has(idx) ? 'bg-blue-50/30' : ''
+                      }`}
+                    >
+                      <TableCell className="w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedReviews.has(idx)}
+                          onCheckedChange={(c) => handleToggleSelectReview(idx, !!c)}
+                          aria-label={`Select review ${idx + 1}`}
+                        />
+                      </TableCell>
                       <TableCell className="text-center font-mono text-xs text-slate-400">
                         {idx + 1}
                       </TableCell>
@@ -735,7 +839,7 @@ export default function TestimonialsManagementPage() {
 
                 {reviews.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-slate-400 text-xs">
+                    <TableCell colSpan={7} className="text-center py-12 text-slate-400 text-xs">
                       No client reviews added yet. Click &ldquo;Add Client Review&rdquo; above.
                     </TableCell>
                   </TableRow>
@@ -745,6 +849,75 @@ export default function TestimonialsManagementPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* ── Floating Bulk Action Dock for Reviews ───────────────────────── */}
+      {activeTab === 'reviews' && selectedReviews.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+            {selectedReviews.size} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            onClick={() => handleBulkFeatureReviews(true)}
+          >
+            <Star className="h-3.5 w-3.5 mr-1 text-emerald-600 fill-emerald-500" />
+            <span>Feature</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkFeatureReviews(false)}
+          >
+            <Star className="h-3.5 w-3.5 mr-1 text-slate-400" />
+            <span>Unfeature</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkRepeatReviews(true)}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 mr-1 text-blue-600" />
+            <span>Repeat Client</span>
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-8 text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+            onClick={() => setBulkDeleteReviewConfirm(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <span>Delete</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-slate-400 hover:text-slate-600 rounded-xl ml-1"
+            onClick={() => setSelectedReviews(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {/* ── Bulk Delete Reviews Dialog ────────────────────────────────────── */}
+      <ConfirmDialog
+        open={bulkDeleteReviewConfirm}
+        onOpenChange={(open) => !open && setBulkDeleteReviewConfirm(false)}
+        title={`Delete ${selectedReviews.size} Client Reviews?`}
+        description={`Are you sure you want to delete ${selectedReviews.size} selected reviews? This will permanently remove them from the live homepage testimonial slider.`}
+        confirmLabel={isBulkProcessingReviews ? 'Deleting...' : `Delete ${selectedReviews.size} Reviews`}
+        variant="destructive"
+        onConfirm={handleBulkDeleteReviews}
+      />
 
       {/* ── Video Modal Dialog ────────────────────────────────────────────────── */}
       <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>

@@ -520,9 +520,9 @@ export function ContactSettings({ section, onChange }: ContactSettingsProps) {
               type="button"
               size="sm"
               onClick={handleAddField}
-              className="h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
+              className="inline-flex items-center gap-1.5 h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
             >
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add Field
+              <Plus className="h-3.5 w-3.5" /> Add Field
             </Button>
           </div>
         </CardHeader>

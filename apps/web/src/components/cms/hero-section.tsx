@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { PageSectionDto, HeroPayload } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { ScrollReveal } from '@/components/motion';
 
 interface HeroSectionProps {
   section: PageSectionDto;
@@ -31,7 +32,7 @@ export function HeroSection({ section }: HeroSectionProps) {
 
   return (
     <div className="w-full bg-[#f4f3ef] px-1.5 sm:px-2 md:px-3 pt-[clamp(6px,1vw,10px)]">
-      <section
+      <div
         className="relative isolate w-full rounded-[18px] sm:rounded-[22px] md:rounded-[28px] overflow-hidden flex flex-col shadow-sm border border-neutral-200/50"
         style={{ minHeight: 'calc(100dvh - clamp(10px, 2vw, 16px) - 16px)', height: 'calc(100dvh - clamp(10px, 2vw, 16px) - 16px)' }}
       >
@@ -74,90 +75,96 @@ export function HeroSection({ section }: HeroSectionProps) {
 
           {/* Editorial Headline with Segments & Inline Video Trigger */}
           {headline?.segments && headline.segments.length > 0 && (
-            <h1 className="text-[clamp(28px,7vw,64px)] font-semibold tracking-[-0.02em] text-white leading-[1.15] max-w-[18ch] sm:max-w-[20ch] md:max-w-5xl mx-auto drop-shadow-md">
-              {headline.segments.map((seg, idx) => {
-                const isVideoSpot =
-                  headline.hasInlineVideo && headline.inlineVideoPosition === idx;
+            <ScrollReveal direction="up" delay={80}>
+              <h1 className="text-[clamp(28px,7vw,64px)] font-semibold tracking-[-0.02em] text-white leading-[1.15] max-w-[18ch] sm:max-w-[20ch] md:max-w-5xl mx-auto drop-shadow-md">
+                {headline.segments.map((seg, idx) => {
+                  const isVideoSpot =
+                    headline.hasInlineVideo && headline.inlineVideoPosition === idx;
 
-                const lines = seg.value.split('\n');
-                const renderText = lines.map((line, lIdx) => (
-                  <React.Fragment key={lIdx}>
-                    {lIdx > 0 && <br />}
-                    {line}
-                  </React.Fragment>
-                ));
+                  const lines = seg.value.split('\n');
+                  const renderText = lines.map((line, lIdx) => (
+                    <React.Fragment key={lIdx}>
+                      {lIdx > 0 && <br />}
+                      {line}
+                    </React.Fragment>
+                  ));
 
-                let segElem = null;
-                if (seg.type === 'italic') {
-                  segElem = (
-                    <span
-                      key={idx}
-                      className="font-serif italic font-normal text-white drop-shadow-md text-[clamp(32px,8vw,72px)] inline-block leading-none mx-2 sm:mx-3"
-                    >
-                      {renderText}
-                    </span>
-                  );
-                } else if (titleHighlight && (seg.value || (seg as any).text || '').toLowerCase().includes(titleHighlight.trim().toLowerCase())) {
-                  const segStr = seg.value || (seg as any).text || '';
-                  segElem = (
-                    <span key={idx} className="text-white">
-                      {renderTitleWithHighlight(
-                        segStr,
-                        titleHighlight,
-                        'font-serif italic font-normal text-white drop-shadow-md text-[clamp(32px,8vw,72px)] inline-block leading-none mx-1.5 sm:mx-2.5'
-                      )}
-                    </span>
-                  );
-                } else if (seg.type === 'highlight') {
-                  segElem = (
-                    <span key={idx} className="text-white">
-                      {renderText}
-                    </span>
-                  );
-                } else {
-                  segElem = (
-                    <span key={idx} className="text-white">
-                      {renderText}
-                    </span>
-                  );
-                }
-
-                return (
-                  <React.Fragment key={idx}>
-                    {isVideoSpot && videoCta?.enabled && (
-                      <button
-                        onClick={() => setVideoOpen(true)}
-                        className="inline-flex items-center justify-center w-[72px] h-[40px] sm:w-[84px] sm:h-[48px] rounded-2xl bg-[#c2e678]/15 border border-[#c2e678]/25 text-lime-400 hover:scale-105 hover:bg-[#c2e678]/25 transition-all mx-2 sm:mx-3 align-middle shadow-lg cursor-pointer backdrop-blur-[3px] group"
-                        aria-label="Play video"
+                  let segElem = null;
+                  if (seg.type === 'italic') {
+                    segElem = (
+                      <span
+                        key={idx}
+                        className="font-serif italic font-normal text-white drop-shadow-md text-[clamp(32px,8vw,72px)] inline-block leading-none mx-2 sm:mx-3"
                       >
-                        <Play className="h-4 w-4 fill-lime-400 ml-0.5 group-hover:scale-110 transition-transform" />
-                      </button>
-                    )}
-                    {segElem}
-                  </React.Fragment>
-                );
-              })}
-            </h1>
+                        {renderText}
+                      </span>
+                    );
+                  } else if (titleHighlight && (seg.value || (seg as any).text || '').toLowerCase().includes(titleHighlight.trim().toLowerCase())) {
+                    const segStr = seg.value || (seg as any).text || '';
+                    segElem = (
+                      <span key={idx} className="text-white">
+                        {renderTitleWithHighlight(
+                          segStr,
+                          titleHighlight,
+                          'font-serif italic font-normal text-white drop-shadow-md text-[clamp(32px,8vw,72px)] inline-block leading-none mx-1.5 sm:mx-2.5'
+                        )}
+                      </span>
+                    );
+                  } else if (seg.type === 'highlight') {
+                    segElem = (
+                      <span key={idx} className="text-white">
+                        {renderText}
+                      </span>
+                    );
+                  } else {
+                    segElem = (
+                      <span key={idx} className="text-white">
+                        {renderText}
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <React.Fragment key={idx}>
+                      {isVideoSpot && videoCta?.enabled && (
+                        <button
+                          onClick={() => setVideoOpen(true)}
+                          className="inline-flex items-center justify-center w-[72px] h-[40px] sm:w-[84px] sm:h-[48px] rounded-2xl bg-[#c2e678]/15 border border-[#c2e678]/25 text-lime-400 hover:scale-105 hover:bg-[#c2e678]/25 transition-all mx-2 sm:mx-3 align-middle shadow-lg cursor-pointer backdrop-blur-[3px] group"
+                          aria-label="Play video"
+                        >
+                          <Play className="h-4 w-4 fill-lime-400 ml-0.5 group-hover:scale-110 transition-transform" />
+                        </button>
+                      )}
+                      {segElem}
+                    </React.Fragment>
+                  );
+                })}
+              </h1>
+            </ScrollReveal>
           )}
 
           {/* Description Paragraph */}
           {description?.enabled && description.content && (
-            <p className="text-[14px] sm:text-[15px] md:text-[16px] lg:text-[17px] text-neutral-100 max-w-[90%] sm:max-w-xl md:max-w-2xl mx-auto leading-[1.65] font-normal drop-shadow">
-              {description.content}
-            </p>
+            <ScrollReveal direction="up" delay={160}>
+              <p className="text-[14px] sm:text-[15px] md:text-[16px] lg:text-[17px] text-neutral-100 max-w-[90%] sm:max-w-xl md:max-w-2xl mx-auto leading-[1.65] font-normal drop-shadow">
+                {description.content}
+              </p>
+            </ScrollReveal>
           )}
 
           {/* Primary CTA Action */}
           {primaryCta?.enabled && primaryCta.label && (
-            <div className="pt-2 flex flex-col xs:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
-              <Link
-                href={primaryCta.url || '/contact'}
-                className="inline-flex items-center px-7 py-3 rounded-full bg-white text-neutral-950 font-semibold text-xs sm:text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-xl shadow-black/10"
-              >
-                <span>{primaryCta.label}</span>
-                <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-              </Link>
-            </div>
+            <ScrollReveal direction="up" delay={240}>
+              <div className="pt-2 flex flex-col xs:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
+                <Link
+                  href={primaryCta.url || '/contact'}
+                  className="inline-flex items-center px-7 py-3 rounded-full bg-white text-neutral-950 font-semibold text-xs sm:text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-xl shadow-black/10"
+                >
+                  <span>{primaryCta.label}</span>
+                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </ScrollReveal>
           )}
         </div>
 
@@ -165,7 +172,7 @@ export function HeroSection({ section }: HeroSectionProps) {
         {clientStrip?.enabled && clientStrip.clients && (
           <div className="w-full relative z-10" style={{ marginTop: 'auto' }}>
             <div className="w-full h-[80px] sm:h-[90px] lg:h-[100px] flex items-center overflow-hidden bg-white">
-              {/* Label — no separator, same style as developios */}
+              {/* Label — no separator, same style as gypsym */}
               {clientStrip.title && (
                 <div
                   className="shrink-0 pl-4 sm:pl-6 lg:pl-8 pr-5 sm:pr-7 text-[11px] sm:text-[12px] font-normal text-neutral-400 whitespace-nowrap"
@@ -248,7 +255,7 @@ export function HeroSection({ section }: HeroSectionProps) {
           </div>
         )}
 
-      </section>
+      </div>
 
       {/* 4. Floating WhatsApp Button — fixed position, works from outside section */}
       {floatingAction?.enabled && (

@@ -19,7 +19,6 @@ export async function getPageBySlug(slug: string): Promise<PageDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/pages/${slug}`, {
       cache: 'no-store',
-      next: { tags: [`page-${slug}`], revalidate: 0 },
     });
     if (!res.ok) {
       return null;
@@ -58,7 +57,7 @@ export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/branding`, {
       cache: 'no-store',
-      next: { tags: ['brand-settings'], revalidate: 0 },
+      next: { tags: ['brand-settings'] },
     });
     if (!res.ok) {
       return null;
@@ -78,7 +77,7 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings`, {
       cache: 'no-store',
-      next: { tags: ['site-settings'], revalidate: 0 },
+      next: { tags: ['site-settings'] },
     });
     if (!res.ok) {
       return {};
@@ -98,7 +97,7 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
   try {
     const res = await fetch(`${API_BASE_URL}/header`, {
       cache: 'no-store',
-      next: { tags: ['header-all'], revalidate: 0 },
+      next: { tags: ['header-all'] },
     });
     if (res.ok) {
       const json = await res.json();
@@ -153,10 +152,11 @@ export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]>
   try {
     const res = await fetch(`${API_BASE_URL}/portfolio/categories`, {
       cache: 'no-store',
-      next: { tags: ['portfolio-categories'], revalidate: 0 },
+      next: { tags: ['portfolio-categories'] },
     });
     if (!res.ok) return [];
-    const data = await res.json();
+    const json = await res.json();
+    const data = json?.data ?? json;
     return Array.isArray(data) ? data : [];
   } catch {
     return [];
@@ -175,11 +175,12 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
     }
     const res = await fetch(url.toString(), {
       cache: 'no-store',
-      next: { tags: ['portfolio-projects'], revalidate: 0 },
+      next: { tags: ['portfolio-projects'] },
     });
     if (!res.ok) return [];
     const json = await res.json();
-    return Array.isArray(json?.projects) ? json.projects : [];
+    const list = json?.data?.projects ?? json?.projects ?? (Array.isArray(json?.data) ? json.data : []);
+    return Array.isArray(list) ? list : [];
   } catch {
     return [];
   }

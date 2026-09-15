@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { ArrowRight } from 'lucide-react';
+import { AnimatedCounter } from '@/components/motion';
 
 interface RevenueExperimentSectionProps {
   section: PageSectionDto;
@@ -44,11 +45,36 @@ export function RevenueExperimentSection({ section }: RevenueExperimentSectionPr
     '#c026d3', // Bar 6 (Winner)
   ];
 
+  const barsContainerRef = React.useRef<HTMLDivElement>(null);
+  const [barsInView, setBarsInView] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = barsContainerRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setBarsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Format variant subtext with animated percentage if applicable
+  const subtextParts = variantSubtext.split('·');
+  const hasMultipleParts = subtextParts.length > 1;
+
   return (
     <div className="w-full py-8 sm:py-10 md:py-12">
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Main Card Container */}
-        <div className="w-full bg-white dark:bg-card rounded-[24px] sm:rounded-[36px] md:rounded-[42px] border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] p-5 sm:p-10 md:p-12 lg:p-14">
+        <div className="w-full bg-white dark:bg-card rounded-[24px] sm:rounded-[36px] md:rounded-[42px] border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] p-6 sm:p-8 md:p-10 lg:p-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Content Column: Verified Results Design applied (dot, typography, colors) */}
             <div className="lg:col-span-5 flex flex-col justify-center space-y-4 text-left">
@@ -105,7 +131,7 @@ export function RevenueExperimentSection({ section }: RevenueExperimentSectionPr
                       {controlLabel}
                     </span>
                     <span className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white block">
-                      {controlValue}
+                      <AnimatedCounter value={controlValue} duration={1.6} />
                     </span>
                     <span className="text-[11px] sm:text-xs text-neutral-400 font-medium block">
                       {controlSubtext}
@@ -118,16 +144,27 @@ export function RevenueExperimentSection({ section }: RevenueExperimentSectionPr
                       {variantLabel}
                     </span>
                     <span className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white block">
-                      {variantValue}
+                      <AnimatedCounter value={variantValue} duration={1.6} delay={120} />
                     </span>
                     <span className="text-[11px] sm:text-xs font-semibold text-[#db2777] dark:text-pink-400 block">
-                      {variantSubtext}
+                      {hasMultipleParts ? (
+                        <>
+                          <AnimatedCounter value={subtextParts[0].trim()} duration={1.6} delay={200} />
+                          {' · '}
+                          {subtextParts.slice(1).join('·').trim()}
+                        </>
+                      ) : (
+                        <AnimatedCounter value={variantSubtext} duration={1.6} delay={200} />
+                      )}
                     </span>
                   </div>
                 </div>
 
                 {/* Progressive Bar Chart */}
-                <div className="pt-4 flex items-end justify-between gap-2.5 sm:gap-3.5 h-28 sm:h-36 px-1">
+                <div
+                  ref={barsContainerRef}
+                  className="pt-4 flex items-end justify-between gap-2.5 sm:gap-3.5 h-28 sm:h-36 px-1"
+                >
                   {rawBars.map((heightPercent: number, idx: number) => {
                     const color = barColors[idx % barColors.length];
                     const clampedHeight = Math.max(10, Math.min(100, Number(heightPercent) || 20));
@@ -138,10 +175,11 @@ export function RevenueExperimentSection({ section }: RevenueExperimentSectionPr
                       >
                         <div
                           style={{
-                            height: `${clampedHeight}%`,
+                            height: barsInView ? `${clampedHeight}%` : '6%',
                             backgroundColor: color,
+                            transitionDelay: `${idx * 90}ms`,
                           }}
-                          className="w-full rounded-t-lg sm:rounded-t-xl transition-all duration-300 group-hover:opacity-90"
+                          className="w-full rounded-t-lg sm:rounded-t-xl transition-all duration-700 ease-out group-hover:opacity-90"
                         />
                       </div>
                     );

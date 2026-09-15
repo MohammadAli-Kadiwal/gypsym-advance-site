@@ -13,7 +13,11 @@ import {
   ChevronDown,
   ExternalLink,
   Search,
+  FileCheck,
+  FileClock,
+  Archive,
 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -590,6 +594,8 @@ export default function PartnersPage() {
 
   // Selected items for bulk actions
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
 
   // Modal dialog states
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -850,9 +856,7 @@ export default function PartnersPage() {
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} selected partners?`)) {
-      return;
-    }
+    setIsBulkProcessing(true);
     const ids = Array.from(selectedIds);
     try {
       await fetchApi('/partners/bulk-delete', {
@@ -861,9 +865,12 @@ export default function PartnersPage() {
       });
       setPartners((prev) => prev.filter((p) => !selectedIds.has(p.id)));
       setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
       notify.success(`Deleted ${ids.length} partners.`);
     } catch {
       notify.error('Failed to delete selected partners.');
+    } finally {
+      setIsBulkProcessing(false);
     }
   }
 
@@ -980,51 +987,6 @@ export default function PartnersPage() {
             </select>
           </div>
         </div>
-
-        {/* Bulk Action Bar (when items selected) */}
-        {selectedIds.size > 0 && (
-          <div className="p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center justify-between animate-in fade-in-50 duration-150">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-blue-900">
-                {selectedIds.size} partner{selectedIds.size > 1 ? 's' : ''} selected
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatus('PUBLISHED')}
-                className="h-7 px-2.5 text-[11px] font-semibold bg-white border-blue-200 text-emerald-700 hover:bg-emerald-50"
-              >
-                Publish
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatus('DRAFT')}
-                className="h-7 px-2.5 text-[11px] font-semibold bg-white border-blue-200 text-amber-700 hover:bg-amber-50"
-              >
-                Draft
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatus('ARCHIVED')}
-                className="h-7 px-2.5 text-[11px] font-semibold bg-white border-blue-200 text-slate-600 hover:bg-slate-100"
-              >
-                Archive
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={handleBulkDelete}
-                className="h-7 px-2.5 text-[11px] font-semibold bg-rose-600 hover:bg-rose-700 text-white"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
@@ -1294,6 +1256,75 @@ export default function PartnersPage() {
         deleting={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+      />
+
+      {/* ─── Floating Bulk Action Dock ─────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+            {selectedIds.size} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            onClick={() => handleBulkStatus('PUBLISHED')}
+          >
+            <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+            <span>Publish</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkStatus('DRAFT')}
+          >
+            <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600" />
+            <span>Draft</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkStatus('ARCHIVED')}
+          >
+            <Archive className="h-3.5 w-3.5 mr-1 text-slate-500" />
+            <span>Archive</span>
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-8 text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+            onClick={() => setBulkDeleteConfirm(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <span>Delete</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-slate-400 hover:text-slate-600 rounded-xl ml-1"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {/* ─── Bulk Delete Confirmation Dialog ───────────────────────── */}
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        onOpenChange={(open) => !open && setBulkDeleteConfirm(false)}
+        title={`Delete ${selectedIds.size} Partners?`}
+        description={`Are you sure you want to delete ${selectedIds.size} selected partners? This action cannot be undone.`}
+        confirmLabel={isBulkProcessing ? 'Deleting...' : `Delete ${selectedIds.size} Partners`}
+        variant="destructive"
+        onConfirm={handleBulkDelete}
       />
     </div>
   );

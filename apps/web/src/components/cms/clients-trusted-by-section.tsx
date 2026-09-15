@@ -4,6 +4,7 @@ import * as React from 'react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { BrandLogosSection } from './brand-logos-section';
 import { BrandLogoItem } from './shared/brand-logo-card';
+import { AnimatedCounter } from '@/components/motion';
 
 export interface ClientItem extends BrandLogoItem {
   industry?: string;
@@ -65,13 +66,13 @@ export function ClientsTrustedBySection({ section }: ClientsTrustedBySectionProp
   const desktopRows = layout.desktopRows || [6, 4];
 
   const metricsRibbon = showMetricsBar ? (
-    <div className="mt-14 sm:mt-16 pt-8 sm:pt-10 border-t border-neutral-200/70 dark:border-neutral-800/80">
+    <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-neutral-200/70 dark:border-neutral-800/80">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto">
         {DEFAULT_METRICS.map((metric, idx) => (
           <div key={idx} className="flex flex-col items-center text-center space-y-1">
             <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white font-mono">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-950 via-neutral-800 to-neutral-700 dark:from-white dark:via-neutral-200 dark:to-neutral-400">
-                {metric.value}
+                <AnimatedCounter value={metric.value} duration={1.8} delay={idx * 120} />
               </span>
             </span>
             <span className="text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400 leading-snug">

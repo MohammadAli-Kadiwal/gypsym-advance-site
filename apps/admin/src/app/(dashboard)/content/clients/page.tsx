@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, X, Building2, ImageOff, Loader2, Pencil, Trash2, Globe, Upload, Link2 } from 'lucide-react';
+import { Plus, X, Building2, ImageOff, Loader2, Globe, Upload, Link2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -13,26 +12,18 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Card } from '@/components/ui/card';
+import { DataTable, ColumnDef } from '@/components/crud/data-table';
+import { BaseRecord, ItemStatus } from '@/lib/store';
+import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-export interface Client {
-  id: string;
+export interface ClientRecord extends BaseRecord {
   name: string;
   logoUrl?: string;
   websiteUrl?: string;
   isActive: boolean;
-  createdAt?: string;
 }
 
 interface ClientFormState {
@@ -371,93 +362,29 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
   );
 }
 
-// ─── Delete Confirm Dialog ────────────────────────────────────────────────────
-interface DeleteDialogProps {
-  open: boolean;
-  clientName: string;
-  deleting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
-
-function DeleteDialog({ open, clientName, deleting, onClose, onConfirm }: DeleteDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-sm rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <Trash2 className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-sm font-bold text-slate-900">Delete Client</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
-                This action cannot be undone.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-        <div className="px-6 py-5 space-y-4">
-          <p className="text-sm text-slate-700">
-            Are you sure you want to delete{' '}
-            <span className="font-bold text-slate-900">&ldquo;{clientName}&rdquo;</span>? It will be
-            removed from all marquee strips.
-          </p>
-          <DialogFooter className="gap-2 flex-row justify-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={deleting}
-              className="rounded-xl h-9 px-4 text-xs font-semibold border-slate-200 text-slate-600"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={onConfirm}
-              disabled={deleting}
-              className="rounded-xl h-9 px-5 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              {deleting ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Deleting…
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Delete
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Main Clients Page ────────────────────────────────────────────────────────
 export default function ClientsPage() {
   const [mounted, setMounted] = React.useState(false);
-  const [clients, setClients] = React.useState<Client[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [clients, setClients] = React.useState<ClientRecord[]>([]);
   const [saving, setSaving] = React.useState(false);
-  const [deleting, setDeleting] = React.useState(false);
 
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [editTarget, setEditTarget] = React.useState<Client | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Client | null>(null);
+  const [editTarget, setEditTarget] = React.useState<ClientRecord | null>(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const loadClients = React.useCallback(async () => {
-    setLoading(true);
     try {
-      const data = await fetchApi<Client[]>('/clients');
-      setClients(Array.isArray(data) ? data : []);
+      const data = await fetchApi<ClientRecord[]>('/clients');
+      setClients(
+        Array.isArray(data)
+          ? data.map((c) => ({
+              ...c,
+              status: (c.status || (c.isActive ? 'PUBLISHED' : 'DRAFT')) as ItemStatus,
+            }))
+          : []
+      );
     } catch {
       setClients([]);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -470,7 +397,7 @@ export default function ClientsPage() {
   async function handleCreate(form: ClientFormState) {
     setSaving(true);
     try {
-      const created = await fetchApi<Client>('/clients', {
+      const created = await fetchApi<ClientRecord>('/clients', {
         method: 'POST',
         body: JSON.stringify({
           name: form.name.trim(),
@@ -479,7 +406,10 @@ export default function ClientsPage() {
           isActive: true,
         }),
       });
-      setClients((prev) => [created, ...prev]);
+      setClients((prev) => [
+        { ...created, status: (created.status || 'PUBLISHED') as ItemStatus },
+        ...prev,
+      ]);
       setCreateOpen(false);
       notify.success(`Client "${created.name}" created successfully.`);
     } catch {
@@ -494,7 +424,7 @@ export default function ClientsPage() {
     if (!editTarget) return;
     setSaving(true);
     try {
-      const updated = await fetchApi<Client>(`/clients/${editTarget.id}`, {
+      const updated = await fetchApi<ClientRecord>(`/clients/${editTarget.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           name: form.name.trim(),
@@ -502,7 +432,13 @@ export default function ClientsPage() {
           websiteUrl: form.websiteUrl.trim() || null,
         }),
       });
-      setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === updated.id
+            ? { ...updated, status: (updated.status || (updated.isActive ? 'PUBLISHED' : 'DRAFT')) as ItemStatus }
+            : c
+        )
+      );
       setEditTarget(null);
       notify.success(`Client "${updated.name}" updated.`);
     } catch {
@@ -513,20 +449,123 @@ export default function ClientsPage() {
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────────
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  async function handleDelete(id: string) {
     try {
-      await fetchApi(`/clients/${deleteTarget.id}`, { method: 'DELETE' });
-      setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-      notify.success(`Client "${deleteTarget.name}" deleted.`);
-      setDeleteTarget(null);
+      await fetchApi(`/clients/${id}`, { method: 'DELETE' });
+      setClients((prev) => prev.filter((c) => c.id !== id));
+      notify.success('Client deleted successfully.');
     } catch {
       notify.error('Could not delete client. Please try again.');
-    } finally {
-      setDeleting(false);
     }
   }
+
+  // ── Bulk Delete ─────────────────────────────────────────────────────────────
+  async function handleBulkDelete(ids: string[]) {
+    try {
+      await Promise.all(ids.map((id) => fetchApi(`/clients/${id}`, { method: 'DELETE' })));
+      setClients((prev) => prev.filter((c) => !ids.includes(c.id)));
+      notify.success(`${ids.length} clients deleted successfully.`);
+    } catch {
+      notify.error('Unable to delete selected clients.');
+    }
+  }
+
+  // ── Bulk Status Change ──────────────────────────────────────────────────────
+  async function handleBulkStatus(ids: string[], status: ItemStatus) {
+    try {
+      const isActive = status === 'PUBLISHED';
+      await Promise.all(
+        ids.map((id) =>
+          fetchApi(`/clients/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ isActive }),
+          })
+        )
+      );
+      setClients((prev) =>
+        prev.map((c) => (ids.includes(c.id) ? { ...c, status, isActive } : c))
+      );
+      const label = status === 'PUBLISHED' ? 'published' : status === 'DRAFT' ? 'moved to draft' : 'archived';
+      notify.success(`${ids.length} clients ${label} successfully.`);
+    } catch {
+      notify.error('Unable to update status for selected clients.');
+    }
+  }
+
+  const columns: ColumnDef<ClientRecord>[] = [
+    {
+      key: 'logo',
+      header: 'Logo',
+      render: (item) => (
+        <div className="h-9 w-9 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+          {item.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={item.logoUrl}
+              alt={item.name}
+              className="h-full w-full object-contain p-1"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <Building2 className="h-4 w-4 text-slate-300" />
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Client Name',
+      sortable: true,
+      render: (item) => (
+        <div>
+          <span className="font-semibold text-slate-900 text-xs">{item.name}</span>
+          {item.websiteUrl && (
+            <a
+              href={item.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[11px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="truncate max-w-[220px]">{item.websiteUrl}</span>
+              <ExternalLink className="w-2.5 h-2.5" />
+            </a>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'websiteUrl',
+      header: 'Website',
+      render: (item) =>
+        item.websiteUrl ? (
+          <a
+            href={item.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Globe className="h-3.5 w-3.5 text-slate-400" />
+            <span className="truncate max-w-[180px]">{item.websiteUrl.replace(/^https?:\/\//, '')}</span>
+          </a>
+        ) : (
+          <span className="text-slate-300 font-mono text-xs">—</span>
+        ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      sortable: true,
+      render: (item) => (
+        <span className="font-mono text-[11px] text-slate-500">
+          {item.createdAt ? formatDate(item.createdAt) : '—'}
+        </span>
+      ),
+    },
+  ];
 
   if (!mounted) {
     return (
@@ -538,183 +577,34 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-2 space-y-6">
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2.5">
-            <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <span>Clients</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage client logos and names used in marquee strips and across the website.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2 shrink-0">
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />}
-          <Badge
-            variant="outline"
-            className="text-xs font-mono bg-blue-50/60 text-blue-700 border-blue-200"
-          >
-            {clients.length} Clients
-          </Badge>
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="h-9 px-4 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Client
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Table ──────────────────────────────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Client Directory
-          </span>
-          <span className="text-[11px] text-slate-400 font-mono">
-            {loading ? 'Syncing…' : `${clients.length} registered`}
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="p-10 flex items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-          </div>
-        ) : clients.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-700">No clients yet</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Add your first client to start populating the marquee strip.
-              </p>
-            </div>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              variant="outline"
-              className="mt-2 rounded-xl h-9 px-4 text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Add First Client
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader className="bg-slate-50/60">
-              <TableRow className="border-b border-slate-100">
-                <TableHead className="w-[64px] text-xs font-bold text-slate-600">Logo</TableHead>
-                <TableHead className="text-xs font-bold text-slate-600">Client Name</TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 hidden sm:table-cell">
-                  Website
-                </TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 hidden md:table-cell">
-                  Status
-                </TableHead>
-                <TableHead className="text-right text-xs font-bold text-slate-600">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.map((client) => (
-                <TableRow
-                  key={client.id}
-                  className="hover:bg-slate-50/60 transition-colors group"
-                >
-                  {/* Logo */}
-                  <TableCell className="py-3">
-                    <div className="h-9 w-9 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
-                      {client.logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={client.logoUrl}
-                          alt={client.name}
-                          className="h-full w-full object-contain p-1"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <Building2 className="h-4 w-4 text-slate-300" />
-                      )}
-                    </div>
-                  </TableCell>
-
-                  {/* Name */}
-                  <TableCell className="py-3">
-                    <span className="font-semibold text-xs text-slate-900">{client.name}</span>
-                  </TableCell>
-
-                  {/* Website */}
-                  <TableCell className="py-3 hidden sm:table-cell">
-                    {client.websiteUrl ? (
-                      <a
-                        href={client.websiteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-mono text-blue-600 hover:underline truncate max-w-[200px] block"
-                      >
-                        {client.websiteUrl.replace(/^https?:\/\//, '')}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-300">—</span>
-                    )}
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell className="py-3 hidden md:table-cell">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        client.isActive
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-slate-100 text-slate-500 border-slate-200'
-                      }`}
-                    >
-                      {client.isActive ? 'ACTIVE' : 'INACTIVE'}
-                    </span>
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="py-3 text-right">
-                    <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditTarget(client)}
-                        className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                        title="Edit client"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteTarget(client)}
-                        className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                        title="Delete client"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+    <>
+      <DataTable<ClientRecord>
+        title="Clients"
+        description="Manage client logos and names used in marquee strips and across the website."
+        data={clients}
+        columns={columns}
+        searchKeys={['name', 'websiteUrl']}
+        requiredPermission="content:write"
+        addButtonLabel="Add Client"
+        entityName="client"
+        emptyStateTitle="No clients yet."
+        emptyStateDescription="Add your first client to start populating the marquee strip."
+        onAdd={() => {
+          setEditTarget(null);
+          setCreateOpen(true);
+        }}
+        onEdit={(item) => {
+          setEditTarget(item);
+          setCreateOpen(true);
+        }}
+        onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
+        onBulkStatusChange={handleBulkStatus}
+      />
 
       {/* ── Dialogs ────────────────────────────────────────────────────────── */}
       <ClientDialog
-        open={createOpen}
+        open={createOpen && !editTarget}
         mode="create"
         saving={saving}
         onClose={() => setCreateOpen(false)}
@@ -737,14 +627,6 @@ export default function ClientsPage() {
         onClose={() => setEditTarget(null)}
         onSubmit={handleUpdate}
       />
-
-      <DeleteDialog
-        open={!!deleteTarget}
-        clientName={deleteTarget?.name || ''}
-        deleting={deleting}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-      />
-    </div>
+    </>
   );
 }

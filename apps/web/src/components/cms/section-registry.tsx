@@ -11,7 +11,9 @@ import { ClientsTrustedBySection } from './clients-trusted-by-section';
 import { PartnersSection } from './partners-section';
 import { ContactSection } from './contact-section';
 import { CtaSection } from './cta-section';
+import { CapabilitiesSection } from './capabilities-section';
 
+export { CapabilitiesSection } from './capabilities-section';
 export { BrandLogosSection } from './brand-logos-section';
 export { BrandLogoCard } from './shared/brand-logo-card';
 export { BrandLogosGrid } from './shared/brand-logos-grid';
@@ -56,6 +58,9 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   CTA: CtaSection,
   CTA_BANNER: CtaSection,
   CALL_TO_ACTION: CtaSection,
+  CAPABILITIES: CapabilitiesSection,
+  OUR_CAPABILITIES: CapabilitiesSection,
+  TECH_STACK: CapabilitiesSection,
 };
 
 /**
@@ -92,6 +97,13 @@ export function getSectionComponent(
   componentType: string,
   sectionIdentifier?: string
 ): React.ComponentType<SectionProps> {
+  if (
+    sectionIdentifier === 'our-capabilities' ||
+    sectionIdentifier === 'capabilities' ||
+    sectionIdentifier === 'tech-stack'
+  ) {
+    return CapabilitiesSection;
+  }
   if (sectionIdentifier === 'cro-revenue-experiment') return RevenueExperimentSection;
   if (sectionIdentifier === 'what-we-actually-change') return WhatWeChangeSection;
   if (

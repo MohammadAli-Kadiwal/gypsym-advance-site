@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { InquiriesController } from './inquiries.controller';
 import { InquiriesService } from './inquiries.service';
 import { EmailModule } from '../email/email.module';
+import { RecaptchaModule } from '../recaptcha/recaptcha.module';
 
 @Module({
-  imports: [EmailModule],
+  imports: [EmailModule, RecaptchaModule],
   controllers: [InquiriesController],
   providers: [InquiriesService],
   exports: [InquiriesService],

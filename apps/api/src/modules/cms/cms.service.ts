@@ -414,9 +414,12 @@ export class CmsService {
 
   // 9. Dynamic Pages & Sections
   async getPageBySlug(slug: string): Promise<any> {
+    const isPortfolio = slug === 'portfolio' || slug === 'our-work';
     const page = await this.prisma.page.findFirst({
       where: {
-        slug,
+        ...(isPortfolio
+          ? { slug: { in: ['portfolio', 'our-work'] } }
+          : { slug }),
         status: 'PUBLISHED',
         deletedAt: null,
       },

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { ScrollReveal } from '@/components/motion';
 
 export interface PortfolioCategoryFilterItem {
   id: string;
@@ -233,47 +234,53 @@ export function PortfolioSection({
   }, []);
 
   return (
-    <section className="relative w-full py-12 sm:py-16 lg:py-20 bg-background overflow-hidden">
+    <div className="relative w-full py-8 sm:py-10 md:py-12 bg-background overflow-hidden">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3 mb-8 sm:mb-12">
-          {eyebrow && (
-            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-              <span>{eyebrow}</span>
-            </div>
-          )}
+        <ScrollReveal direction="up">
+          <div className="text-center max-w-3xl mx-auto space-y-3 mb-8 sm:mb-10">
+            {eyebrow && (
+              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                <span>{eyebrow}</span>
+              </div>
+            )}
 
-          <h2 className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[50px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12]">
-            <span>{renderTitleWithHighlight(title, titleHighlight)}</span>
-          </h2>
+            <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
+              {renderTitleWithHighlight(
+                title,
+                titleHighlight,
+                'font-serif italic font-normal text-[1.12em] tracking-normal inline-block px-1'
+              )}
+            </h2>
 
-          {description && (
-            <p className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-0.5">
-              {description}
-            </p>
-          )}
+            {description && (
+              <p className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-0.5">
+                {description}
+              </p>
+            )}
+          </div>
+        </ScrollReveal>
 
-          {/* ── Dynamic Category Filter Bar (Rules 5, 12, 17, 21, 55) ── */}
-          {showCategoryFilter && (
-            <div className="pt-4 sm:pt-6 w-full">
-              {/* Mobile: Horizontal scroll only container (page overflow prevented) */}
-              {/* Tablet & Desktop: Centered wrapped pill list */}
+        {/* ── Dynamic Category Filter Bar: In-Line up to Full Section Width (1360px) ── */}
+        {showCategoryFilter && (
+          <ScrollReveal direction="up" delay={80}>
+            <div className="w-full pb-8 sm:pb-12">
               <div
-                className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 py-1 flex-nowrap md:flex-wrap"
+                className="flex items-center justify-center gap-2 sm:gap-2.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 py-1 flex-nowrap md:flex-wrap max-w-[1360px] mx-auto"
                 role="tablist"
                 aria-label="Filter portfolio by category"
               >
-                {/* Virtual 'All' Filter Pill (Rule 21: not in DB) */}
+                {/* Virtual 'All' Filter Pill */}
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activeCategory === 'all'}
                   onClick={() => handleCategorySelect('all')}
-                  className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none ${
+                  className={`shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
                     activeCategory === 'all'
-                      ? 'bg-[#d9287c] text-white shadow-md shadow-[#d9287c]/25 ring-2 ring-[#d9287c]/20'
-                      : 'bg-neutral-100 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700/90 border border-neutral-200/60 dark:border-neutral-700/60'
+                      ? 'bg-[#d9287c] text-white shadow-lg shadow-[#d9287c]/30 ring-2 ring-[#d9287c]/30'
+                      : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800 shadow-xs'
                   }`}
                 >
                   All
@@ -289,10 +296,10 @@ export function PortfolioSection({
                       role="tab"
                       aria-selected={isSelected}
                       onClick={() => handleCategorySelect(cat.slug)}
-                      className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none ${
+                      className={`shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
                         isSelected
-                          ? 'bg-[#d9287c] text-white shadow-md shadow-[#d9287c]/25 ring-2 ring-[#d9287c]/20'
-                          : 'bg-neutral-100 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700/90 border border-neutral-200/60 dark:border-neutral-700/60'
+                          ? 'bg-[#d9287c] text-white shadow-lg shadow-[#d9287c]/30 ring-2 ring-[#d9287c]/30'
+                          : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800 shadow-xs'
                       }`}
                     >
                       {cat.name}
@@ -301,169 +308,178 @@ export function PortfolioSection({
                 })}
               </div>
             </div>
+          </ScrollReveal>
+        )}
+
+        {/* ── Projects Grid & Slider with Scroll-Up Reveal ── */}
+        <ScrollReveal direction="up" delay={140}>
+          {/* Empty Category State */}
+          {projects.length === 0 && (
+            <div className="w-full py-16 text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
+                No projects available in this category yet.
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                New showcase projects are published regularly. Please select another category or view all work.
+              </p>
+            </div>
           )}
-        </div>
 
-        {/* ── Empty Category State (Rule 30) ── */}
-        {projects.length === 0 && (
-          <div className="w-full py-16 text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400">
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
-              No projects available in this category yet.
-            </h3>
-            <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-              New enterprise showcase projects are published regularly. Please select another category or view all work.
-            </p>
-          </div>
-        )}
-
-        {/* ── Mobile Layout: Touch-Swipeable Project Slider (< 1024px) ── */}
-        {projects.length > 0 && (
-          <div className="block lg:hidden space-y-4 transition-opacity duration-300">
-            <div
-              ref={mobileSliderRef}
-              onScroll={handleMobileSliderScroll}
-              className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-3 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
-            >
-              {projects.map((project, idx) => (
-                <div
-                  key={project.id || idx}
-                  className="w-[86vw] sm:w-[75vw] max-w-[420px] shrink-0 snap-center"
-                >
-                  <Link
-                    href={project.projectUrl || '#'}
-                    className="group relative block w-full h-[360px] sm:h-[400px] rounded-[22px] overflow-hidden bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/80 shadow-md active:scale-[0.99] transition-transform"
-                    aria-label={`View project: ${project.title}`}
-                  >
-                    {/* Project Image */}
-                    <div className="absolute inset-0 w-full h-full overflow-hidden">
-                      <Image
-                        src={project.imageUrl}
-                        alt={project.altText || project.title}
-                        fill
-                        sizes="(max-width: 640px) 86vw, 420px"
-                        className="object-cover"
-                        priority={idx === 0}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    </div>
-
-                    {/* View Button (⚪ View) */}
-                    {viewButtonEnabled && (
-                      <div className="absolute top-4 right-4 z-20 pointer-events-none">
-                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/55 text-white text-xs font-medium backdrop-blur-md border border-white/20 shadow-lg">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-xs" />
-                          <span>{viewButtonLabel}</span>
+          {/* Mobile Layout: Touch-Swipeable Project Slider (< 1024px) */}
+          {projects.length > 0 && (
+            <div className="block lg:hidden space-y-4 transition-opacity duration-300">
+              <div
+                ref={mobileSliderRef}
+                onScroll={handleMobileSliderScroll}
+                className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-3 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
+              >
+                {projects.map((project, idx) => {
+                  const href = project.projectUrl || '#';
+                  const isExternal = href.startsWith('http://') || href.startsWith('https://');
+                  return (
+                    <div
+                      key={project.id || idx}
+                      className="w-[86vw] sm:w-[75vw] max-w-[420px] shrink-0 snap-center"
+                    >
+                      <Link
+                        href={href}
+                        target={isExternal ? '_blank' : undefined}
+                        rel={isExternal ? 'noopener noreferrer' : undefined}
+                        className="group relative block w-full h-[360px] sm:h-[400px] rounded-[22px] overflow-hidden bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/80 shadow-md active:scale-[0.99] transition-transform"
+                        aria-label={`View project: ${project.title}`}
+                      >
+                        {/* Project Image */}
+                        <div className="absolute inset-0 w-full h-full overflow-hidden">
+                          <Image
+                            src={project.imageUrl}
+                            alt={project.altText || project.title}
+                            fill
+                            sizes="(max-width: 640px) 86vw, 420px"
+                            className="object-cover"
+                            priority={idx === 0}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         </div>
-                      </div>
-                    )}
 
-                    {/* Project Name & Category Tag at Bottom */}
-                    <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end space-y-1">
-                      {project.category && (
-                        <div className="text-[11px] font-medium tracking-wide uppercase text-neutral-300/90">
-                          {project.category}
+                        {/* View Button (⚪ View) */}
+                        {viewButtonEnabled && (
+                          <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/55 text-white text-xs font-medium backdrop-blur-md border border-white/20 shadow-lg">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-xs" />
+                              <span>{viewButtonLabel}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Project Name & Category Tag at Bottom */}
+                        <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 z-10 pointer-events-none flex flex-col justify-end space-y-1">
+                          {project.category && (
+                            <div className="text-[11px] font-medium tracking-wide uppercase text-neutral-300/90">
+                              {project.category}
+                            </div>
+                          )}
+                          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-md">
+                            {project.title}
+                          </h3>
                         </div>
-                      )}
-                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-md">
-                        {project.title}
-                      </h3>
+                      </Link>
                     </div>
-                  </Link>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Slider Controls: Prev/Next Buttons + Dot Pagination */}
+              <div className="flex items-center justify-between pt-1 px-1">
+                {/* Dots indicator */}
+                <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] [scrollbar-width:none]">
+                  {projects.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => scrollToMobileSlide(i)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        activeMobileSlide === i
+                          ? 'w-6 bg-[#d9287c]'
+                          : 'w-2 bg-neutral-300 dark:bg-neutral-700'
+                      }`}
+                      aria-label={`Go to project ${i + 1}`}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* Mobile Slider Controls: Prev/Next Buttons + Dot Pagination */}
-            <div className="flex items-center justify-between pt-1 px-1">
-              {/* Dots indicator */}
-              <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-[65%] [scrollbar-width:none]">
-                {projects.map((_, i) => (
+                {/* Arrow Navigation */}
+                <div className="flex items-center gap-2">
                   <button
-                    key={i}
                     type="button"
-                    onClick={() => scrollToMobileSlide(i)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      activeMobileSlide === i
-                        ? 'w-6 bg-[#d9287c]'
-                        : 'w-2 bg-neutral-300 dark:bg-neutral-700'
-                    }`}
-                    aria-label={`Go to project ${i + 1}`}
-                  />
-                ))}
-              </div>
-
-              {/* Arrow Navigation */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={scrollMobilePrev}
-                  disabled={activeMobileSlide === 0}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                  aria-label="Previous project"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollMobileNext}
-                  disabled={activeMobileSlide === projects.length - 1}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                  aria-label="Next project"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                    onClick={scrollMobilePrev}
+                    disabled={activeMobileSlide === 0}
+                    className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                    aria-label="Previous project"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scrollMobileNext}
+                    disabled={activeMobileSlide === projects.length - 1}
+                    className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                    aria-label="Next project"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── Desktop Layout: Compact 2 -> 1 -> 2 Portfolio Grid Container (>= 1024px) ── */}
-        {projects.length > 0 && (
-          <div
-            className="hidden lg:grid lg:grid-cols-12 gap-3 sm:gap-4 md:gap-5 w-full transition-opacity duration-300"
-            style={{
-              perspective: threeDScrollEnabled && isDesktop && !prefersReducedMotion ? '1200px' : 'none',
-            }}
-          >
-            {projects.map((project, index) => {
-              const isFullWidth = index % 5 === 2;
-              const isLeftCard = index % 5 === 0 || index % 5 === 3;
-              const isRightCard = index % 5 === 1 || index % 5 === 4;
+          {/* Desktop Layout: Compact 2 -> 1 -> 2 Portfolio Grid Container (>= 1024px) */}
+          {projects.length > 0 && (
+            <div
+              className="hidden lg:grid lg:grid-cols-12 gap-3 sm:gap-4 md:gap-5 w-full transition-opacity duration-300"
+              style={{
+                perspective: threeDScrollEnabled && isDesktop && !prefersReducedMotion ? '1200px' : 'none',
+              }}
+            >
+              {projects.map((project, index) => {
+                const isFullWidth = index % 5 === 2;
+                const isLeftCard = index % 5 === 0 || index % 5 === 3;
+                const isRightCard = index % 5 === 1 || index % 5 === 4;
 
-              const colSpanClass = isFullWidth
-                ? 'lg:col-span-12'
-                : 'lg:col-span-6';
+                const colSpanClass = isFullWidth
+                  ? 'lg:col-span-12'
+                  : 'lg:col-span-6';
 
-              return (
-                <PortfolioCard
-                  key={project.id || index}
-                  project={project}
-                  index={index}
-                  isFullWidth={isFullWidth}
-                  isLeftCard={isLeftCard}
-                  isRightCard={isRightCard}
-                  colSpanClass={colSpanClass}
-                  hoverEffectsEnabled={hoverEffectsEnabled}
-                  viewButtonEnabled={viewButtonEnabled}
-                  viewButtonLabel={viewButtonLabel}
-                  overlayEnabled={overlayEnabled}
-                  backdropBlurEnabled={backdropBlurEnabled}
-                  imageZoomEnabled={imageZoomEnabled}
-                  threeDScrollEnabled={threeDScrollEnabled}
-                  threeDIntensity={threeDIntensity}
-                  mouseParallaxEnabled={mouseParallaxEnabled}
-                  prefersReducedMotion={prefersReducedMotion}
-                  isDesktop={isDesktop}
-                />
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <PortfolioCard
+                    key={project.id || index}
+                    project={project}
+                    index={index}
+                    isFullWidth={isFullWidth}
+                    isLeftCard={isLeftCard}
+                    isRightCard={isRightCard}
+                    colSpanClass={colSpanClass}
+                    hoverEffectsEnabled={hoverEffectsEnabled}
+                    viewButtonEnabled={viewButtonEnabled}
+                    viewButtonLabel={viewButtonLabel}
+                    overlayEnabled={overlayEnabled}
+                    backdropBlurEnabled={backdropBlurEnabled}
+                    imageZoomEnabled={imageZoomEnabled}
+                    threeDScrollEnabled={threeDScrollEnabled}
+                    threeDIntensity={threeDIntensity}
+                    mouseParallaxEnabled={mouseParallaxEnabled}
+                    prefersReducedMotion={prefersReducedMotion}
+                    isDesktop={isDesktop}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </ScrollReveal>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -629,6 +645,11 @@ function PortfolioCard({
     ? 'h-[340px] sm:h-[420px] lg:h-[460px]'
     : 'h-[320px] sm:h-[380px] lg:h-[430px]';
 
+  const href = project.projectUrl || '#';
+  const isExternal = href.startsWith('http://') || href.startsWith('https://');
+  const displayViewLabel =
+    viewButtonLabel === 'View Case Study' ? 'View' : viewButtonLabel || 'View';
+
   return (
     <div
       ref={cardRef}
@@ -646,7 +667,9 @@ function PortfolioCard({
       }}
     >
       <Link
-        href={project.projectUrl || '#'}
+        href={href}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -702,7 +725,7 @@ function PortfolioCard({
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 sm:px-4.5 sm:py-2 rounded-full bg-neutral-900/65 dark:bg-black/70 text-white text-xs sm:text-sm font-medium tracking-wide shadow-2xl border border-white/20 backdrop-blur-md whitespace-nowrap select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-xs" />
-              <span>{viewButtonLabel}</span>
+              <span>{displayViewLabel}</span>
             </div>
           </div>
         )}
@@ -712,7 +735,7 @@ function PortfolioCard({
           <div className="absolute top-4 right-4 z-20 pointer-events-none">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 text-white text-[11px] font-medium backdrop-blur-md border border-white/15">
               <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
-              <span>{viewButtonLabel}</span>
+              <span>{displayViewLabel}</span>
             </div>
           </div>
         )}

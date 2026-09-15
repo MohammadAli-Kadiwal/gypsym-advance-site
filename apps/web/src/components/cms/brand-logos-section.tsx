@@ -6,6 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { BrandLogosGrid } from './shared/brand-logos-grid';
 import { BrandLogoItem } from './shared/brand-logo-card';
+import { ScrollReveal } from '@/components/motion';
 
 export interface BrandLogosSectionProps {
   id?: string;
@@ -92,67 +93,75 @@ export function BrandLogosSection({
   const mobileCols = layout.mobileCols || 3;
 
   return (
-    <section
+    <div
       id={sectionId}
-      className="w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-transparent transition-colors duration-300 relative overflow-hidden"
+      className="w-full py-8 sm:py-10 md:py-12 bg-transparent transition-colors duration-300 relative overflow-hidden"
     >
       {/* Ambient background glow matching site theme */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[450px] bg-gradient-to-tr from-[#d9287c]/6 via-[#d9287c]/2 to-transparent blur-[140px] rounded-full pointer-events-none -z-10" />
 
-      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
         {/* ── Section Header ────────────────────────────────────────── */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12 md:mb-14 space-y-3 sm:space-y-4">
-          {eyebrow && (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#d9287c]/8 border border-[#d9287c]/20 text-xs font-bold tracking-widest text-[#d9287c] uppercase shadow-2xs">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c] animate-pulse" />
-              <span>{eyebrow}</span>
-            </div>
-          )}
+        <ScrollReveal direction="up">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12 md:mb-14 space-y-3 sm:space-y-4">
+            {eyebrow && (
+              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                <span>{eyebrow}</span>
+              </div>
+            )}
 
-          {title && (
-            <h2 className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[50px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.2] sm:leading-[1.18] whitespace-pre-line">
-              {renderTitleWithHighlight(
-                title,
-                titleHighlight,
-                'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
-              )}
-            </h2>
-          )}
+            {title && (
+              <h2 className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[50px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.2] sm:leading-[1.18] whitespace-pre-line">
+                {renderTitleWithHighlight(
+                  title,
+                  titleHighlight,
+                  'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
+                )}
+              </h2>
+            )}
 
-          {description && (
-            <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-1">
-              {description}
-            </p>
-          )}
+            {description && (
+              <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-1">
+                {description}
+              </p>
+            )}
 
-          {cta?.enabled && cta.url && (
-            <div className="pt-2">
-              <Link
-                href={cta.url}
-                target={cta.target || '_self'}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors"
-              >
-                <span>{cta.label || 'Learn More'}</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
-        </div>
+            {cta?.enabled && cta.url && (
+              <div className="pt-2">
+                <Link
+                  href={cta.url}
+                  target={cta.target || '_self'}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-semibold shadow-xs transition-colors"
+                >
+                  <span>{cta.label || 'Learn More'}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
+          </div>
+        </ScrollReveal>
 
         {/* ── Brand Logos Grid (Shared unified cards & cascading centered rows) ── */}
-        <BrandLogosGrid
-          items={uniqueItems}
-          displayMode={displayMode}
-          desktopRows={layout.desktopRows}
-          logoStyle={logoStyle}
-          logoSize={logoSize}
-          hoverEffect={hoverEffect}
-          mobileCols={mobileCols}
-        />
+        <ScrollReveal direction="up" delay={120}>
+          <BrandLogosGrid
+            items={uniqueItems}
+            displayMode={displayMode}
+            desktopRows={layout.desktopRows}
+            logoStyle={logoStyle}
+            logoSize={logoSize}
+            hoverEffect={hoverEffect}
+            mobileCols={mobileCols}
+          />
+        </ScrollReveal>
 
         {/* ── Optional Bottom Slot (e.g. Trust Metrics Ribbon) ──────── */}
-        {bottomSlot && <div className="w-full">{bottomSlot}</div>}
+        {bottomSlot && (
+          <ScrollReveal direction="up" delay={180}>
+            <div className="w-full">{bottomSlot}</div>
+          </ScrollReveal>
+        )}
       </div>
-    </section>
+    </div>
   );
 }

@@ -6,6 +6,8 @@ import { SearchModal } from '@/components/search-modal';
 import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
 import { DynamicBrandStyleTag } from '@/components/branding-provider';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
+import { GlobalWebsiteLoader, RouteProgressBar } from '@/components/motion';
+import { getHeaderData } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: {
@@ -41,17 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headerData = await getHeaderData();
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Corporation',
-    name: 'Gypsym Technology',
+    name: headerData.branding?.companyName || 'Gypsym Technology',
     url: 'https://gypsym.com',
-    logo: 'https://gypsym.com/logo.svg',
+    logo: headerData.branding?.logoLight || 'https://gypsym.com/logo.svg',
     sameAs: [
       'https://linkedin.com/company/gypsym',
       'https://twitter.com/gypsymtech',
@@ -86,6 +89,8 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col justify-between bg-[#f4f3ef] text-neutral-900 antialiased selection:bg-lime-200">
         <ThemeProvider defaultTheme="light">
           <SmoothScrollProvider>
+            <GlobalWebsiteLoader brand={headerData?.branding} />
+            <RouteProgressBar />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />

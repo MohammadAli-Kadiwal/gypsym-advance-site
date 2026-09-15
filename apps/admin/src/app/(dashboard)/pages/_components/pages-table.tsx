@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Layers, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { ChevronRight, FileText, Loader2, LayoutGrid, Briefcase } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,15 +15,46 @@ import {
 } from '@/components/ui/table';
 import type { PageData } from './types';
 
-interface PagesTableProps {
-  pageData: PageData | null;
-  loading: boolean;
-  onConfigure: () => void;
+export type PageSlug = 'home' | 'our-work';
+
+interface PageEntry {
+  slug: PageSlug;
+  title: string;
+  route: string;
+  icon: React.ReactNode;
+  layoutType: string;
+  sectionCount: number;
+  status: string;
 }
 
-export function PagesTable({ pageData, loading, onConfigure }: PagesTableProps) {
-  const displayTitle = pageData?.title || 'Home';
-  const displaySlug = pageData?.slug === 'home' ? '/' : (pageData?.slug || '/');
+interface PagesTableProps {
+  pageData: PageData | null;
+  ourWorkPageData: PageData | null;
+  loading: boolean;
+  onConfigure: (slug: PageSlug) => void;
+}
+
+export function PagesTable({ pageData, ourWorkPageData, loading, onConfigure }: PagesTableProps) {
+  const pages: PageEntry[] = [
+    {
+      slug: 'home',
+      title: 'Home',
+      route: '/',
+      icon: <LayoutGrid className="h-4 w-4" />,
+      layoutType: pageData?.layoutType || 'LANDING',
+      sectionCount: pageData?.sections?.length ?? 2,
+      status: pageData?.status || 'PUBLISHED',
+    },
+    {
+      slug: 'our-work',
+      title: 'Portfolio',
+      route: '/portfolio',
+      icon: <Briefcase className="h-4 w-4" />,
+      layoutType: ourWorkPageData?.layoutType || 'PORTFOLIO',
+      sectionCount: ourWorkPageData?.sections?.length ?? 1,
+      status: ourWorkPageData?.status || 'PUBLISHED',
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-200">
@@ -47,7 +78,7 @@ export function PagesTable({ pageData, loading, onConfigure }: PagesTableProps) 
             variant="outline"
             className="text-xs font-mono bg-blue-50/60 text-blue-700 border-blue-200"
           >
-            1 Active Page
+            {pages.length} Active Pages
           </Badge>
         </div>
       </div>
@@ -76,63 +107,67 @@ export function PagesTable({ pageData, loading, onConfigure }: PagesTableProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow
-              onClick={onConfigure}
-              className="cursor-pointer hover:bg-blue-50/40 transition-colors group"
-            >
-              <TableCell className="py-3.5">
-                <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <Layers className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {displayTitle}
+            {pages.map((page) => (
+              <TableRow
+                key={page.slug}
+                onClick={() => onConfigure(page.slug)}
+                className="cursor-pointer hover:bg-blue-50/40 transition-colors group"
+              >
+                <TableCell className="py-3.5">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      {page.icon}
                     </div>
-                    <div className="text-[11px] font-mono text-slate-400">{displaySlug}</div>
+                    <div>
+                      <div className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {page.title}
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-400">{page.route}</div>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
+                </TableCell>
 
-              <TableCell className="py-3.5">
-                <Badge
-                  variant="outline"
-                  className="text-[10px] font-mono font-medium bg-slate-100 text-slate-700"
-                >
-                  {pageData?.layoutType || 'LANDING'}
-                </Badge>
-              </TableCell>
+                <TableCell className="py-3.5">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono font-medium bg-slate-100 text-slate-700"
+                  >
+                    {page.layoutType}
+                  </Badge>
+                </TableCell>
 
-              <TableCell className="py-3.5">
-                <span className="inline-flex items-center text-xs font-medium text-slate-700">
-                  {pageData?.sections?.length ?? 2} Live Sections
-                </span>
-              </TableCell>
+                <TableCell className="py-3.5">
+                  <span className="inline-flex items-center text-xs font-medium text-slate-700">
+                    {page.sectionCount} Live Sections
+                  </span>
+                </TableCell>
 
-              <TableCell className="py-3.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  {pageData?.status || 'PUBLISHED'}
-                </span>
-              </TableCell>
+                <TableCell className="py-3.5">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    {page.status}
+                  </span>
+                </TableCell>
 
-              <TableCell className="py-3.5 text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onConfigure();
-                  }}
-                  className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
-                >
-                  <span>Configure Sections</span>
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </TableCell>
-            </TableRow>
+                <TableCell className="py-3.5 text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onConfigure(page.slug);
+                    }}
+                    className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                  >
+                    <span>Configure Sections</span>
+                    <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Card>
     </div>
   );
 }
+

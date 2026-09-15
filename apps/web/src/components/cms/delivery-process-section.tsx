@@ -6,6 +6,7 @@ import gsap from 'gsap';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ScrollReveal } from '@/components/motion';
 
 interface ProcessStep {
   id?: string;
@@ -193,44 +194,46 @@ export function DeliveryProcessSection({ section }: DeliveryProcessSectionProps)
   const trackHeightClass =
     stickyScrollEnabled && !prefersReducedMotion
       ? steps.length >= 4
-        ? 'lg:h-[320vh] h-auto'
+        ? 'lg:h-[180vh] h-auto'
         : steps.length === 3
-        ? 'lg:h-[260vh] h-auto'
-        : 'lg:h-[200vh] h-auto'
+        ? 'lg:h-[150vh] h-auto'
+        : 'lg:h-[120vh] h-auto'
       : 'h-auto';
 
   return (
-    <section
+    <div
       ref={containerRef}
       className={`relative w-full ${trackHeightClass}`}
     >
       <div
         className={`${
           stickyScrollEnabled && !prefersReducedMotion
-            ? 'lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden relative py-8 sm:py-10 md:py-12'
+            ? 'lg:sticky lg:top-12 xl:top-16 relative py-8 sm:py-10 md:py-12'
             : 'relative py-8 sm:py-10 md:py-12'
         } flex flex-col justify-center`}
       >
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-3.5 mb-8 sm:mb-10">
-            {eyebrow && (
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                <span>{eyebrow}</span>
-              </div>
-            )}
+          <ScrollReveal direction="up">
+            <div className="text-center max-w-3xl mx-auto space-y-3.5 mb-8 sm:mb-10">
+              {eyebrow && (
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>{eyebrow}</span>
+                </div>
+              )}
 
-            <h2 className="text-3xl sm:text-4xl lg:text-[50px] xl:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line">
-              <span className="block">{renderTitleWithHighlight(title, titleHighlight)}</span>
-            </h2>
+              <h2 className="text-3xl sm:text-4xl lg:text-[50px] xl:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line">
+                <span className="block">{renderTitleWithHighlight(title, titleHighlight)}</span>
+              </h2>
 
-            {description && (
-              <p className="text-sm sm:text-base lg:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-0.5">
-                {description}
-              </p>
-            )}
-          </div>
+              {description && (
+                <p className="text-sm sm:text-base lg:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-0.5">
+                  {description}
+                </p>
+              )}
+            </div>
+          </ScrollReveal>
 
           {/* Cards Flex Container */}
           <div className="w-full">
@@ -459,6 +462,6 @@ export function DeliveryProcessSection({ section }: DeliveryProcessSectionProps)
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

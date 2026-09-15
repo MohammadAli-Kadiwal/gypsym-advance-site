@@ -6,6 +6,8 @@ import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 
 import { PagesTable } from './_components/pages-table';
+import type { PageSlug } from './_components/pages-table';
+import { OurWorkStudio } from './_components/our-work-studio';
 import { SectionsHeader } from './_components/sections-header';
 import { HeroSettings } from './_components/hero-settings';
 import { MetricsSettings } from './_components/metrics-settings';
@@ -13,6 +15,7 @@ import { RevenueExperimentSettings } from './_components/revenue-experiment-sett
 import { WhatWeChangeSettings } from './_components/what-we-change-settings';
 import { PortfolioSettings } from './_components/portfolio-settings';
 import { DeliveryProcessSettings } from './_components/delivery-process-settings';
+import { CapabilitiesSettings } from './_components/capabilities-settings';
 import { ClientTestimonialsSettings } from './_components/client-testimonials-settings';
 import { ClientsSettings } from './_components/clients-settings';
 import { PartnersSettings } from './_components/partners-settings';
@@ -26,6 +29,7 @@ import type {
   WhatWeChangeSection,
   PortfolioSection,
   DeliveryProcessSection,
+  CapabilitiesSection,
   ClientTestimonialsSection,
   ClientsSection,
   PartnersSection,
@@ -38,6 +42,7 @@ import type {
   WhatWeChangePayload,
   PortfolioPayload,
   DeliveryProcessPayload,
+  CapabilitiesPayload,
   ClientTestimonialsPayload,
   ClientsPayload,
   PartnersPayload,
@@ -65,8 +70,8 @@ export default function PagesManagementPage() {
   // Hydration safety mount guard
   const [mounted, setMounted] = React.useState(false);
 
-  // View state: list of pages or 4-section studio
-  const [viewMode, setViewMode] = React.useState<'list' | 'sections'>('list');
+  // View state: list, home sections studio, or our-work studio
+  const [viewMode, setViewMode] = React.useState<'list' | 'sections' | 'our-work'>('list');
 
   // Active section tab
   const [activeTab, setActiveTab] = React.useState<ActiveTab>('hero');
@@ -75,6 +80,7 @@ export default function PagesManagementPage() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [pageData, setPageData] = React.useState<PageData | null>(null);
+  const [ourWorkPageData, setOurWorkPageData] = React.useState<PageData | null>(null);
 
   const [heroSection, setHeroSection] = React.useState<HeroSection | null>(null);
   const [metricsSection, setMetricsSection] = React.useState<MetricsSection | null>(null);
@@ -82,6 +88,7 @@ export default function PagesManagementPage() {
   const [whatWeChangeSection, setWhatWeChangeSection] = React.useState<WhatWeChangeSection | null>(null);
   const [portfolioSection, setPortfolioSection] = React.useState<PortfolioSection | null>(null);
   const [deliveryProcessSection, setDeliveryProcessSection] = React.useState<DeliveryProcessSection | null>(null);
+  const [capabilitiesSection, setCapabilitiesSection] = React.useState<CapabilitiesSection | null>(null);
   const [clientTestimonialsSection, setClientTestimonialsSection] = React.useState<ClientTestimonialsSection | null>(null);
   const [clientsSection, setClientsSection] = React.useState<ClientsSection | null>(null);
   const [partnersSection, setPartnersSection] = React.useState<PartnersSection | null>(null);
@@ -92,64 +99,80 @@ export default function PagesManagementPage() {
   const loadBackendData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApi<PageData>('/pages/home');
-      if (res) {
-        setPageData(res);
+      // Load home + our-work pages in parallel
+      const [res, ourWorkRes] = await Promise.all([
+        fetchApi<PageData>('/pages/home'),
+        fetchApi<PageData>('/pages/our-work').catch(() => null),
+      ]);
 
-        const heroRaw = res.sections?.find(
+      if (ourWorkRes) {
+        setOurWorkPageData(ourWorkRes);
+      }
+
+      const res2 = res; // alias for clarity below
+      if (res2) {
+        setPageData(res2);
+
+        const heroRaw = res2.sections?.find(
           (s) => s.componentType === 'HERO' || s.sectionIdentifier === 'hero-banner'
         );
-        const metricsRaw = res.sections?.find(
+        const metricsRaw = res2.sections?.find(
           (s) =>
             s.componentType === 'METRICS_BANNER' ||
             s.sectionIdentifier === 'verified-results-metrics'
         );
-        const croRaw = res.sections?.find(
+        const croRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'cro-revenue-experiment' ||
             s.componentType === 'CTA_STRIP'
         );
-        const whatWeChangeRaw = res.sections?.find(
+        const whatWeChangeRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'what-we-actually-change' ||
             s.componentType === 'FEATURE_GRID'
         );
-        const portfolioRaw = res.sections?.find(
+        const portfolioRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'portfolio-showcase' ||
             s.sectionIdentifier === 'our-work' ||
             s.sectionIdentifier === 'portfolio'
         );
-        const deliveryProcessRaw = res.sections?.find(
+        const deliveryProcessRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'delivery-process' ||
             s.componentType === 'TABBED_SOLUTIONS'
         );
-        const clientTestimonialsRaw = res.sections?.find(
+        const capabilitiesRaw = res2.sections?.find(
+          (s) =>
+            s.sectionIdentifier === 'our-capabilities' ||
+            s.sectionIdentifier === 'capabilities' ||
+            s.componentType === 'CAPABILITIES'
+        );
+        const clientTestimonialsRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'client-testimonials' ||
             s.componentType === 'TESTIMONIAL_SLIDER'
         );
-        const clientsRaw = res.sections?.find(
+        const clientsRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'clients-trusted-by' ||
             s.sectionIdentifier === 'trusted-by' ||
             (s.componentType === 'LOGO_CLOUD' && s.sectionIdentifier !== 'homepage-partners')
         );
-        const partnersRaw = res.sections?.find(
+        const partnersRaw = res2.sections?.find(
           (s) =>
             s.sectionIdentifier === 'homepage-partners' ||
             s.sectionIdentifier === 'our-partners' ||
             s.sectionIdentifier === 'partners' ||
             s.componentType === 'PARTNERS'
         );
-        const ctaRaw = res.sections?.find(
+        const ctaRaw = res2.sections?.find(
           (s) =>
             s.componentType === 'CTA' ||
             s.sectionIdentifier === 'homepage-cta' ||
             s.sectionIdentifier === 'cta-banner'
         );
-        const contactRaw = res.sections?.find(
+        const contactRaw = res2.sections?.find(
           (s) =>
             s.componentType === 'CONTACT' ||
             s.sectionIdentifier === 'contact-inquiry' ||
@@ -207,6 +230,51 @@ export default function PagesManagementPage() {
             componentType: deliveryProcessRaw.componentType,
             isActive: deliveryProcessRaw.isActive,
             contentPayload: deliveryProcessRaw.contentPayload as DeliveryProcessPayload,
+          });
+        }
+
+        if (capabilitiesRaw) {
+          setCapabilitiesSection({
+            id: capabilitiesRaw.id,
+            componentType: capabilitiesRaw.componentType,
+            isActive: capabilitiesRaw.isActive,
+            contentPayload: capabilitiesRaw.contentPayload as CapabilitiesPayload,
+          });
+        } else {
+          setCapabilitiesSection({
+            id: 'local-capabilities',
+            componentType: 'CAPABILITIES',
+            isActive: true,
+            contentPayload: {
+              eyebrow: 'OUR CAPABILITIES',
+              title: 'Engineered with modern tools for scalable digital products',
+              titleHighlight: 'engineering',
+              description:
+                'We combine world-class design systems with robust, high-performance engineering. Our multidisciplinary team leverages the modern web ecosystem to build digital experiences that load instantly, convert visitors, and scale seamlessly.',
+              image: {
+                url: '/images/capabilities-engineer.jpg',
+                alt: 'Senior Software & Solutions Engineer',
+                badgeText: 'Enterprise-Grade Execution',
+              },
+              technologies: [
+                { name: 'Figma', category: 'Design Systems' },
+                { name: 'Webflow', category: 'Visual Development' },
+                { name: 'Relume', category: 'Component Library' },
+                { name: 'Midjourney', category: 'Generative Visuals' },
+                { name: 'Framer', category: 'Interactivity & Motion' },
+                { name: 'React.js', category: 'UI Engineering' },
+                { name: 'NEXT.js', category: 'Full-Stack Architecture' },
+                { name: 'node.js', category: 'High-Throughput Runtime' },
+                { name: 'Tailwind css', category: 'Utility Design System' },
+              ],
+              highlights: [
+                { title: 'Sub-second load times', description: 'Engineered for 95+ Google Lighthouse scores' },
+                { title: 'Pixel-perfect fidelity', description: 'Zero compromise from Figma canvas to production' },
+                { title: 'Scalable architecture', description: 'TypeScript, modular APIs & headless CMS' },
+              ],
+              ctaText: 'Consult With Engineering',
+              ctaUrl: '#contact-inquiry',
+            },
           });
         }
 
@@ -407,6 +475,7 @@ export default function PagesManagementPage() {
   const whatWeChangePayload: WhatWeChangePayload = whatWeChangeSection?.contentPayload ?? {};
   const portfolioPayload: PortfolioPayload = portfolioSection?.contentPayload ?? {};
   const deliveryProcessPayload: DeliveryProcessPayload = deliveryProcessSection?.contentPayload ?? {};
+  const capabilitiesPayload: CapabilitiesPayload = capabilitiesSection?.contentPayload ?? {};
   const clientsPayload: ClientsPayload = clientsSection?.contentPayload ?? {};
   const clientTestimonialsPayload: ClientTestimonialsPayload = clientTestimonialsSection?.contentPayload ?? {};
   const partnersPayload: PartnersPayload = partnersSection?.contentPayload ?? {};
@@ -515,6 +584,22 @@ export default function PagesManagementPage() {
           });
         }
         notify.success('Delivery process updated successfully.');
+      } else if (activeTab === 'capabilities') {
+        if (!capabilitiesPayload.title?.trim()) {
+          notify.error('Validation: Capabilities headline cannot be empty.');
+          setSaving(false);
+          return;
+        }
+        if (capabilitiesSection && !capabilitiesSection.id.startsWith('local-')) {
+          await fetchApi(`/sections/${capabilitiesSection.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: capabilitiesSection.contentPayload,
+              isActive: capabilitiesSection.isActive,
+            }),
+          });
+        }
+        notify.success('Our Capabilities settings saved and synchronized.');
       } else if (activeTab === 'clientTestimonials') {
         if (!clientTestimonialsPayload.title?.trim()) {
           notify.error('Validation: Section title cannot be empty.');
@@ -657,15 +742,30 @@ export default function PagesManagementPage() {
     );
   }
 
+  // ── Dispatch configure action based on selected page
+  const handleConfigure = (slug: PageSlug) => {
+    if (slug === 'our-work') {
+      setViewMode('our-work');
+    } else {
+      setViewMode('sections');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-2 space-y-6">
       {/* ── LIST VIEW ────────────────────────────────────────────────────── */}
       {viewMode === 'list' && (
         <PagesTable
           pageData={pageData}
+          ourWorkPageData={ourWorkPageData}
           loading={loading}
-          onConfigure={() => setViewMode('sections')}
+          onConfigure={handleConfigure}
         />
+      )}
+
+      {/* ── OUR WORK STUDIO ──────────────────────────────────────────────── */}
+      {viewMode === 'our-work' && (
+        <OurWorkStudio onBack={() => setViewMode('list')} />
       )}
 
       {/* ── SECTIONS STUDIO ──────────────────────────────────────────────── */}
@@ -673,8 +773,15 @@ export default function PagesManagementPage() {
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           <SectionsHeader
             saving={saving}
+            loading={loading}
+            pageTitle="Home"
+            pageRoute="/"
+            layoutLabel="LANDING PAGE"
+            sectionCount={pageData?.sections?.filter((s) => s.isActive).length}
+            status={pageData?.status}
             onBack={() => setViewMode('list')}
             onSave={handleSave}
+            onRefresh={loadBackendData}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -685,7 +792,7 @@ export default function PagesManagementPage() {
                 onValueChange={(v) => setActiveTab(v as ActiveTab)}
                 className="w-full space-y-4"
               >
-                <TabsList className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
+                <TabsList className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1">
                   <TabsTrigger
                     value="hero"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
@@ -723,34 +830,40 @@ export default function PagesManagementPage() {
                     6. Process
                   </TabsTrigger>
                   <TabsTrigger
+                    value="capabilities"
+                    className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
+                  >
+                    7. Stack
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="clients"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    7. Clients
+                    8. Clients
                   </TabsTrigger>
                   <TabsTrigger
                     value="clientTestimonials"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    8. Reviews
+                    9. Reviews
                   </TabsTrigger>
                   <TabsTrigger
                     value="partners"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    9. Partners
+                    10. Partners
                   </TabsTrigger>
                   <TabsTrigger
                     value="contact"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    10. Contact
+                    11. Contact
                   </TabsTrigger>
                   <TabsTrigger
                     value="cta"
                     className="rounded-xl py-2 px-1 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all text-center"
                   >
-                    11. CTA
+                    12. CTA
                   </TabsTrigger>
                 </TabsList>
 
@@ -838,7 +951,21 @@ export default function PagesManagementPage() {
                   )}
                 </TabsContent>
 
-                {/* 7. Clients Tab */}
+                {/* 7. Capabilities Tab */}
+                <TabsContent value="capabilities" className="focus-visible:outline-none">
+                  {capabilitiesSection ? (
+                    <CapabilitiesSettings
+                      section={capabilitiesSection}
+                      onChange={setCapabilitiesSection}
+                    />
+                  ) : (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                      {loading ? 'Loading Capabilities section…' : 'Capabilities section not found in backend.'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 8. Clients Tab */}
                 <TabsContent value="clients" className="focus-visible:outline-none">
                   {clientsSection ? (
                     <ClientsSettings
@@ -920,6 +1047,7 @@ export default function PagesManagementPage() {
                 whatWeChangePayload={whatWeChangePayload}
                 portfolioPayload={portfolioPayload}
                 deliveryProcessPayload={deliveryProcessPayload}
+                capabilitiesPayload={capabilitiesPayload}
                 clientTestimonialsPayload={clientTestimonialsPayload}
                 clientsPayload={clientsPayload}
                 partnersPayload={partnersPayload}

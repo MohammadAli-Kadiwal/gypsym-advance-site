@@ -15,6 +15,7 @@ import type {
   PartnersPayload,
   ContactPayload,
   CtaPayload,
+  CapabilitiesPayload,
 } from './types';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
@@ -26,6 +27,7 @@ export type ActiveTab =
   | 'whatWeChange'
   | 'portfolio'
   | 'deliveryProcess'
+  | 'capabilities'
   | 'clients'
   | 'clientTestimonials'
   | 'partners'
@@ -40,6 +42,7 @@ interface SectionPreviewProps {
   whatWeChangePayload?: WhatWeChangePayload;
   portfolioPayload?: PortfolioPayload;
   deliveryProcessPayload?: DeliveryProcessPayload;
+  capabilitiesPayload?: CapabilitiesPayload;
   clientTestimonialsPayload?: ClientTestimonialsPayload;
   clientsPayload?: ClientsPayload;
   partnersPayload?: PartnersPayload;
@@ -49,23 +52,49 @@ interface SectionPreviewProps {
   metricsHeadlineText: string;
 }
 
+function findPreviewHighlightTarget(title: string, highlightWord?: string): string | null {
+  if (!highlightWord || !highlightWord.trim()) return null;
+  const trimmed = highlightWord.trim();
+  if (title.toLowerCase().includes(trimmed.toLowerCase())) {
+    return trimmed;
+  }
+  const words = title.split(/\s+/).map((w) => w.replace(/[^\w]/g, ''));
+  const hLower = trimmed.toLowerCase();
+  for (const w of words) {
+    if (!w) continue;
+    const wLower = w.toLowerCase();
+    let commonLen = 0;
+    while (
+      commonLen < wLower.length &&
+      commonLen < hLower.length &&
+      wLower[commonLen] === hLower[commonLen]
+    ) {
+      commonLen++;
+    }
+    if (commonLen >= 4 && commonLen >= Math.min(wLower.length, hLower.length) * 0.55) {
+      return w;
+    }
+  }
+  return null;
+}
+
 function renderPreviewTitleWithHighlight(
   title: string,
   highlightWord?: string
 ): React.ReactNode {
   if (!title) return null;
-  if (!highlightWord || !highlightWord.trim() || !title.toLowerCase().includes(highlightWord.trim().toLowerCase())) {
+  const matchedTarget = findPreviewHighlightTarget(title, highlightWord);
+  if (!matchedTarget) {
     return title;
   }
 
-  const trimmed = highlightWord.trim();
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = matchedTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${escaped})`, 'gi');
   const parts = title.split(regex);
 
   return parts.map((part, i) =>
     regex.test(part) ? (
-      <span key={i} className="text-[#d9287c] font-extrabold underline decoration-[#d9287c]/30">
+      <span key={i} className="font-serif italic font-normal text-white text-[1.12em] px-0.5 inline-block">
         {part}
       </span>
     ) : (
@@ -82,6 +111,7 @@ export function SectionPreview({
   whatWeChangePayload,
   portfolioPayload,
   deliveryProcessPayload,
+  capabilitiesPayload,
   clientTestimonialsPayload,
   clientsPayload,
   partnersPayload,
@@ -99,6 +129,7 @@ export function SectionPreview({
   const showWhatWeChange = activeTab === 'whatWeChange' || previewScope === 'full';
   const showPortfolio = activeTab === 'portfolio' || previewScope === 'full';
   const showDeliveryProcess = activeTab === 'deliveryProcess' || previewScope === 'full';
+  const showCapabilities = activeTab === 'capabilities' || previewScope === 'full';
   const showClients = activeTab === 'clients' || previewScope === 'full';
   const showClientTestimonials = activeTab === 'clientTestimonials' || previewScope === 'full';
   const showPartners = activeTab === 'partners' || previewScope === 'full';
@@ -209,7 +240,7 @@ export function SectionPreview({
               <div className="h-2 w-2 rounded-full bg-emerald-400" />
             </div>
             <div className="bg-slate-100 rounded-md px-3 py-0.5 text-slate-500 font-mono text-[9px] truncate max-w-[180px]">
-              developios.com
+              gypsym.com
             </div>
             <div className="h-2 w-2" />
           </div>
@@ -545,6 +576,66 @@ export function SectionPreview({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* 6.5 OUR CAPABILITIES PREVIEW (Dark Green Card) */}
+            {showCapabilities && (
+              <div className="p-1 sm:p-1.5 bg-[#f4f3ef]">
+                <div
+                  className={`rounded-[18px] sm:rounded-[22px] ${
+                    capabilitiesPayload?.backgroundColor ? '' : 'bg-gradient-to-br from-[#064e42] via-[#053d34] to-[#032a24]'
+                  } p-3 sm:p-4 border border-emerald-500/25 text-white shadow-md space-y-3`}
+                  style={capabilitiesPayload?.backgroundColor ? { background: capabilitiesPayload.backgroundColor } : undefined}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-[7.5px] font-bold text-[#d9287c] uppercase tracking-wider">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
+                      <span>{capabilitiesPayload?.eyebrow || 'OUR CAPABILITIES'}</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    {/* Left: Clean Photo (no badge) */}
+                    <div className="sm:col-span-4 relative rounded-xl overflow-hidden aspect-[4/3] sm:aspect-[4/5] border border-emerald-400/20 bg-emerald-950">
+                      <img
+                        src={capabilitiesPayload?.image?.url || '/images/capabilities-engineer.jpg'}
+                        alt={capabilitiesPayload?.image?.alt || 'Engineer'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Right: Title & 3x3 tech logos preview (page bg) */}
+                    <div className="sm:col-span-8 space-y-2">
+                      <h4 className="text-[12px] font-bold text-white leading-snug">
+                        {renderPreviewTitleWithHighlight(
+                          capabilitiesPayload?.title || 'Engineered with modern tools for scalable digital products',
+                          capabilitiesPayload?.titleHighlight || 'Engineered'
+                        )}
+                      </h4>
+                      <p className="text-[7.5px] text-emerald-100/80 line-clamp-2 leading-tight">
+                        {capabilitiesPayload?.description || 'We combine world-class design systems with robust, high-performance engineering.'}
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        {(capabilitiesPayload?.technologies || [
+                          { name: 'Figma' },
+                          { name: 'Webflow' },
+                          { name: 'Relume' },
+                          { name: 'Midjourney' },
+                          { name: 'Framer' },
+                          { name: 'React.js' },
+                          { name: 'NEXT.js' },
+                          { name: 'node.js' },
+                          { name: 'Tailwind css' },
+                        ]).map((t, tIdx) => (
+                          <div key={tIdx} className="bg-[#f4f3ef] border border-white/20 rounded-lg p-1.5 flex items-center justify-center shadow-xs">
+                            <span className="text-[7px] font-bold text-neutral-800 block truncate">{t.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

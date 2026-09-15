@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PageSectionDto, ClientTestimonialsPayload, VideoTestimonialDto, TextTestimonialDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { Play, Star, X, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ScrollReveal, StaggerContainer, RevealItem, AnimatedCounter } from '@/components/motion';
 
 interface ClientTestimonialsSectionProps {
   section: PageSectionDto;
@@ -143,118 +144,125 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
   }, [activeVideo]);
 
   return (
-    <section
+    <div
       id={section.sectionIdentifier || 'client-testimonials'}
       aria-labelledby={`heading-${section.id}`}
       className="w-full py-8 sm:py-10 md:py-12 transition-colors"
     >
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 space-y-8 sm:space-y-10">
         {/* ── SECTION HEADER & RATING SUMMARY ─────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          {/* Left Column: Eyebrow, Main Headline & Description */}
-          <div className="max-w-3xl space-y-3.5 text-left">
-            {eyebrow && (
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                <span>{eyebrow}</span>
+        <ScrollReveal direction="up">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            {/* Left Column: Eyebrow, Main Headline & Description */}
+            <div className="max-w-3xl space-y-3.5 text-left">
+              {eyebrow && (
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>{eyebrow}</span>
+                </div>
+              )}
+
+              <h2
+                id={`heading-${section.id}`}
+                className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line"
+              >
+                {renderTitleWithHighlight(title, titleHighlight)}
+              </h2>
+
+              {description && (
+                <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl pt-0.5">
+                  {description}
+                </p>
+              )}
+            </div>
+
+            {/* Right Column: Dynamic Rating Summary Badge */}
+            {ratingSummary && ratingSummary.enabled !== false && (
+              <div className="shrink-0 self-start md:self-auto">
+                <div className="bg-white dark:bg-card border border-neutral-200/80 dark:border-border rounded-2xl p-4 sm:p-5 shadow-xs flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
+                    <AnimatedCounter
+                      value={ratingSummary.ratingValue}
+                      decimals={1}
+                      duration={1.6}
+                    />
+                    <Star className="w-6 h-6 fill-amber-400 text-amber-400 shrink-0" aria-hidden="true" />
+                  </div>
+                  <div className="border-l border-neutral-200 dark:border-neutral-800 pl-3.5 text-left space-y-0.5">
+                    <span className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 block leading-tight">
+                      {ratingSummary.reviewCountText}
+                    </span>
+                    {ratingSummary.badgeText && (
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400 block">
+                        {ratingSummary.badgeText}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-
-            <h2
-              id={`heading-${section.id}`}
-              className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line"
-            >
-              {renderTitleWithHighlight(title, titleHighlight)}
-            </h2>
-
-            {description && (
-              <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl pt-0.5">
-                {description}
-              </p>
             )}
           </div>
-
-          {/* Right Column: Dynamic Rating Summary Badge */}
-          {ratingSummary && ratingSummary.enabled !== false && (
-            <div className="shrink-0 self-start md:self-auto">
-              <div className="bg-white dark:bg-card border border-neutral-200/80 dark:border-border rounded-2xl p-4 sm:p-5 shadow-xs flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
-                  <span>{ratingSummary.ratingValue.toFixed(1)}</span>
-                  <Star className="w-6 h-6 fill-amber-400 text-amber-400 shrink-0" aria-hidden="true" />
-                </div>
-                <div className="border-l border-neutral-200 dark:border-neutral-800 pl-3.5 text-left space-y-0.5">
-                  <span className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 block leading-tight">
-                    {ratingSummary.reviewCountText}
-                  </span>
-                  {ratingSummary.badgeText && (
-                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400 block">
-                      {ratingSummary.badgeText}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        </ScrollReveal>
 
         {/* ── VIDEO TESTIMONIALS ──────────────────────────────────────────────── */}
         {videos.length > 0 && (
           <div>
             {/* DESKTOP VIEW: 3-Card Grid */}
-            <div className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
+            <StaggerContainer preset="fast" className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
               {videos.map((vid) => (
-                <div
-                  key={vid.id}
-                  className="group relative aspect-[3/4] rounded-[28px] overflow-hidden bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-sm cursor-pointer"
-                  onClick={() => setActiveVideo(vid)}
-                >
-                  {/* Video Media: Autoplay loop without voice or fallback poster */}
-                  {vid.videoUrl && autoplayVideos ? (
-                    <video
-                      src={vid.videoUrl}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      poster={vid.thumbnailUrl}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
-                    />
-                  ) : vid.thumbnailUrl ? (
-                    <Image
-                      src={vid.thumbnailUrl}
-                      alt={`${vid.clientName} - ${vid.company}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : null}
+                <RevealItem key={vid.id}>
+                  <div
+                    className="group relative aspect-[3/4] rounded-[28px] overflow-hidden bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-sm cursor-pointer"
+                    onClick={() => setActiveVideo(vid)}
+                  >
+                    {/* Video Media: Autoplay loop without voice or fallback poster */}
+                    {vid.videoUrl && autoplayVideos ? (
+                      <video
+                        src={vid.videoUrl}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        poster={vid.thumbnailUrl}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+                      />
+                    ) : vid.thumbnailUrl ? (
+                      <Image
+                        src={vid.thumbnailUrl}
+                        alt={`${vid.clientName} - ${vid.company}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : null}
 
-                  {/* Subtle Gradient Scrim */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    {/* Subtle Gradient Scrim */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
 
-                  {/* Centered Play Button */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white transition-all duration-200"
-                      aria-label={`Play video testimonial from ${vid.clientName}`}
-                    >
-                      <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-neutral-900 ml-1 text-neutral-900" aria-hidden="true" />
+                    {/* Centered Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white transition-all duration-200"
+                        aria-label={`Play video testimonial from ${vid.clientName}`}
+                      >
+                        <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-neutral-900 ml-1 text-neutral-900" aria-hidden="true" />
+                      </div>
+                    </div>
+
+                    {/* Bottom Card Content: Client Name & Company */}
+                    <div className="absolute bottom-5 left-5 right-5 text-left text-white pointer-events-none">
+                      <h3 className="text-base sm:text-lg font-bold drop-shadow-md leading-tight">
+                        {vid.clientName}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-white/85 font-medium drop-shadow-sm mt-0.5">
+                        {vid.company}
+                        {vid.location ? ` · ${vid.location}` : ''}
+                      </p>
                     </div>
                   </div>
-
-                  {/* Bottom Card Content: Client Name & Company */}
-                  <div className="absolute bottom-5 left-5 right-5 text-left text-white pointer-events-none">
-                    <h3 className="text-base sm:text-lg font-bold drop-shadow-md leading-tight">
-                      {vid.clientName}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-white/85 font-medium drop-shadow-sm mt-0.5">
-                      {vid.company}
-                      {vid.location ? ` · ${vid.location}` : ''}
-                    </p>
-                  </div>
-                </div>
+                </RevealItem>
               ))}
-            </div>
+            </StaggerContainer>
 
             {/* MOBILE VIEW: Touch Swipeable Horizontal Slider */}
             <div className="block md:hidden space-y-3">
@@ -364,8 +372,9 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
 
         {/* ── TEXT TESTIMONIALS: FEATURED + GRID ─────────────────────────────── */}
         {testimonials.length > 0 && (
-          <div>
-            {/* DESKTOP VIEW: Unified 4-Column Bento Grid matching reference */}
+          <ScrollReveal direction="up" delay={100}>
+            <div>
+              {/* DESKTOP VIEW: Unified 4-Column Bento Grid matching reference */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 items-stretch">
               {/* Featured Testimonial Card (Spans 2 columns and 2 rows on lg screen) */}
               {featuredTestimonial && (
@@ -718,6 +727,7 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
               )}
             </div>
           </div>
+        </ScrollReveal>
         )}
 
         {/* ── BOTTOM TRUST & CTA BAR ─────────────────────────────────────────── */}
@@ -728,32 +738,34 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
             : [rawStatements];
 
           return (
-            <div className="rounded-[20px] sm:rounded-[28px] bg-[#fcf2f6] dark:bg-pink-950/30 border border-[#fae2ec] dark:border-pink-900/40 px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-3.5 sm:gap-4">
-              {/* Responsive Statements List */}
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 sm:gap-x-4 gap-y-2 text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 text-center sm:text-left">
-                {statementList.map((stmt, idx) => (
-                  <div key={idx} className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#d9127b] shrink-0" aria-hidden="true" />
-                    <span>{stmt}</span>
-                    {idx < statementList.length - 1 && (
-                      <span className="hidden sm:inline-block text-neutral-300 dark:text-neutral-700 ml-2" aria-hidden="true">
-                        ·
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+            <ScrollReveal direction="up" delay={150}>
+              <div className="rounded-[20px] sm:rounded-[28px] bg-[#fcf2f6] dark:bg-pink-950/30 border border-[#fae2ec] dark:border-pink-900/40 px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-3.5 sm:gap-4">
+                {/* Responsive Statements List */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 sm:gap-x-4 gap-y-2 text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 text-center sm:text-left">
+                  {statementList.map((stmt, idx) => (
+                    <div key={idx} className="inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#d9127b] shrink-0" aria-hidden="true" />
+                      <span>{stmt}</span>
+                      {idx < statementList.length - 1 && (
+                        <span className="hidden sm:inline-block text-neutral-300 dark:text-neutral-700 ml-2" aria-hidden="true">
+                          ·
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
-              {bottomTrustBar.ctaLabel && (
-                <Link
-                  href={bottomTrustBar.ctaUrl || '#contact'}
-                  className="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#d9127b] hover:text-[#b00e63] dark:text-pink-400 hover:underline transition-colors mt-0.5 sm:mt-0"
-                >
-                  <span>{bottomTrustBar.ctaLabel}</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-              )}
-            </div>
+                {bottomTrustBar.ctaLabel && (
+                  <Link
+                    href={bottomTrustBar.ctaUrl || '#contact'}
+                    className="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#d9127b] hover:text-[#b00e63] dark:text-pink-400 hover:underline transition-colors mt-0.5 sm:mt-0"
+                  >
+                    <span>{bottomTrustBar.ctaLabel}</span>
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Link>
+                )}
+              </div>
+            </ScrollReveal>
           );
         })()}
       </div>
@@ -796,6 +808,6 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

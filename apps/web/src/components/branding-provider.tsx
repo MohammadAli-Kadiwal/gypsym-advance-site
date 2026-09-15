@@ -27,7 +27,7 @@ export interface BrandTokens {
 
 // 1. Design-System Sensible Defaults (Zero-Breakage Fallback)
 export const DEFAULT_BRAND_TOKENS: BrandTokens = {
-  companyName: 'Developios',
+  companyName: 'Gypsym',
   defaultTheme: 'dark',
   logoLightUrl: '/logo-light.svg',
   logoDarkUrl: '/logo-dark.svg',

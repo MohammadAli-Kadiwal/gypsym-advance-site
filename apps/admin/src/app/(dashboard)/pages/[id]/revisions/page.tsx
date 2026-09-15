@@ -90,8 +90,8 @@ export default function PageRevisionsView() {
       <div className="flex items-center justify-between border-b border-border/50 pb-4">
         <div className="flex items-center space-x-3">
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/pages/${pageId}/builder`}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
+            <Link href={`/pages/${pageId}/builder`} className="inline-flex items-center gap-1">
+              <ArrowLeft className="h-4 w-4" />
               <span>Back to Builder</span>
             </Link>
           </Button>

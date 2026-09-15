@@ -35,7 +35,7 @@ export function FooterView({ navigation, brand }: FooterViewProps) {
     return getResolvedLogo(brand?.logoLight, brand?.logoDark);
   });
   const [liveBrandName, setLiveBrandName] = React.useState<string>(() => {
-    return brand?.companyName || 'Developios';
+    return brand?.companyName || 'Gypsym';
   });
   const [imgError, setImgError] = React.useState(false);
 

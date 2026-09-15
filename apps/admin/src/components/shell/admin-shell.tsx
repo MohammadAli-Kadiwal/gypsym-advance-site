@@ -24,6 +24,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <NotificationProvider>
+      {/* Toast renders at root level — outside overflow-hidden so fixed positioning works correctly */}
+      <ToastContainer />
       <div className="flex h-screen overflow-hidden bg-[#f4f6fa] text-slate-800 antialiased">
         {/* Collapsible Workspace Sidebar */}
         <Sidebar />
@@ -35,9 +37,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {children}
           </main>
         </div>
-
-        {/* Single Global Toast Notification Container */}
-        <ToastContainer />
       </div>
     </NotificationProvider>
   );

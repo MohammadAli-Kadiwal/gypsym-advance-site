@@ -1,6 +1,6 @@
-import * as React from 'react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { getSectionComponent } from './section-registry';
+import { ScrollReveal } from '@/components/motion';
 
 interface SectionRendererProps {
   sections?: PageSectionDto[];
@@ -38,18 +38,38 @@ export function SectionRenderer({ sections }: SectionRendererProps) {
   }
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full overflow-x-clip">
       {activeSections.map((section) => {
         const Component = getSectionComponent(section.componentType, section.sectionIdentifier);
+
+        // Section-level animation configuration (Rules 8, 9, 11, 47, 51)
+        const animConfig = section.contentPayload?.animation || {};
+        const isAnimEnabled = animConfig.enabled !== false;
+        const animDirection = animConfig.direction || 'up';
+        const animIntensity = animConfig.intensity || 'subtle';
+        const animRepeat = Boolean(animConfig.repeat);
+
         return (
           <section
             key={section.id}
             id={section.sectionIdentifier}
             data-section-type={section.componentType}
             data-section-order={section.displayOrder}
-            className="w-full relative"
+            className="w-full relative overflow-x-clip"
           >
-            <Component section={section} />
+            {isAnimEnabled ? (
+              <ScrollReveal
+                direction={animDirection}
+                intensity={animIntensity}
+                repeat={animRepeat}
+                once={!animRepeat}
+                className="w-full"
+              >
+                <Component section={section} />
+              </ScrollReveal>
+            ) : (
+              <Component section={section} />
+            )}
           </section>
         );
       })}

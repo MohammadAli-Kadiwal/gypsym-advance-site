@@ -53,6 +53,8 @@ export function Header() {
     if (pathname.startsWith('/content/testimonials')) return 'Testimonials';
     if (pathname.startsWith('/site/branding')) return 'Branding & Identity';
     if (pathname.startsWith('/site/navigation')) return 'Navigation';
+    if (pathname.startsWith('/site/settings/recaptcha')) return 'reCAPTCHA & Security';
+    if (pathname.startsWith('/site/settings/email')) return 'Email / SMTP';
     if (pathname.startsWith('/site/settings')) return 'Settings';
     if (pathname.startsWith('/system/users')) return 'Users & Access';
     if (pathname.startsWith('/system/audit')) return 'System Audit';

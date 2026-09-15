@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { ScrollReveal } from '@/components/motion';
 import {
   Mail,
   Phone,
@@ -17,6 +18,7 @@ import {
   Globe,
 } from 'lucide-react';
 import axios from 'axios';
+import { useRecaptcha } from '@/lib/use-recaptcha';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -160,7 +162,7 @@ export function ContactSection({ section }: ContactSectionProps) {
   const fields = form?.fields && form.fields.length > 0 ? form.fields : DEFAULT_FIELDS;
 
   return (
-    <section
+    <div
       id={section.sectionIdentifier || 'contact-inquiry'}
       className="w-full py-8 sm:py-10 md:py-12 bg-transparent transition-colors duration-300 relative overflow-hidden"
     >
@@ -170,151 +172,155 @@ export function ContactSection({ section }: ContactSectionProps) {
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           {/* ── LEFT COLUMN: Context & Contact Details (50%) ────────────────── */}
-          <div className="space-y-6 sm:space-y-8 text-left">
-            <div className="space-y-3 sm:space-y-4">
-              {/* Eyebrow matching other section */}
-              {eyebrow && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#d9287c] bg-[#d9287c]/8 border border-[#d9287c]/20 shadow-2xs">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c] animate-pulse" />
-                  <span>{eyebrow}</span>
-                </div>
-              )}
-
-              {/* Title with Serif-Italic Highlight (Font size standardized with other sections) */}
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight whitespace-pre-line">
-                {renderTitleWithHighlight(
-                  title,
-                  titleHighlight,
-                  'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
-                )}
-              </h2>
-
-              {/* Description (Font size standardized with other sections) */}
-              {description && (
-                <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-xl">
-                  {description}
-                </p>
-              )}
-            </div>
-
-            {/* Corporate Coordinates Card */}
-            <div className="p-5 sm:p-7 rounded-[22px] sm:rounded-[32px] bg-white dark:bg-card border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-4 sm:space-y-5">
-              <h3 className="text-xs font-bold tracking-wider uppercase text-neutral-500 dark:text-neutral-400">
-                Direct Channels
-              </h3>
-
-              <div className="space-y-3.5 sm:space-y-4 text-xs sm:text-sm">
-                {email && (
-                  <a
-                    href={`mailto:${email}`}
-                    className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] group-hover:scale-105 transition-transform shrink-0 shadow-2xs">
-                      <Mail className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Executive Desk</div>
-                      <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-[#d9287c] truncate">{email}</div>
-                    </div>
-                  </a>
-                )}
-
-                {phone && (
-                  <a
-                    href={`tel:${phone.replace(/[^0-9+]/g, '')}`}
-                    className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] group-hover:scale-105 transition-transform shrink-0 shadow-2xs">
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Direct Telephone</div>
-                      <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-[#d9287c] truncate">{phone}</div>
-                    </div>
-                  </a>
-                )}
-
-                {address && (
-                  <div className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200">
-                    <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] shrink-0 shadow-2xs">
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Global Headquarters</div>
-                      <div className="font-semibold text-neutral-900 dark:text-white">{address}</div>
-                    </div>
+          <ScrollReveal direction="left" delay={50}>
+            <div className="space-y-6 sm:space-y-8 text-left">
+              <div className="space-y-3 sm:space-y-4">
+                {/* Eyebrow matching other section */}
+                {eyebrow && (
+                  <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                    <span>{eyebrow}</span>
                   </div>
                 )}
 
-                {officeHours && (
-                  <div className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200">
-                    <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] shrink-0 shadow-2xs">
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Operating Windows</div>
-                      <div className="font-semibold text-neutral-900 dark:text-white">{officeHours}</div>
-                    </div>
-                  </div>
+                {/* Title with Serif-Italic Highlight (Font size standardized with other sections) */}
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight whitespace-pre-line">
+                  {renderTitleWithHighlight(
+                    title,
+                    titleHighlight,
+                    'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
+                  )}
+                </h2>
+
+                {/* Description (Font size standardized with other sections) */}
+                {description && (
+                  <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-xl">
+                    {description}
+                  </p>
                 )}
               </div>
 
-              {/* Social Channels */}
-              {socialLinks.length > 0 && (
-                <div className="pt-3 sm:pt-4 border-t border-neutral-100 dark:border-neutral-800 flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span className="text-[11px] uppercase font-semibold text-neutral-400 mr-1">Alliances:</span>
-                  {socialLinks.map((link, i) => (
+              {/* Corporate Coordinates Card */}
+              <div className="p-5 sm:p-7 rounded-[22px] sm:rounded-[32px] bg-white dark:bg-card border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-4 sm:space-y-5">
+                <h3 className="text-xs font-bold tracking-wider uppercase text-neutral-500 dark:text-neutral-400">
+                  Direct Channels
+                </h3>
+
+                <div className="space-y-3.5 sm:space-y-4 text-xs sm:text-sm">
+                  {email && (
                     <a
-                      key={i}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 sm:px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#d9287c]/10 hover:text-[#d9287c] text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors inline-flex items-center gap-1.5"
+                      href={`mailto:${email}`}
+                      className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group"
                     >
-                      <Globe className="w-3.5 h-3.5 text-[#d9287c]" />
-                      <span>{link.platform}</span>
+                      <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] group-hover:scale-105 transition-transform shrink-0 shadow-2xs">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Executive Desk</div>
+                        <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-[#d9287c] truncate">{email}</div>
+                      </div>
                     </a>
-                  ))}
+                  )}
+
+                  {phone && (
+                    <a
+                      href={`tel:${phone.replace(/[^0-9+]/g, '')}`}
+                      className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] group-hover:scale-105 transition-transform shrink-0 shadow-2xs">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Direct Telephone</div>
+                        <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-[#d9287c] truncate">{phone}</div>
+                      </div>
+                    </a>
+                  )}
+
+                  {address && (
+                    <div className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200">
+                      <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] shrink-0 shadow-2xs">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Global Headquarters</div>
+                        <div className="font-semibold text-neutral-900 dark:text-white">{address}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {officeHours && (
+                    <div className="flex items-center gap-3.5 text-neutral-800 dark:text-neutral-200">
+                      <div className="w-10 h-10 rounded-xl bg-[#d9287c]/10 border border-[#d9287c]/20 flex items-center justify-center text-[#d9287c] shrink-0 shadow-2xs">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400">Operating Windows</div>
+                        <div className="font-semibold text-neutral-900 dark:text-white">{officeHours}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Social Channels */}
+                {socialLinks.length > 0 && (
+                  <div className="pt-3 sm:pt-4 border-t border-neutral-100 dark:border-neutral-800 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="text-[11px] uppercase font-semibold text-neutral-400 mr-1">Alliances:</span>
+                    {socialLinks.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 sm:px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#d9287c]/10 hover:text-[#d9287c] text-neutral-700 dark:text-neutral-300 text-xs font-medium transition-colors inline-flex items-center gap-1.5"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-[#d9287c]" />
+                        <span>{link.platform}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Optional Advisory Mini-Card */}
+              {supportCard?.enabled && (
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#fce7ec] border border-[#fbcfe8] text-neutral-900 shadow-sm space-y-2.5 sm:space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#d9287c]/15 text-[#d9287c]">
+                      Priority Briefing
+                    </span>
+                    <ShieldCheck className="w-4 h-4 text-[#d9287c]" />
+                  </div>
+                  <h4 className="text-sm sm:text-base font-bold text-neutral-900">
+                    {supportCard.title || 'Rapid Architecture Assessment'}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
+                    {supportCard.description ||
+                      'Qualifying enterprise projects receive a 45-minute technical roadmap briefing with our CTO office.'}
+                  </p>
+                  {supportCard.ctaLabel && (
+                    <a
+                      href={supportCard.ctaUrl || '#contact-inquiry'}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#d9287c] hover:underline pt-1"
+                    >
+                      <span>{supportCard.ctaLabel}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Optional Advisory Mini-Card */}
-            {supportCard?.enabled && (
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#fce7ec] border border-[#fbcfe8] text-neutral-900 shadow-sm space-y-2.5 sm:space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#d9287c]/15 text-[#d9287c]">
-                    Priority Briefing
-                  </span>
-                  <ShieldCheck className="w-4 h-4 text-[#d9287c]" />
-                </div>
-                <h4 className="text-sm sm:text-base font-bold text-neutral-900">
-                  {supportCard.title || 'Rapid Architecture Assessment'}
-                </h4>
-                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
-                  {supportCard.description ||
-                    'Qualifying enterprise projects receive a 45-minute technical roadmap briefing with our CTO office.'}
-                </p>
-                {supportCard.ctaLabel && (
-                  <a
-                    href={supportCard.ctaUrl || '#contact-inquiry'}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#d9287c] hover:underline pt-1"
-                  >
-                    <span>{supportCard.ctaLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
+          </ScrollReveal>
 
           {/* ── RIGHT COLUMN: Dynamic Interactive Form (50%) - Sticky on Desktop ────────────────── */}
-          <div className="w-full lg:sticky lg:top-24 self-start">
-            <ContactForm form={form} fields={fields} />
-          </div>
+          <ScrollReveal direction="right" delay={150} className="w-full lg:sticky lg:top-24 self-start">
+            <div className="w-full">
+              <ContactForm form={form} fields={fields} />
+            </div>
+          </ScrollReveal>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -326,6 +332,7 @@ function ContactForm({
   form: ContactPayload['form'];
   fields: ContactFieldConfig[];
 }) {
+  const { isEnabled: isRecaptchaEnabled, executeRecaptcha } = useRecaptcha();
   const [formData, setFormData] = React.useState<Record<string, any>>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitting, setSubmitting] = React.useState(false);
@@ -391,6 +398,8 @@ function ContactForm({
     setErrorMessage(null);
 
     try {
+      const recaptchaToken = await executeRecaptcha('contact_inquiry');
+
       const fullName = formData.fullName || formData.name || formData.contactName || 'Corporate Inquirer';
       const email = formData.email || formData.businessEmail || formData.workEmail || '';
       const companyName = formData.companyName || formData.organization || formData.company;
@@ -399,8 +408,10 @@ function ContactForm({
       const projectDescription = formData.message || formData.description || formData.projectBrief || '';
 
       await axios.post(`${API_BASE_URL}/inquiries`, {
+        recaptchaToken: recaptchaToken || undefined,
         data: {
           ...formData,
+          recaptchaToken: recaptchaToken || undefined,
           fullName,
           email,
           businessEmail: email,
@@ -423,6 +434,10 @@ function ContactForm({
     } catch (err: any) {
       if (err.response?.status === 429) {
         setErrorMessage('Rate limit reached: Maximum 5 inquiries per 10 minutes. Please try again shortly.');
+      } else if (err.response?.status === 400 && err.response?.data?.message?.toLowerCase().includes('recaptcha')) {
+        setErrorMessage(
+          err.response?.data?.message || 'reCAPTCHA verification failed. Please refresh and try again.'
+        );
       } else {
         setErrorMessage(
           err.response?.data?.message || 'Unable to transmit inquiry. Please check your network and try again.'
@@ -577,6 +592,30 @@ function ContactForm({
               <p className="text-center text-[11px] sm:text-xs text-neutral-500 flex items-center justify-center gap-1.5 pt-0.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 <span>{privacyNote}</span>
+              </p>
+            )}
+
+            {isRecaptchaEnabled && (
+              <p className="text-center text-[10px] sm:text-[11px] text-neutral-400 dark:text-neutral-500 leading-relaxed px-2 pt-1">
+                Protected by reCAPTCHA and the Google{' '}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                >
+                  Privacy Policy
+                </a>{' '}
+                and{' '}
+                <a
+                  href="https://policies.google.com/terms"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                >
+                  Terms of Service
+                </a>{' '}
+                apply.
               </p>
             )}
           </div>

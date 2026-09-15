@@ -20,7 +20,10 @@ import {
   RefreshCw,
   Archive,
   UserCheck,
+  CheckCheck,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 
 interface SubmissionItem {
   id: string;
@@ -59,6 +62,9 @@ export default function ContactSubmissionsPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>('ALL');
   const [selectedSubmission, setSelectedSubmission] = React.useState<SubmissionItem | null>(null);
   const [totalCount, setTotalCount] = React.useState(0);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
 
   const loadSubmissions = React.useCallback(async () => {
     setLoading(true);
@@ -122,6 +128,76 @@ export default function ContactSubmissionsPage() {
     setSelectedSubmission(sub);
     if (sub.status === 'NEW') {
       handleUpdateStatus(sub.id, 'READ');
+    }
+  };
+
+  // ── Bulk Selection & Actions ─────────────────────────────────────────────
+  const isAllSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id));
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(items.map((i) => i.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleToggleSelect = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    setSelectedIds(next);
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetchApi(`/inquiries/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+          })
+        )
+      );
+      setItems((prev) =>
+        prev.map((item) => (selectedIds.has(item.id) ? { ...item, status: status as any } : item))
+      );
+      if (selectedSubmission && selectedIds.has(selectedSubmission.id)) {
+        setSelectedSubmission((prev) => (prev ? { ...prev, status: status as any } : null));
+      }
+      setSelectedIds(new Set());
+      notify.success(`${ids.length} submissions marked as ${STATUS_CONFIG[status]?.label || status}.`);
+    } catch {
+      notify.error('Failed to update status for selected submissions.');
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    try {
+      await Promise.all(ids.map((id) => fetchApi(`/inquiries/${id}`, { method: 'DELETE' })));
+      setItems((prev) => prev.filter((item) => !selectedIds.has(item.id)));
+      setTotalCount((c) => Math.max(0, c - ids.length));
+      if (selectedSubmission && selectedIds.has(selectedSubmission.id)) {
+        setSelectedSubmission(null);
+      }
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+      notify.success(`${ids.length} submissions deleted.`);
+    } catch {
+      notify.error('Failed to delete selected submissions.');
+    } finally {
+      setIsBulkProcessing(false);
     }
   };
 
@@ -206,6 +282,13 @@ export default function ContactSubmissionsPage() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
+                    <th className="py-3 px-3 w-10 text-center">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={(c) => handleSelectAll(!!c)}
+                        aria-label="Select all"
+                      />
+                    </th>
                     <th className="py-3 px-4">Contact</th>
                     <th className="py-3 px-4">Company</th>
                     <th className="py-3 px-4">Status</th>
@@ -225,9 +308,20 @@ export default function ContactSubmissionsPage() {
                         key={sub.id}
                         onClick={() => handleOpenDetail(sub)}
                         className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
-                          sub.status === 'NEW' ? 'bg-blue-50/30 font-medium' : ''
+                          selectedIds.has(sub.id)
+                            ? 'bg-blue-50/40'
+                            : sub.status === 'NEW'
+                            ? 'bg-blue-50/30 font-medium'
+                            : ''
                         }`}
                       >
+                        <td className="py-3 px-3 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(sub.id)}
+                            onCheckedChange={(c) => handleToggleSelect(sub.id, !!c)}
+                            aria-label={`Select ${sub.fullName}`}
+                          />
+                        </td>
                         <td className="py-3 px-4">
                           <div className="space-y-0.5">
                             <div className="font-semibold text-slate-900 flex items-center gap-1.5">
@@ -305,6 +399,75 @@ export default function ContactSubmissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Floating Bulk Action Dock ───────────────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+            {selectedIds.size} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkStatus('READ')}
+          >
+            <CheckCheck className="h-3.5 w-3.5 mr-1 text-slate-600" />
+            <span>Mark Read</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            onClick={() => handleBulkStatus('CONTACTED')}
+          >
+            <UserCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+            <span>Contacted</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkStatus('ARCHIVED')}
+          >
+            <Archive className="h-3.5 w-3.5 mr-1 text-slate-500" />
+            <span>Archive</span>
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-8 text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+            onClick={() => setBulkDeleteConfirm(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <span>Delete</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-slate-400 hover:text-slate-600 rounded-xl ml-1"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {/* ── Bulk Delete Confirmation Dialog ─────────────────────────────────── */}
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        onOpenChange={(open) => !open && setBulkDeleteConfirm(false)}
+        title={`Delete ${selectedIds.size} Submissions?`}
+        description={`Are you sure you want to delete ${selectedIds.size} selected contact submissions? This action cannot be undone.`}
+        confirmLabel={isBulkProcessing ? 'Deleting...' : `Delete ${selectedIds.size} Submissions`}
+        variant="destructive"
+        onConfirm={handleBulkDelete}
+      />
 
       {/* ── Slide-over Detail Drawer ──────────────────────────────────────── */}
       {selectedSubmission && (

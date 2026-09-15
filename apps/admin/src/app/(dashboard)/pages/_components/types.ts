@@ -229,11 +229,20 @@ export interface PortfolioProject {
   metrics?: string;
 }
 
+export interface PortfolioCredential {
+  label?: string;
+  desc?: string;
+}
+
 export interface PortfolioPayload {
   eyebrow?: string;
   title?: string;
   titleHighlight?: string;
   description?: string;
+
+  // Hero strip credentials settings
+  showHeroStrip?: boolean;
+  heroCredentials?: PortfolioCredential[];
 
   // Hover settings
   hoverEffectsEnabled?: boolean;
@@ -251,6 +260,14 @@ export interface PortfolioPayload {
 
   // Display limits
   maxDisplayCount?: number;
+
+  // Filter
+  showCategoryFilter?: boolean;
+  defaultCategory?: string;
+
+  // Homepage Section Integrations (Direct Components)
+  showContactSection?: boolean;
+  showCtaSection?: boolean;
 
   projects?: PortfolioProject[];
 }
@@ -471,12 +488,55 @@ export interface CtaSection {
   contentPayload: CtaPayload;
 }
 
+export interface TechItem {
+  id?: string;
+  name: string;
+  category?: string;
+  icon?: string;
+}
+
+export interface CapabilitiesPayload {
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  description?: string;
+  backgroundColor?: string;
+  image?: {
+    url?: string;
+    alt?: string;
+    badgeText?: string;
+  };
+  technologies?: TechItem[];
+  highlights?: Array<{
+    title: string;
+    description?: string;
+  }>;
+  ctaText?: string;
+  ctaUrl?: string;
+}
+
+export interface CapabilitiesSection {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  contentPayload: CapabilitiesPayload;
+}
+
 export interface PageData {
   id?: string;
   slug?: string;
   title?: string;
+  description?: string;
   status?: string;
   layoutType?: string;
+  seoMetadata?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImageUrl?: string;
+    noIndex?: boolean;
+  };
   sections?: Array<{
     id: string;
     componentType: string;

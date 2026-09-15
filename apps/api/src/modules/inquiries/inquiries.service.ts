@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../email/email.service';
+import { RecaptchaService } from '../recaptcha/recaptcha.service';
 import { InquiryStatus } from '@gypsym/database';
 
 export interface SubmitInquiryDto {
@@ -11,6 +12,7 @@ export interface SubmitInquiryDto {
   utmMedium?: string;
   utmCampaign?: string;
   ipAddress?: string;
+  recaptchaToken?: string;
 }
 
 export interface InquiryQueryDto {
@@ -30,6 +32,7 @@ export class InquiriesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly recaptchaService: RecaptchaService,
   ) {}
 
   /**
@@ -70,6 +73,18 @@ export class InquiriesService {
       throw new BadRequestException('Form submission data cannot be empty.');
     }
 
+    // ── reCAPTCHA v3 Security Verification ────────────────────────────────────
+    const recaptchaToken =
+      dto.recaptchaToken ||
+      (dto as any).token ||
+      rawData.recaptchaToken ||
+      rawData.token;
+
+    const captchaScore = await this.recaptchaService.validateSubmissionOrThrow(
+      recaptchaToken,
+      clientIp
+    );
+
     // Extract core identity fields flexibly
     const fullName = String(
       rawData.fullName || rawData.name || rawData.firstName || 'Inquiry Contact'
@@ -103,7 +118,10 @@ export class InquiriesService {
         serviceId,
         formId: dto.formId || 'homepage-contact',
         source: dto.source || 'Homepage Contact Form',
-        submittedData: rawData,
+        submittedData: {
+          ...rawData,
+          recaptchaScore: captchaScore,
+        },
         status: InquiryStatus.NEW,
         utmSource: dto.utmSource ? String(dto.utmSource).slice(0, 100) : null,
         utmMedium: dto.utmMedium ? String(dto.utmMedium).slice(0, 100) : null,

@@ -339,7 +339,7 @@ async function main() {
   await prisma.brandSetting.upsert({
     where: { id: '00000000-0000-0000-0000-000000000001' },
     update: {
-      companyName: 'Developios',
+      companyName: 'Gypsym',
       logoLightId: mediaMap['system/brand/logo-light.svg'],
       logoDarkId: mediaMap['system/brand/logo-dark.svg'],
       faviconId: mediaMap['system/brand/favicon.ico'],
@@ -367,7 +367,7 @@ async function main() {
       id: '00000000-0000-0000-0000-000000000001',
       version: 1,
       isActive: true,
-      companyName: 'Developios',
+      companyName: 'Gypsym',
       logoLightId: mediaMap['system/brand/logo-light.svg'],
       logoDarkId: mediaMap['system/brand/logo-dark.svg'],
       faviconId: mediaMap['system/brand/favicon.ico'],
@@ -676,17 +676,17 @@ async function main() {
             },
             videoCta: {
               enabled: true,
-              label: 'Developios Studio Reel',
+              label: 'Gypsym Studio Reel',
               videoUrl: 'https://res.cloudinary.com/dorhkx3tj/video/upload/v1779362848/IMG_1122_jgcztz.mov',
               icon: 'Play',
             },
             backgroundMedia: {
               desktopImageUrl:
-                'https://res.cloudinary.com/dshotouwu/video/upload/so_0,f_jpg,q_80/v1782707510/developios_bg_video_ydv8vg.jpg',
+                'https://res.cloudinary.com/dshotouwu/video/upload/so_0,f_jpg,q_80/v1782707510/gypsym_bg_video_ydv8vg.jpg',
               mobileImageUrl:
-                'https://res.cloudinary.com/dshotouwu/video/upload/so_0,f_jpg,q_80/v1782707510/developios_bg_video_ydv8vg.jpg',
+                'https://res.cloudinary.com/dshotouwu/video/upload/so_0,f_jpg,q_80/v1782707510/gypsym_bg_video_ydv8vg.jpg',
               videoUrl:
-                'https://res.cloudinary.com/dshotouwu/video/upload/v1782707510/developios_bg_video_ydv8vg.mp4',
+                'https://res.cloudinary.com/dshotouwu/video/upload/v1782707510/gypsym_bg_video_ydv8vg.mp4',
               overlayColor: '#000000',
               overlayOpacity: 0.3,
               focalPoint: 'center',

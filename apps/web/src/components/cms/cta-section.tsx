@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ScrollReveal } from '@/components/motion';
 
 export interface CtaButton {
   label: string;
@@ -116,16 +117,16 @@ export function CtaSection({ section }: CtaSectionProps) {
   };
 
   return (
-    <section
+    <div
       id={section.sectionIdentifier || 'homepage-cta'}
       className="w-full py-8 sm:py-10 md:py-12 bg-transparent transition-colors duration-300 relative overflow-hidden"
     >
       {/* Ambient background glow matching site theme */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[450px] bg-gradient-to-tr from-[#d9287c]/6 via-[#d9287c]/2 to-transparent blur-[140px] rounded-full pointer-events-none -z-10" />
 
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 relative z-10">
         {/* Main Card Container matching What We Change & Revenue Experiment design exactly */}
-        <div className="w-full bg-white dark:bg-card rounded-[24px] sm:rounded-[36px] md:rounded-[42px] border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] p-6 sm:p-10 md:p-14 lg:p-16 relative overflow-hidden">
+        <div className="w-full bg-white dark:bg-card rounded-[24px] sm:rounded-[36px] md:rounded-[42px] border border-neutral-200/80 dark:border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] p-6 sm:p-8 md:p-10 lg:p-12 relative overflow-hidden">
           {/* Custom Background Image if specified */}
           {appearance.backgroundType === 'image' && appearance.backgroundImageUrl && (
             <div className="absolute inset-0 z-0">
@@ -143,50 +144,52 @@ export function CtaSection({ section }: CtaSectionProps) {
           )}
 
           {/* Card Content */}
-          <div className={`relative z-10 flex flex-col ${alignClass} space-y-4 sm:space-y-5 max-w-3xl mx-auto`}>
-            {/* Eyebrow matching other section */}
-            {eyebrow && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#d9287c] bg-[#d9287c]/8 border border-[#d9287c]/20 shadow-2xs">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#d9287c] animate-pulse" />
-                <span>{eyebrow}</span>
+          <ScrollReveal direction="up">
+            <div className={`relative z-10 flex flex-col ${alignClass} space-y-4 sm:space-y-5 max-w-3xl mx-auto`}>
+              {/* Eyebrow matching other section */}
+              {eyebrow && (
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>{eyebrow}</span>
+                </div>
+              )}
+
+              {/* Title with Serif-Italic Highlight (Standardized font size matching other sections) */}
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight whitespace-pre-line">
+                {renderTitleWithHighlight(
+                  title,
+                  titleHighlight,
+                  'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
+                )}
+              </h2>
+
+              {/* Description (Standardized font size matching other sections) */}
+              {description && (
+                <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-2xl mx-auto">
+                  {description}
+                </p>
+              )}
+
+              {/* Action Buttons - Mobile First Responsive Column on Small Screens */}
+              <div className={`pt-2 sm:pt-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full ${buttonAlignClass}`}>
+                {primaryButton?.label && renderButton(primaryButton, true)}
+
+                {secondaryButton?.enabled && secondaryButton?.label && secondaryButton?.url && (
+                  renderButton(
+                    {
+                      label: secondaryButton.label,
+                      url: secondaryButton.url,
+                      variant: secondaryButton.variant || 'outline',
+                      target: secondaryButton.target || '_self',
+                    },
+                    false
+                  )
+                )}
               </div>
-            )}
-
-            {/* Title with Serif-Italic Highlight (Standardized font size matching other sections) */}
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight whitespace-pre-line">
-              {renderTitleWithHighlight(
-                title,
-                titleHighlight,
-                'font-serif italic font-normal text-[1.06em] tracking-normal inline-block text-neutral-900 dark:text-white leading-normal'
-              )}
-            </h2>
-
-            {/* Description (Standardized font size matching other sections) */}
-            {description && (
-              <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-2xl mx-auto">
-                {description}
-              </p>
-            )}
-
-            {/* Action Buttons - Mobile First Responsive Column on Small Screens */}
-            <div className={`pt-2 sm:pt-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full ${buttonAlignClass}`}>
-              {primaryButton?.label && renderButton(primaryButton, true)}
-
-              {secondaryButton?.enabled && secondaryButton?.label && secondaryButton?.url && (
-                renderButton(
-                  {
-                    label: secondaryButton.label,
-                    url: secondaryButton.url,
-                    variant: secondaryButton.variant || 'outline',
-                    target: secondaryButton.target || '_self',
-                  },
-                  false
-                )
-              )}
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

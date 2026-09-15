@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { PageSectionDto, VerifiedResultsPayload, ResultCardPayload } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { ScrollReveal, StaggerContainer, RevealItem, AnimatedCounter } from '@/components/motion';
 
 interface VerifiedResultsSectionProps {
   section: PageSectionDto;
@@ -31,7 +32,8 @@ const THEME_PALETTES: Record<string, { bg: string; bar: string; text: string }> 
 const DEFAULT_THEME_KEYS = ['pink', 'blue', 'yellow', 'peach'];
 
 /**
- * Ascending 6-bar chart with graduated opacity matching reference image.
+ * Ascending 6-bar chart with graduated opacity matching reference image,
+ * animating smoothly upward when scrolled into view.
  */
 function MiniBarChart({
   dataPoints,
@@ -42,20 +44,45 @@ function MiniBarChart({
 }) {
   const pts = dataPoints && dataPoints.length > 0 ? dataPoints : [22, 34, 45, 60, 80, 100];
   const max = Math.max(...pts, 1);
+  const chartRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = chartRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="flex items-end gap-1 sm:gap-1.5 md:gap-2 h-6 sm:h-8 md:h-10 w-full mt-3 sm:mt-5" aria-hidden="true">
+    <div
+      ref={chartRef}
+      className="flex items-end gap-1 sm:gap-1.5 md:gap-2 h-6 sm:h-8 md:h-10 w-full mt-3 sm:mt-5"
+      aria-hidden="true"
+    >
       {pts.map((val, idx) => {
         const heightPct = Math.max(18, Math.round((val / max) * 100));
         const opacity = 0.28 + (idx / Math.max(pts.length - 1, 1)) * 0.72;
         return (
           <div
             key={idx}
-            className="flex-1 rounded-xs sm:rounded-md transition-all duration-500 ease-out"
+            className="flex-1 rounded-xs sm:rounded-md transition-all duration-700 ease-out"
             style={{
-              height: `${heightPct}%`,
+              height: isInView ? `${heightPct}%` : '8%',
               backgroundColor: themeColor,
-              opacity: opacity,
+              opacity: isInView ? opacity : 0.2,
+              transitionDelay: `${idx * 75}ms`,
             }}
           />
         );
@@ -74,6 +101,7 @@ function ResultCard({ card, index }: { card: ResultCardPayload; index: number })
 
   const cardBg = (card.appearance as any)?.cardBg || palette.bg;
   const barColor = (card.appearance as any)?.barColor || palette.bar;
+  const rawFormattedMetric = formatMetricValue(card.metric);
 
   return (
     <div
@@ -97,7 +125,12 @@ function ResultCard({ card, index }: { card: ResultCardPayload; index: number })
         {/* Middle: Metric Display & Subtext */}
         <div className="mt-3 sm:mt-5 mb-1">
           <div className="text-xl sm:text-[30px] md:text-[36px] font-bold text-neutral-900 tracking-tight leading-none truncate">
-            {formatMetricValue(card.metric)}
+            <AnimatedCounter
+              value={rawFormattedMetric}
+              duration={1.8}
+              delay={index * 100}
+              easing="cubic"
+            />
           </div>
           {card.metric.description && (
             <p className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-600 font-normal mt-1 sm:mt-2 leading-tight sm:leading-relaxed line-clamp-2 sm:line-clamp-none">
@@ -128,71 +161,75 @@ export function VerifiedResultsSection({ section }: VerifiedResultsSectionProps)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
-    <section
+    <div
       aria-labelledby={`heading-${section.id}`}
-      className="w-full bg-[#F4F3EF] dark:bg-[#0b0d12] text-neutral-900 dark:text-white py-10 sm:py-14 px-4 sm:px-6 lg:px-8 transition-colors"
+      className="w-full bg-[#F4F3EF] dark:bg-[#0b0d12] text-neutral-900 dark:text-white py-8 sm:py-10 md:py-12 transition-colors"
     >
-      <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 space-y-8 sm:space-y-10">
         {/* Header Block: Eyebrow, Large Headline, Descriptions */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          {eyebrow?.enabled && eyebrow.text && (
-            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-              <span>{eyebrow.text}</span>
-            </div>
-          )}
+        <ScrollReveal direction="up">
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            {eyebrow?.enabled && eyebrow.text && (
+              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                <span>{eyebrow.text}</span>
+              </div>
+            )}
 
-          {headline && (
-            <h2
-              id={`heading-${section.id}`}
-              className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line"
-            >
-              {payload.titleHighlight ? (
-                renderTitleWithHighlight(
-                  headline.segments && headline.segments.length > 0
-                    ? headline.segments.map((s) => s.value || (s as any).text || '').join('')
-                    : headline.text || '',
-                  payload.titleHighlight
-                )
-              ) : headline.segments && headline.segments.length > 0 ? (
-                headline.segments.map((seg, idx) => {
-                  if (seg.type === 'italic') {
-                    return (
-                      <span key={idx} className="font-serif italic font-normal text-[1.08em] tracking-normal">
-                        {seg.value}
-                      </span>
-                    );
-                  }
-                  return <span key={idx}>{seg.value}</span>;
-                })
-              ) : (
-                <span>{headline.text}</span>
-              )}
-            </h2>
-          )}
+            {headline && (
+              <h2
+                id={`heading-${section.id}`}
+                className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line"
+              >
+                {payload.titleHighlight ? (
+                  renderTitleWithHighlight(
+                    headline.segments && headline.segments.length > 0
+                      ? headline.segments.map((s) => s.value || (s as any).text || '').join('')
+                      : headline.text || '',
+                    payload.titleHighlight
+                  )
+                ) : headline.segments && headline.segments.length > 0 ? (
+                  headline.segments.map((seg, idx) => {
+                    if (seg.type === 'italic') {
+                      return (
+                        <span key={idx} className="font-serif italic font-normal text-[1.08em] tracking-normal">
+                          {seg.value}
+                        </span>
+                      );
+                    }
+                    return <span key={idx}>{seg.value}</span>;
+                  })
+                ) : (
+                  <span>{headline.text}</span>
+                )}
+              </h2>
+            )}
 
-          {description?.enabled && description.content && (
-            <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-1">
-              {description.content}
-            </p>
-          )}
+            {description?.enabled && description.content && (
+              <p className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-2xl mx-auto pt-1">
+                {description.content}
+              </p>
+            )}
 
-          {supportingText?.enabled && supportingText.content && (
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto">
-              {supportingText.content}
-            </p>
-          )}
-        </div>
+            {supportingText?.enabled && supportingText.content && (
+              <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto">
+                {supportingText.content}
+              </p>
+            )}
+          </div>
+        </ScrollReveal>
 
         {/* Responsive Cards Grid: 2 columns in mobile (2 in one row), 4 columns desktop */}
         {cards.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
+          <StaggerContainer preset="fast" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
             {cards.map((card, idx) => (
-              <ResultCard key={card.id} card={card} index={idx} />
+              <RevealItem key={card.id}>
+                <ResultCard card={card} index={idx} />
+              </RevealItem>
             ))}
-          </div>
+          </StaggerContainer>
         )}
       </div>
-    </section>
+    </div>
   );
 }
