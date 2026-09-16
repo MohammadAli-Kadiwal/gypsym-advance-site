@@ -18,8 +18,8 @@ const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabel
   <label className={`block text-xs font-semibold text-slate-700 ${className}`} {...props} />
 );
 
-interface OurWorkStudioProps {
-  onBack: () => void;
+export interface PortfolioStudioProps {
+  onBack?: () => void;
 }
 
 const defaultHeroCredentials = [
@@ -29,7 +29,7 @@ const defaultHeroCredentials = [
   { label: '25+ Specialists', desc: 'Dedicated Liquid & Headless Team' },
 ];
 
-export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
+export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [pageData, setPageData] = React.useState<PageData | null>(null);
@@ -39,7 +39,7 @@ export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
   const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApi<PageData>('/pages/our-work');
+      const res = await fetchApi<PageData>('/pages/portfolio');
       if (res) {
         setPageData(res);
         const raw = res.sections?.find(
@@ -61,7 +61,7 @@ export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
         } else {
           // Fallback defaults
           setSection({
-            id: 'local-our-work',
+            id: 'local-portfolio',
             componentType: 'PORTFOLIO',
             isActive: true,
             contentPayload: {
@@ -112,11 +112,11 @@ export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
           }),
         });
       } else {
-        const created = await fetchApi<{ id: string }>('/pages/our-work/sections', {
+        const created = await fetchApi<{ id: string }>('/pages/portfolio/sections', {
           method: 'POST',
           body: JSON.stringify({
             componentType: 'PORTFOLIO',
-            sectionIdentifier: 'our-work-portfolio',
+            sectionIdentifier: 'portfolio-showcase',
             contentPayload: section.contentPayload,
             isActive: true,
             displayOrder: 1,
@@ -167,7 +167,7 @@ export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
         layoutLabel="PORTFOLIO PAGE"
         sectionCount={pageData?.sections?.filter((s) => s.isActive).length}
         status={pageData?.status || 'PUBLISHED'}
-        onBack={onBack}
+        onBack={onBack || (() => window.history.back())}
         onSave={handleSave}
         onRefresh={loadData}
       />
@@ -609,7 +609,7 @@ export function OurWorkStudio({ onBack }: OurWorkStudioProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => onBack()}
+                  onClick={() => (onBack ? onBack() : window.history.back())}
                   className="font-bold text-blue-700 hover:text-blue-900 hover:underline flex items-center gap-1"
                 >
                   <span>Go to Home Studio</span>

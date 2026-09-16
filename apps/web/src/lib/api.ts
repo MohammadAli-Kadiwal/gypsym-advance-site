@@ -186,3 +186,80 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
   }
 }
 
+export interface ServiceProcessStep {
+  step: string;
+  title: string;
+  description: string;
+}
+
+export interface ServiceBenefit {
+  title: string;
+  description: string;
+}
+
+export interface ServiceFaq {
+  question: string;
+  answer: string;
+}
+
+export interface ServicePriceTier {
+  name: string;
+  description: string;
+  isPopular?: boolean;
+  prices: { currency: string; symbol: string; amount: string; period?: string }[];
+  features: string[];
+}
+
+export interface ServiceItemDto {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string;
+  shortDescription: string;
+  detailedContent: string;
+  category?: string;
+  iconName?: string;
+  keyFeatures?: string[];
+  deliverables?: string[];
+  technologies?: string[];
+  process?: ServiceProcessStep[];
+  benefits?: ServiceBenefit[];
+  faqs?: ServiceFaq[];
+  pricing?: ServicePriceTier[];
+}
+
+/**
+ * Fetch all published services from NestJS CMS API.
+ */
+export async function getServices(): Promise<ServiceItemDto[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/services`, {
+      cache: 'no-store',
+      next: { tags: ['services'] },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list = json?.data ?? json;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch a single published service by slug from NestJS CMS API.
+ */
+export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/services/${slug}`, {
+      cache: 'no-store',
+      next: { tags: [`service-${slug}`] },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data ?? json) || null;
+  } catch {
+    return null;
+  }
+}
+

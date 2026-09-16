@@ -20,6 +20,7 @@ import { EmailModule } from './modules/email/email.module';
 import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { RecaptchaModule } from './modules/recaptcha/recaptcha.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { RecaptchaModule } from './modules/recaptcha/recaptcha.module';
     InquiriesModule,
     PortfolioModule,
     RecaptchaModule,
+    BookingsModule,
   ],
 })
 export class AppModule implements NestModule {

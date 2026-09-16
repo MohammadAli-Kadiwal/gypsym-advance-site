@@ -1051,47 +1051,77 @@ async function main() {
     });
   }
 
-  // Services
+  // Services (from gypsym.com/services)
   const services = [
     {
-      slug: 'cloud-core-engineering',
-      title: 'Zero-Downtime Cloud Core Architecture',
-      tagline: 'Fault-tolerant planetary active-active cloud topologies.',
+      slug: 'e-commerce-solutions',
+      title: 'E-commerce Solutions',
+      tagline: 'Complete Shopify & Shopify Plus stores designed to sell — not just look pretty.',
       shortDescription:
-        'Architecting multi-region resilient cloud infrastructures guaranteed for 99.999% availability under catastrophic regional blackouts.',
+        'We build complete Shopify stores designed to sell — not just look pretty. From product pages to checkout optimization, every detail is handled so your store generates revenue from day one.',
       detailedContent:
-        'Our Cloud Core practice transforms legacy mono-datacenter workloads into resilient, multi-cloud topologies orchestrated via automated failover controllers and distributed state reconciliation.',
+        'At Gypsym, we engineer full-funnel Shopify and Shopify Plus storefronts that scale effortlessly. Whether you are launching your first flagship digital storefront or migrating an enterprise multi-million dollar catalog, our engineering team ensures lightning speed, bulletproof checkout funnels, seamless ERP/WMS synchronization, and localized multi-currency purchasing experiences.',
       displayOrder: 1,
     },
     {
-      slug: 'sovereign-ai-platforms',
-      title: 'Sovereign AI & Distributed Intelligence Mesh',
-      tagline: 'Private, auditable AI deployments for enterprise data sovereignty.',
+      slug: 'web-design-development',
+      title: 'Web Design & Development',
+      tagline: 'Custom, responsive websites that captivate visitors, load fast, and drive conversions.',
       shortDescription:
-        'Deploying localized foundation models and vector intelligence networks completely within client-controlled jurisdictional perimeters.',
+        'Your website is your storefront, salesperson, and brand ambassador — all in one. We design and develop sites that look incredible, load fast, and guide visitors toward buying.',
       detailedContent:
-        'We design air-gapped model inference clusters, secure multi-party compute enclaves, and fine-tuned private knowledge retrieval meshes.',
+        'Digital flagship experiences built with bespoke UI/UX and ultra-clean Liquid/Hydrogen architectures. We avoid generic off-the-shelf templates in favor of tailored design systems in Figma translated into fast, responsive, and accessible code that elevates your brand perception and boosts user engagement across every viewport.',
       displayOrder: 2,
     },
     {
-      slug: 'distributed-systems',
-      title: 'High-Throughput Distributed Ledgers & Consensus',
-      tagline: 'Deterministic transaction processing at global volume.',
+      slug: 'search-engine-optimization',
+      title: 'Search Engine Optimization',
+      tagline: 'Technical SEO, structured data, and on-page strategy that ranks your store on Google.',
       shortDescription:
-        'High-frequency state machines and Byzantine fault-tolerant consensus engines processing millions of events per second with sub-millisecond finality.',
+        'Getting found on Google should not feel like a mystery. We handle technical SEO, content strategy, and ongoing optimization so your store shows up when ideal customers are searching.',
       detailedContent:
-        'Specializing in Raft, Paxos, and custom DAG-based state engines engineered in memory-safe systems programming languages.',
+        'Our e-commerce SEO practice tackles technical bottlenecks head-on. From resolving Shopify-specific collection duplication and canonicalization quirks to deploying comprehensive JSON-LD product schemas, rich snippets, and international hreflang tags, we systematically increase your organic search visibility, high-intent traffic, and sustainable inbound revenue.',
       displayOrder: 3,
     },
     {
-      slug: 'zero-trust-security',
-      title: 'Deterministic Zero-Trust Security Infrastructure',
-      tagline: 'Cryptographic authentication down to the microservice boundary.',
+      slug: 'website-maintenance',
+      title: 'Website Maintenance',
+      tagline: 'Proactive 24/7 SLA monitoring, emergency fixes, and ongoing performance retainers.',
       shortDescription:
-        'Continuous mutual TLS, hardware-backed SPIFFE/SPIRE workload attestation, and dynamic identity governance protecting digital sovereignty.',
+        'A website that goes down costs you money. We keep your store updated, secure, and performing at its best with proactive monitoring, regular updates, and fast issue resolution.',
       detailedContent:
-        'Eliminating perimeter security fallacies with ephemeral cryptographic tokens, zero-trust network policies, and real-time behavioral intrusion detection.',
+        'Eliminate technical anxiety with Gypsym’s dedicated ongoing engineering retainers. You receive real-time uptime monitoring, staging-verified app and theme updates, sub-60-minute emergency escalation protocols, continuous Core Web Vitals maintenance, and direct access to senior Shopify developers via dedicated Slack.',
       displayOrder: 4,
+    },
+    {
+      slug: 'theme-customization',
+      title: 'Theme Customization',
+      tagline: 'Bespoke Shopify theme engineering tailored to your brand identity and conversion goals.',
+      shortDescription:
+        'Your brand deserves more than a template that looks like everyone else. We create custom Shopify themes that reflect your brand identity and are built to convert.',
+      detailedContent:
+        'Transform your existing Shopify OS 2.0 theme into a customized digital storefront. We build bespoke modular sections, dynamic block controls, interactive sticky cart drawers, custom variant pickers, and tailored PDP modules that empower your marketing team to launch new campaigns without needing continuous developer intervention.',
+      displayOrder: 5,
+    },
+    {
+      slug: 'store-optimization',
+      title: 'Store Optimization',
+      tagline: 'Boost conversions, slash bounce rates, and accelerate page speed to maximize revenue.',
+      shortDescription:
+        'Slow page loads and confusing checkout flows kill your sales. We audit your store, identify bottlenecks, and implement fixes that boost speed, conversions, and average order value.',
+      detailedContent:
+        'Turn lost traffic into bottom-line profit. Our CRO and speed specialists conduct deep behavioral session audits, remove render-blocking third-party app bloat, optimize critical rendering paths to guarantee 90+ Core Web Vitals scores, and implement high-converting cart upsells and streamlined checkout touchpoints.',
+      displayOrder: 6,
+    },
+    {
+      slug: 'store-setup',
+      title: 'Store Setup',
+      tagline: 'Turnkey Shopify store setup, configuration, and launch — executed right the first time.',
+      shortDescription:
+        'Getting your Shopify store up and running the right way matters. We handle setup, configuration, payment gateways, shipping rules, tax settings, and app integrations so you can focus on selling.',
+      detailedContent:
+        'Launch with complete confidence. As certified Shopify Partners, we manage every facet of your initial store onboarding: tax Nexus configuration, global shipping zones, payment gateways (Stripe, PayPal, Klarna, regional providers), product schema architecture, DNS setup, tracking pixels, and hands-on operational team training.',
+      displayOrder: 7,
     },
   ];
 

@@ -401,6 +401,25 @@ export interface ContactFieldConfig {
   width?: 'full' | 'half';
 }
 
+export interface DirectContactCardItem {
+  id?: string;
+  icon?: 'calendar' | 'mail' | 'whatsapp' | 'phone';
+  iconBgColor?: 'blue' | 'amber' | 'sky' | 'emerald' | 'purple';
+  title?: string;
+  description?: string;
+  linkText?: string;
+  linkUrl?: string;
+}
+
+export interface DirectContactSettings {
+  enabled?: boolean;
+  eyebrow?: string;
+  title?: string;
+  titleHighlight?: string;
+  footnote?: string;
+  cards?: DirectContactCardItem[];
+}
+
 export interface ContactPayload {
   eyebrow?: string;
   title?: string;
@@ -420,6 +439,7 @@ export interface ContactPayload {
     ctaLabel?: string;
     ctaUrl?: string;
   };
+  directChannels?: DirectContactSettings;
   form?: {
     formTitle?: string;
     formSubtitle?: string;
@@ -529,20 +549,25 @@ export interface PageData {
   description?: string;
   status?: string;
   layoutType?: string;
+  sectionsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
   seoMetadata?: {
     metaTitle?: string;
     metaDescription?: string;
+    canonicalUrl?: string | null;
     ogTitle?: string;
     ogDescription?: string;
-    ogImageUrl?: string;
+    ogImageUrl?: string | null;
     noIndex?: boolean;
-  };
+  } | null;
   sections?: Array<{
     id: string;
     componentType: string;
     sectionIdentifier: string;
     contentPayload: unknown;
     isActive: boolean;
+    displayOrder?: number;
   }>;
 }
 

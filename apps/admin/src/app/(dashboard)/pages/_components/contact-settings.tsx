@@ -17,6 +17,7 @@ import {
   Sliders,
   FileText,
   Building,
+  Calendar,
 } from 'lucide-react';
 import type {
   ContactSection,
@@ -137,6 +138,52 @@ export function ContactSettings({ section, onChange }: ContactSettingsProps) {
     update({
       supportCard: {
         ...supportCard,
+        ...partial,
+      },
+    });
+  };
+
+  const directChannels = p.directChannels || {
+    enabled: true,
+    title: 'Or reach us directly',
+    footnote: 'We reply within 24 hours on business days. Gujarat, India.',
+    cards: [
+      {
+        id: 'book-call',
+        icon: 'calendar',
+        iconBgColor: 'blue',
+        title: 'Book a 30-min call',
+        description:
+          'Book a 30-minute discovery session directly on our calendar. A live look at your store, no pitch deck.',
+        linkText: 'gypsym.com/book →',
+        linkUrl: 'https://gypsym.com/book',
+      },
+      {
+        id: 'email-us',
+        icon: 'mail',
+        iconBgColor: 'amber',
+        title: 'Email us',
+        description: 'For briefs, RFPs and anything with attachments.',
+        linkText: 'project@gypsym.com →',
+        linkUrl: 'mailto:project@gypsym.com',
+      },
+      {
+        id: 'whatsapp',
+        icon: 'whatsapp',
+        iconBgColor: 'sky',
+        title: 'WhatsApp',
+        description:
+          'Quick questions, quick answers. Based in Gujarat (IST), we serve clients in USA, UK, and globally — time zones aren’t a barrier.',
+        linkText: '+91 73397 26403 →',
+        linkUrl: 'https://wa.me/917339726403',
+      },
+    ],
+  };
+
+  const updateDirectChannels = (partial: Partial<NonNullable<ContactPayload['directChannels']>>) => {
+    update({
+      directChannels: {
+        ...directChannels,
         ...partial,
       },
     });
@@ -417,6 +464,155 @@ export function ContactSettings({ section, onChange }: ContactSettingsProps) {
                 className="mt-1 text-xs font-mono"
                 placeholder="#inquiry-form or https://cal.com/..."
               />
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* ── Direct Reach Channels ("Or reach us directly") ── */}
+      <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                <Calendar className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900">
+                  Direct Reach Channels · "Or reach us directly"
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500">
+                  Configure direct contact cards (Book a call, Email, WhatsApp) and availability note
+                </CardDescription>
+              </div>
+            </div>
+            <Switch
+              checked={directChannels.enabled ?? true}
+              onCheckedChange={(checked) => updateDirectChannels({ enabled: checked })}
+            />
+          </div>
+        </CardHeader>
+        {directChannels.enabled !== false && (
+          <CardContent className="space-y-4 text-xs pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="direct-eyebrow">Eyebrow Badge</Label>
+                <Input
+                  id="direct-eyebrow"
+                  value={directChannels.eyebrow ?? 'DIRECT CHANNELS'}
+                  onChange={(e) => updateDirectChannels({ eyebrow: e.target.value })}
+                  className="mt-1 text-xs"
+                  placeholder="DIRECT CHANNELS"
+                />
+              </div>
+              <div>
+                <Label htmlFor="direct-title">Section Title</Label>
+                <Input
+                  id="direct-title"
+                  value={directChannels.title ?? 'Or Reach Us Directly'}
+                  onChange={(e) => updateDirectChannels({ title: e.target.value })}
+                  className="mt-1 text-xs font-semibold"
+                  placeholder="Or Reach Us Directly"
+                />
+              </div>
+              <div>
+                <Label htmlFor="direct-titleHighlight">Title Highlight (Serif Italic)</Label>
+                <Input
+                  id="direct-titleHighlight"
+                  value={directChannels.titleHighlight ?? 'Directly'}
+                  onChange={(e) => updateDirectChannels({ titleHighlight: e.target.value })}
+                  className="mt-1 text-xs"
+                  placeholder="Directly"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="direct-footnote">Footnote / Hours & Location Note</Label>
+              <Input
+                id="direct-footnote"
+                value={
+                  directChannels.footnote ??
+                  'We reply within 24 hours on business days. Gujarat, India.'
+                }
+                onChange={(e) => updateDirectChannels({ footnote: e.target.value })}
+                className="mt-1 text-xs"
+                placeholder="We reply within 24 hours on business days. Gujarat, India."
+              />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Label className="text-slate-800 font-semibold">Direct Reach Cards (3 Cards)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(directChannels.cards || []).map((card, idx) => (
+                  <div
+                    key={card.id || idx}
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-700 text-xs">Card {idx + 1}</span>
+                      <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                        {card.icon || 'calendar'}
+                      </Badge>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Card Title</Label>
+                      <Input
+                        value={card.title}
+                        onChange={(e) => {
+                          const updated = [...(directChannels.cards || [])];
+                          updated[idx] = { ...updated[idx], title: e.target.value };
+                          updateDirectChannels({ cards: updated });
+                        }}
+                        className="mt-0.5 h-7 text-xs bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Description</Label>
+                      <Textarea
+                        value={card.description}
+                        rows={2}
+                        onChange={(e) => {
+                          const updated = [...(directChannels.cards || [])];
+                          updated[idx] = { ...updated[idx], description: e.target.value };
+                          updateDirectChannels({ cards: updated });
+                        }}
+                        className="mt-0.5 text-xs bg-white resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Link Text</Label>
+                      <Input
+                        value={card.linkText}
+                        onChange={(e) => {
+                          const updated = [...(directChannels.cards || [])];
+                          updated[idx] = { ...updated[idx], linkText: e.target.value };
+                          updateDirectChannels({ cards: updated });
+                        }}
+                        className="mt-0.5 h-7 text-xs bg-white"
+                        placeholder="gypsym.com/book →"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Link URL / Action</Label>
+                      <Input
+                        value={card.linkUrl}
+                        onChange={(e) => {
+                          const updated = [...(directChannels.cards || [])];
+                          updated[idx] = { ...updated[idx], linkUrl: e.target.value };
+                          updateDirectChannels({ cards: updated });
+                        }}
+                        className="mt-0.5 h-7 text-xs bg-white font-mono"
+                        placeholder="https://gypsym.com/book"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         )}

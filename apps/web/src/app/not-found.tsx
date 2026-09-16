@@ -81,7 +81,7 @@ export default function NotFound() {
   return (
     <div className="w-full min-h-[calc(100vh-80px)] flex flex-col justify-between bg-[#f4f3ef] text-neutral-900">
       {/* Top 404 Hero Section — matching home page container and branding */}
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 pt-32 sm:pt-40 md:pt-48 lg:pt-52 pb-12 sm:pb-16">
         <ScrollReveal direction="up">
           <div className="text-center max-w-3xl mx-auto space-y-5 sm:space-y-6">
             {/* Eyebrow badge matching home page section standards */}

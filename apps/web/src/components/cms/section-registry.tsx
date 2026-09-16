@@ -12,8 +12,14 @@ import { PartnersSection } from './partners-section';
 import { ContactSection } from './contact-section';
 import { CtaSection } from './cta-section';
 import { CapabilitiesSection } from './capabilities-section';
+import { ClientOutcomesSection } from './client-outcomes-section';
+import { DirectContactSection } from './direct-contact-section';
+import { BookingCalendarSection } from './booking-calendar-section';
 
 export { CapabilitiesSection } from './capabilities-section';
+export { ClientOutcomesSection } from './client-outcomes-section';
+export { DirectContactSection } from './direct-contact-section';
+export { BookingCalendarSection } from './booking-calendar-section';
 export { BrandLogosSection } from './brand-logos-section';
 export { BrandLogoCard } from './shared/brand-logo-card';
 export { BrandLogosGrid } from './shared/brand-logos-grid';
@@ -61,6 +67,14 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   CAPABILITIES: CapabilitiesSection,
   OUR_CAPABILITIES: CapabilitiesSection,
   TECH_STACK: CapabilitiesSection,
+  CLIENT_OUTCOMES: ClientOutcomesSection,
+  STORE_OUTCOMES: ClientOutcomesSection,
+  HOW_IT_WORKS_OUTCOMES: ClientOutcomesSection,
+  DIRECT_CONTACT: DirectContactSection,
+  DIRECT_CHANNELS: DirectContactSection,
+  REACH_US_DIRECTLY: DirectContactSection,
+  BOOKING_CALENDAR: BookingCalendarSection,
+  DISCOVERY_BOOKING: BookingCalendarSection,
 };
 
 /**
@@ -141,6 +155,27 @@ export function getSectionComponent(
     sectionIdentifier === 'inquiry'
   ) {
     return ContactSection;
+  }
+  if (
+    sectionIdentifier === 'client-outcomes' ||
+    sectionIdentifier === 'store-outcomes' ||
+    sectionIdentifier === 'how-it-works-outcomes'
+  ) {
+    return ClientOutcomesSection;
+  }
+  if (
+    sectionIdentifier === 'direct-contact' ||
+    sectionIdentifier === 'reach-us-directly' ||
+    sectionIdentifier === 'direct-channels'
+  ) {
+    return DirectContactSection;
+  }
+  if (
+    sectionIdentifier === 'book-discovery' ||
+    sectionIdentifier === 'discovery-call' ||
+    sectionIdentifier === 'booking-calendar'
+  ) {
+    return BookingCalendarSection;
   }
   const normalized = componentType.toUpperCase();
   return sectionRegistry[normalized] || UnregisteredSection;

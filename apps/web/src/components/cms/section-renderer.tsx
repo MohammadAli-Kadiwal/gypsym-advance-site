@@ -49,6 +49,8 @@ export function SectionRenderer({ sections }: SectionRendererProps) {
         const animIntensity = animConfig.intensity || 'subtle';
         const animRepeat = Boolean(animConfig.repeat);
 
+        const isStickySection = section.componentType === 'DELIVERY_PROCESS';
+
         return (
           <section
             key={section.id}
@@ -57,7 +59,7 @@ export function SectionRenderer({ sections }: SectionRendererProps) {
             data-section-order={section.displayOrder}
             className="w-full relative overflow-x-clip"
           >
-            {isAnimEnabled ? (
+            {isAnimEnabled && !isStickySection ? (
               <ScrollReveal
                 direction={animDirection}
                 intensity={animIntensity}

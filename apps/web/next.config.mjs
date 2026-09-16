@@ -41,6 +41,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/our-work',
+        destination: '/portfolio',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

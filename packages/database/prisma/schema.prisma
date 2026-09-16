@@ -108,6 +108,14 @@ enum ApplicationStatus {
   HIRED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 enum InquiryStatus {
   NEW
   QUALIFIED
@@ -1112,4 +1120,35 @@ model ProjectTechnology {
   @@id([projectId, technologyId])
   @@index([technologyId])
   @@map("project_technologies")
+}
+
+// -------------------------------------------------------------
+// DISCOVERY CALL BOOKINGS
+// -------------------------------------------------------------
+
+model Booking {
+  id              String        @id @default(uuid()) @db.Uuid
+  bookingNumber   String        @unique @map("booking_number") @db.VarChar(50)
+  fullName        String        @map("full_name") @db.VarChar(120)
+  email           String        @db.VarChar(255)
+  phone           String?       @db.VarChar(40)
+  storeUrl        String?       @map("store_url") @db.VarChar(255)
+  notes           String?       @db.Text
+  date            String        @db.VarChar(20)
+  slotTime        String        @map("slot_time") @db.VarChar(50)
+  timezone        String        @db.VarChar(100)
+  hostTimezone    String        @default("Asia/Kolkata") @map("host_timezone") @db.VarChar(100)
+  hostSlotTime    String?       @map("host_slot_time") @db.VarChar(50)
+  utcStartTime    DateTime      @map("utc_start_time") @db.Timestamptz
+  durationMinutes Int           @default(30) @map("duration_minutes")
+  status          BookingStatus @default(CONFIRMED)
+  meetingLink     String?       @map("meeting_link") @db.VarChar(500)
+  adminNotes      String?       @map("admin_notes") @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([date, status])
+  @@index([email])
+  @@index([utcStartTime])
+  @@map("bookings")
 }

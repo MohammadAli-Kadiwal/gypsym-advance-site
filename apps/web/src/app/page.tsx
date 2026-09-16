@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('home');
   if (!page) {

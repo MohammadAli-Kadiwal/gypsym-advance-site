@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useRecaptcha } from '@/lib/use-recaptcha';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -521,21 +522,15 @@ function ContactForm({
                       }`}
                     />
                   ) : field.type === 'select' ? (
-                    <select
+                    <CustomSelect
                       id={`field-${field.name}`}
                       value={formData[field.name] || ''}
-                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                      className={`w-full rounded-xl bg-white dark:bg-neutral-900 border px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-[#d9287c] focus:ring-2 focus:ring-[#d9287c]/20 transition-all shadow-2xs ${
-                        error ? 'border-rose-500' : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300'
-                      }`}
-                    >
-                      <option value="">{field.placeholder || 'Select...'}</option>
-                      {(field.options || []).map((opt, oIdx) => (
-                        <option key={oIdx} value={opt} className="bg-white text-neutral-900">
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => handleFieldChange(field.name, val)}
+                      options={field.options || []}
+                      placeholder={field.placeholder || 'Select a service...'}
+                      error={Boolean(error)}
+                      accentColor="pink"
+                    />
                   ) : field.type === 'checkbox' ? (
                     <div className="flex items-center gap-2 pt-1">
                       <input

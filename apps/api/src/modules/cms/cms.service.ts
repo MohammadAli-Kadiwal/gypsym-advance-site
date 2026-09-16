@@ -12,27 +12,40 @@ export class CmsService {
       orderBy: { displayOrder: 'asc' },
     });
 
-    return services.map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      title: s.title,
-      tagline: s.tagline || '',
-      shortDescription: s.shortDescription,
-      detailedContent: s.detailedContent || '',
-      iconName: 'Layers',
-      keyFeatures: [
-        'Active-Active Multi-Region Orchestration',
-        'Deterministic Zero-Data-Loss Ledger (RPO=0)',
-        'Sub-Millisecond Byzantine Consensus (< 2.4ms P99)',
-        'Automated Chaos-Engineered Failover Protocols',
-      ],
-      deliverables: [
-        'Production Architecture Blueprint (TOGAF / C4 model)',
-        'Automated OpenTofu & Kubernetes Multi-Region Topology',
-        'Sovereign Security Attestation & Hardened Perimeters',
-      ],
-      technologies: ['Kubernetes', 'Apache Kafka', 'PostgreSQL Distributed', 'Rust Systems', 'eBPF Mesh'],
-    }));
+    const metaSettings = await this.prisma.siteSetting.findMany({
+      where: { category: 'services_meta' },
+    });
+    const metaMap = new Map<string, any>();
+    for (const item of metaSettings) {
+      metaMap.set(item.key, item.value);
+    }
+
+    return services.map((s) => {
+      const defaultMeta = this.getServiceMetadata(s.slug);
+      const customMeta = metaMap.get(`service_meta_${s.id}`) || metaMap.get(`service_meta_${s.slug}`) || {};
+      const mergedMeta = { ...defaultMeta, ...customMeta };
+      return {
+        id: s.id,
+        slug: s.slug,
+        title: s.title,
+        tagline: s.tagline || mergedMeta.tagline || '',
+        shortDescription: s.shortDescription,
+        detailedContent: s.detailedContent || '',
+        status: s.status,
+        displayOrder: s.displayOrder,
+        category: mergedMeta.category || 'Specialized Capability',
+        iconName: mergedMeta.iconName || 'ShoppingBag',
+        keyFeatures: mergedMeta.keyFeatures || [],
+        deliverables: mergedMeta.deliverables || [],
+        technologies: mergedMeta.technologies || [],
+        process: mergedMeta.process || [],
+        benefits: mergedMeta.benefits || [],
+        faqs: mergedMeta.faqs || [],
+        pricing: mergedMeta.pricing || [],
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+      };
+    });
   }
 
   async getServiceBySlug(slug: string) {
@@ -41,26 +54,1220 @@ export class CmsService {
     });
     if (!s) throw new NotFoundException(`Service '${slug}' not found`);
 
+    const customMetaRecord = await this.prisma.siteSetting.findFirst({
+      where: {
+        category: 'services_meta',
+        key: { in: [`service_meta_${s.id}`, `service_meta_${s.slug}`] },
+      },
+    });
+
+    const defaultMeta = this.getServiceMetadata(s.slug);
+    const customMeta = (customMetaRecord?.value as Record<string, any>) || {};
+    const mergedMeta = { ...defaultMeta, ...customMeta };
+
     return {
       id: s.id,
       slug: s.slug,
       title: s.title,
-      tagline: s.tagline || '',
+      tagline: s.tagline || mergedMeta.tagline || '',
       shortDescription: s.shortDescription,
       detailedContent: s.detailedContent || '',
+      status: s.status,
+      displayOrder: s.displayOrder,
+      category: mergedMeta.category || 'Specialized Capability',
+      iconName: mergedMeta.iconName || 'ShoppingBag',
+      keyFeatures: mergedMeta.keyFeatures || [],
+      deliverables: mergedMeta.deliverables || [],
+      technologies: mergedMeta.technologies || [],
+      process: mergedMeta.process || [],
+      benefits: mergedMeta.benefits || [],
+      faqs: mergedMeta.faqs || [],
+      pricing: mergedMeta.pricing || [],
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    };
+  }
+
+  async createService(body: {
+    title: string;
+    slug?: string;
+    tagline?: string;
+    shortDescription?: string;
+    detailedContent?: string;
+    category?: string;
+    iconName?: string;
+    displayOrder?: number;
+    status?: any;
+    deliverables?: string[];
+    technologies?: string[];
+    keyFeatures?: string[];
+    process?: any[];
+    benefits?: any[];
+    faqs?: any[];
+    pricing?: any[];
+  }): Promise<any> {
+    const slugBase = (body.slug || body.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const slug = slugBase || `service-${Date.now()}`;
+
+    const existing = await this.prisma.service.findFirst({ where: { slug, deletedAt: null } });
+    const finalSlug = existing ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
+
+    let displayOrder = body.displayOrder;
+    if (displayOrder === undefined || displayOrder === null) {
+      const last = await this.prisma.service.findFirst({
+        orderBy: { displayOrder: 'desc' },
+        select: { displayOrder: true },
+      });
+      displayOrder = (last?.displayOrder ?? 0) + 1;
+    }
+
+    const service = await this.prisma.service.create({
+      data: {
+        slug: finalSlug,
+        title: body.title,
+        tagline: body.tagline || null,
+        shortDescription: body.shortDescription || '',
+        detailedContent: body.detailedContent || '',
+        displayOrder,
+        status: body.status || 'PUBLISHED',
+      },
+    });
+
+    const metaValue = {
+      category: body.category || 'Specialized Capability',
+      iconName: body.iconName || 'ShoppingBag',
+      keyFeatures: body.keyFeatures || [],
+      deliverables: body.deliverables || [],
+      technologies: body.technologies || [],
+      process: body.process || [],
+      benefits: body.benefits || [],
+      faqs: body.faqs || [],
+      pricing: body.pricing || [],
+    };
+
+    await this.prisma.siteSetting.upsert({
+      where: { key: `service_meta_${service.id}` },
+      update: { value: metaValue, updatedAt: new Date() },
+      create: {
+        category: 'services_meta',
+        key: `service_meta_${service.id}`,
+        value: metaValue,
+        isPublic: true,
+      },
+    });
+
+    return {
+      ...service,
+      ...metaValue,
+    };
+  }
+
+  async updateService(
+    id: string,
+    body: {
+      title?: string;
+      slug?: string;
+      tagline?: string;
+      shortDescription?: string;
+      detailedContent?: string;
+      category?: string;
+      iconName?: string;
+      displayOrder?: number;
+      status?: any;
+      deliverables?: string[];
+      technologies?: string[];
+      keyFeatures?: string[];
+      process?: any[];
+      benefits?: any[];
+      faqs?: any[];
+      pricing?: any[];
+    },
+  ): Promise<any> {
+    const existing = await this.prisma.service.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!existing) throw new NotFoundException(`Service '${id}' not found`);
+
+    const updateData: any = {};
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.slug !== undefined) updateData.slug = body.slug;
+    if (body.tagline !== undefined) updateData.tagline = body.tagline;
+    if (body.shortDescription !== undefined) updateData.shortDescription = body.shortDescription;
+    if (body.detailedContent !== undefined) updateData.detailedContent = body.detailedContent;
+    if (body.displayOrder !== undefined) updateData.displayOrder = body.displayOrder;
+    if (body.status !== undefined) updateData.status = body.status;
+
+    const updated = await this.prisma.service.update({
+      where: { id },
+      data: updateData,
+    });
+
+    const existingMetaSetting = await this.prisma.siteSetting.findFirst({
+      where: {
+        category: 'services_meta',
+        key: { in: [`service_meta_${id}`, `service_meta_${existing.slug}`] },
+      },
+    });
+
+    const defaultMeta = this.getServiceMetadata(existing.slug);
+    const existingMeta = (existingMetaSetting?.value as Record<string, any>) || defaultMeta;
+
+    const newMeta = {
+      ...existingMeta,
+      ...(body.category !== undefined && { category: body.category }),
+      ...(body.iconName !== undefined && { iconName: body.iconName }),
+      ...(body.keyFeatures !== undefined && { keyFeatures: body.keyFeatures }),
+      ...(body.deliverables !== undefined && { deliverables: body.deliverables }),
+      ...(body.technologies !== undefined && { technologies: body.technologies }),
+      ...(body.process !== undefined && { process: body.process }),
+      ...(body.benefits !== undefined && { benefits: body.benefits }),
+      ...(body.faqs !== undefined && { faqs: body.faqs }),
+      ...(body.pricing !== undefined && { pricing: body.pricing }),
+    };
+
+    await this.prisma.siteSetting.upsert({
+      where: { key: `service_meta_${id}` },
+      update: { value: newMeta, updatedAt: new Date() },
+      create: {
+        category: 'services_meta',
+        key: `service_meta_${id}`,
+        value: newMeta,
+        isPublic: true,
+      },
+    });
+
+    return {
+      ...updated,
+      ...newMeta,
+    };
+  }
+
+  async deleteService(id: string): Promise<void> {
+    const existing = await this.prisma.service.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!existing) throw new NotFoundException(`Service '${id}' not found`);
+
+    await this.prisma.service.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async reorderServices(items: Array<{ id: string; displayOrder: number }>): Promise<void> {
+    await this.prisma.$transaction(
+      items.map((item) =>
+        this.prisma.service.update({
+          where: { id: item.id },
+          data: { displayOrder: item.displayOrder },
+        }),
+      ),
+    );
+  }
+
+  async bulkUpdateServiceStatus(ids: string[], status: any): Promise<{ count: number }> {
+    const result = await this.prisma.service.updateMany({
+      where: { id: { in: ids }, deletedAt: null },
+      data: { status },
+    });
+    return { count: result.count };
+  }
+
+  async bulkDeleteServices(ids: string[]): Promise<{ count: number }> {
+    const result = await this.prisma.service.updateMany({
+      where: { id: { in: ids } },
+      data: { deletedAt: new Date() },
+    });
+    return { count: result.count };
+  }
+
+  private getServiceMetadata(slug: string) {
+    const metadata: Record<string, any> = {
+      'e-commerce-solutions': {
+        category: 'E-Commerce',
+        tagline: 'Complete Shopify & Shopify Plus stores designed to sell — not just look pretty.',
+        iconName: 'ShoppingBag',
+        keyFeatures: [
+          'Custom Liquid & Hydrogen Storefronts',
+          'Payment Gateway & Multi-Currency Setup',
+          'Automated ERP & Inventory Synchronization',
+          'High-Velocity One-Click Checkout Optimization',
+        ],
+        deliverables: [
+          'Full-Funnel Custom Shopify Architecture',
+          'ERP / Warehouse Management System Integrations',
+          'Friction-Free Cart Drawer & Upsell Engine',
+          'Multi-Currency & International Tax Setup',
+          'Post-Launch Hypercare & Admin Staff Training',
+        ],
+        technologies: ['Shopify Plus', 'Liquid', 'Hydrogen', 'GraphQL Admin API', 'Klaviyo', 'Stripe'],
+        process: [
+          {
+            step: '01',
+            title: 'Strategy & Catalog Architecture',
+            description: 'We audit your product catalog, taxonomy, and commercial goals to map out a friction-free purchasing journey.',
+          },
+          {
+            step: '02',
+            title: 'Bespoke UI/UX & Wireframing',
+            description: 'Designing high-converting mobile-first storefront prototypes in Figma aligned with brand typography and styling.',
+          },
+          {
+            step: '03',
+            title: 'Full-Stack Liquid Engineering',
+            description: 'Clean, modular development with zero app bloat, integrating third-party logistics, payment gateways, and analytics.',
+          },
+          {
+            step: '04',
+            title: 'Launch & Zero-Downtime Migration',
+            description: 'Rigorous cross-browser checkout testing, DNS switchover, and complete operational handover to your team.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Maximum Conversion Velocity',
+            description: 'Engineered checkout funnels designed to increase AOV and lower cart abandonment rates.',
+          },
+          {
+            title: 'Global Scale Ready',
+            description: 'Multi-currency, international taxation, and localized checkout flows for worldwide selling.',
+          },
+          {
+            title: 'Seamless Inventory Sync',
+            description: 'Automated real-time inventory and catalog management across channels with ERP connectors.',
+          },
+          {
+            title: 'Sub-Second Load Times',
+            description: 'Lightweight code architecture built strictly to exceed Google Core Web Vitals.',
+          },
+          {
+            title: 'Mobile-First Experience',
+            description: 'Designed specifically for the 78%+ of modern e-commerce shoppers purchasing on mobile viewports.',
+          },
+          {
+            title: 'Bank-Grade Security',
+            description: 'PCI-DSS Level 1 compliance and advanced fraud protection integration right out of the box.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'How long does a complete e-commerce build take?',
+            answer: 'A standard custom Shopify build typically takes between 4 to 8 weeks depending on catalog complexity, custom section requirements, and external integrations.',
+          },
+          {
+            question: 'Can you migrate our existing store from WooCommerce or Magento?',
+            answer: 'Yes! We specialize in seamless zero-downtime data migrations including customer accounts, order history, catalog taxonomy, and 301 SEO redirects to preserve your rankings.',
+          },
+          {
+            question: 'Which payment gateways do you configure?',
+            answer: 'We configure Shopify Payments, Stripe, PayPal, Klarna, Afterpay, and regional gateways like Tamara and Tabby for the Gulf/Middle East markets.',
+          },
+          {
+            question: 'What support is included after launch?',
+            answer: 'Every build includes 30 to 90 days of dedicated hypercare where we monitor live transactions, fix any edge-case bugs, and provide 1-on-1 team training.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Starter Store',
+            description: 'For emerging D2C brands ready to launch a high-converting flagship store.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '4,999' },
+              { currency: 'GBP', symbol: '£', amount: '3,999' },
+              { currency: 'AED', symbol: 'AED ', amount: '18,500' },
+            ],
+            features: [
+              'Custom Theme Setup & Styling',
+              'Up to 50 Products Configured',
+              'Payment & Shipping Setup',
+              'Mobile Responsive Layout',
+              'Basic SEO & Schema Markup',
+              '14-Day Post-Launch Support',
+            ],
+          },
+          {
+            name: 'Growth Store',
+            description: 'For scaling brands doing $500K-$2M seeking custom UI/UX and higher AOV.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '9,999' },
+              { currency: 'GBP', symbol: '£', amount: '7,999' },
+              { currency: 'AED', symbol: 'AED ', amount: '36,500' },
+            ],
+            features: [
+              '100% Bespoke UI/UX Design in Figma',
+              'Modular OS 2.0 Sections',
+              'Custom Cart Drawer & Upsells',
+              'ERP / Klaviyo Email Integration',
+              'Core Web Vitals Optimization',
+              '45-Day Dedicated Hypercare',
+            ],
+          },
+          {
+            name: 'Shopify Plus Enterprise',
+            description: 'For high-volume brands ($2M-$20M+) requiring headless or multi-region architecture.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '24,999+' },
+              { currency: 'GBP', symbol: '£', amount: '19,999+' },
+              { currency: 'AED', symbol: 'AED ', amount: '91,500+' },
+            ],
+            features: [
+              'Multi-Region & Multi-Currency Architecture',
+              'Custom Checkout Extensibility Apps',
+              'B2B Wholesale Portal Integration',
+              'Dedicated Technical Account Manager',
+              'Sub-Second Page Speed SLA',
+              '90-Day VIP Dedicated Support',
+            ],
+          },
+        ],
+      },
+      'web-design-development': {
+        category: 'Design & Engineering',
+        tagline: 'Custom, responsive websites that captivate visitors, load fast, and drive conversions.',
+        iconName: 'Layout',
+        keyFeatures: [
+          'Bespoke Figma UI/UX Design System',
+          'Liquid & Modern Component Architecture',
+          'Strict ADA/WCAG Accessibility Compliance',
+          'Cross-Browser & 4K Viewport Optimization',
+        ],
+        deliverables: [
+          'Interactive High-Fidelity Figma Prototypes',
+          'Production-Ready Modular Theme Files',
+          'Responsive Breakpoints for Mobile, Tablet & Desktop',
+          'Custom Interactive Micro-Animations',
+          'Complete Asset Library & Design System Guide',
+        ],
+        technologies: ['Figma', 'Shopify Liquid', 'TailwindCSS', 'TypeScript', 'Next.js', 'Framer Motion'],
+        process: [
+          {
+            step: '01',
+            title: 'Creative Brief & User Discovery',
+            description: 'Understanding your visual identity, customer personas, competitor landscape, and conversion objectives.',
+          },
+          {
+            step: '02',
+            title: 'Figma Prototyping & Design Approval',
+            description: 'Crafting interactive prototypes with responsive layouts and bespoke typography for your direct feedback.',
+          },
+          {
+            step: '03',
+            title: 'Pixel-Perfect Frontend Build',
+            description: 'Translating Figma designs into clean, modular Liquid code with silky-smooth micro-animations.',
+          },
+          {
+            step: '04',
+            title: 'Quality Assurance & Go-Live',
+            description: 'Comprehensive cross-device validation, speed benchmarking, and final deployment.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Distinctive Brand Authority',
+            description: 'Stand out from cookie-cutter competitor sites with a tailor-made aesthetic that builds trust.',
+          },
+          {
+            title: 'Flawless Across All Screens',
+            description: 'Tested and perfected across iPhones, iPads, Androids, MacBooks, and ultra-wide desktop monitors.',
+          },
+          {
+            title: 'High-Converting User Flows',
+            description: 'Strategically positioned CTAs, intuitive navigation menus, and frictionless checkout touchpoints.',
+          },
+          {
+            title: 'Zero Third-Party App Bloat',
+            description: 'Native code replaces costly monthly apps, drastically boosting store speed and stability.',
+          },
+          {
+            title: 'Drag-and-Drop Marketing Sections',
+            description: 'Marketing teams can spin up new landing pages in minutes using custom OS 2.0 blocks.',
+          },
+          {
+            title: 'Built-in SEO Semantics',
+            description: 'Correct heading hierarchies, structured markup, and fast rendering that search engines reward.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'Do you use pre-made templates or design from scratch?',
+            answer: 'Every web design project is 100% bespoke. We design completely custom in Figma before writing a single line of code.',
+          },
+          {
+            question: 'Can my marketing team edit content easily without coding?',
+            answer: 'Yes! We construct native Shopify OS 2.0 customizer sections, giving your team drag-and-drop control over copy, images, and layout options.',
+          },
+          {
+            question: 'How do you ensure fast page speeds?',
+            answer: 'We write lightweight vanilla CSS/JavaScript, optimize all media assets, and avoid jQuery or bloated plugins.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Essential Design',
+            description: 'Ideal for small brands wanting a fresh, premium redesign of core pages.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '3,999' },
+              { currency: 'GBP', symbol: '£', amount: '3,199' },
+              { currency: 'AED', symbol: 'AED ', amount: '14,500' },
+            ],
+            features: [
+              'Homepage & 3 Inner Page Templates',
+              'Figma Design Prototype',
+              'Full Mobile Optimization',
+              'Native Section Architecture',
+              '14-Day Revision Window',
+            ],
+          },
+          {
+            name: 'Full Store Experience',
+            description: 'Complete brand overhaul covering homepage, collections, PDPs, and custom landing pages.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '7,999' },
+              { currency: 'GBP', symbol: '£', amount: '6,399' },
+              { currency: 'AED', symbol: 'AED ', amount: '29,500' },
+            ],
+            features: [
+              'Complete Store Design in Figma',
+              'Custom PDP with Upsell Blocks',
+              'Modular OS 2.0 Sections',
+              'Custom Micro-Animations',
+              'Speed Optimization Built-In',
+              '30-Day Post-Launch Support',
+            ],
+          },
+          {
+            name: 'Flagship Digital Experience',
+            description: 'Bespoke high-end digital design system with 3D elements and interactive storytelling.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '16,999+' },
+              { currency: 'GBP', symbol: '£', amount: '13,500+' },
+              { currency: 'AED', symbol: 'AED ', amount: '62,500+' },
+            ],
+            features: [
+              'Comprehensive Brand Design System',
+              'Interactive 3D / Scroll Animations',
+              'Headless Hydrogen Architecture',
+              'Dedicated Senior Art Director',
+              'Unlimited Design Revisions',
+              '60-Day Dedicated Support',
+            ],
+          },
+        ],
+      },
+      'search-engine-optimization': {
+        category: 'Growth & Search',
+        tagline: 'Technical SEO, structured data, and on-page strategy that ranks your store on Google.',
+        iconName: 'Search',
+        keyFeatures: [
+          'Comprehensive Technical SEO Audits',
+          'Rich Product Schema (JSON-LD Markup)',
+          'Canonicalization & Duplicate URL Fixes',
+          'International Hreflang Configuration',
+        ],
+        deliverables: [
+          'Full Technical SEO Audit & Issue Roadmap',
+          'Complete JSON-LD Rich Snippet Integration',
+          'Collection & Product Meta Tag Optimization',
+          'Custom robots.txt and XML Sitemap Tuning',
+          'Monthly Ranking & Organic Revenue Dashboard',
+        ],
+        technologies: ['Google Search Console', 'Ahrefs', 'Semrush', 'Screaming Frog', 'JSON-LD', 'GA4'],
+        process: [
+          {
+            step: '01',
+            title: 'Technical Crawl & Deep Audit',
+            description: 'Identifying crawl anomalies, broken redirects, indexation bloat, and Shopify URL duplication issues.',
+          },
+          {
+            step: '02',
+            title: 'High-Intent Keyword Mapping',
+            description: 'Pinpointing commercial keywords with high purchase intent that your direct competitors have overlooked.',
+          },
+          {
+            step: '03',
+            title: 'Code & Schema Implementation',
+            description: 'Injecting custom JSON-LD schema, optimizing heading tags, and cleaning up theme code for faster indexing.',
+          },
+          {
+            step: '04',
+            title: 'Monitoring & Continuous Growth',
+            description: 'Tracking rankings, impressions, organic click-through rates, and algorithmic updates continuously.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Predictable Organic Revenue',
+            description: 'Reduce heavy reliance on skyrocketing Facebook and Google CPC ad costs.',
+          },
+          {
+            title: 'Rich Snippets in Search',
+            description: 'Display star ratings, price, stock status, and delivery badges directly in search results.',
+          },
+          {
+            title: 'Fix Shopify URL Quirks',
+            description: 'Resolve the notorious /collections/.../products/ canonical duplication bug once and for all.',
+          },
+          {
+            title: 'Global Organic Footprint',
+            description: 'Capture international buyers with accurate geo-targeting and hreflang tag implementation.',
+          },
+          {
+            title: 'Faster Google Indexing',
+            description: 'Clean sitemaps and optimized crawl budget ensure new products get indexed within hours.',
+          },
+          {
+            title: 'Transparent Reporting',
+            description: 'Clear monthly dashboards detailing traffic growth, keyword progression, and attributable revenue.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'How long does it take to see SEO improvements?',
+            answer: 'Technical fixes and schema markups frequently show indexation and CTR improvements within 3 to 6 weeks. Competitive keyword movements typically compound over 3 to 6 months.',
+          },
+          {
+            question: 'Can you fix Shopify collection URL duplication?',
+            answer: 'Yes! Shopify themes default to routing product pages through collections, causing canonical dilution. We rewrite theme link architecture to guarantee direct product URLs across the site.',
+          },
+          {
+            question: 'Is SEO a one-time project or ongoing retainer?',
+            answer: 'We offer both one-time technical overhaul packages and ongoing monthly optimization retainers to maintain competitive momentum.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Technical Overhaul',
+            description: 'One-time complete audit and code remediation of technical SEO and schema barriers.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '2,999' },
+              { currency: 'GBP', symbol: '£', amount: '2,399' },
+              { currency: 'AED', symbol: 'AED ', amount: '11,000' },
+            ],
+            features: [
+              'Complete 100-Point Technical Audit',
+              'JSON-LD Product Schema Implementation',
+              'Duplicate Content & Canonical Fixes',
+              'Sitemap & Robots.txt Customization',
+              'Post-Implementation Verification Report',
+            ],
+          },
+          {
+            name: 'Monthly Growth Retainer',
+            description: 'Ongoing technical SEO, content strategy, backlink monitoring, and monthly reporting.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '2,499', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '1,999', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '9,200', period: '/mo' },
+            ],
+            features: [
+              'Continuous Keyword Optimization',
+              'New Product & Collection SEO',
+              'Monthly Crawl & Error Remediations',
+              'Competitor SERP Surveillance',
+              'Monthly Executive Video Report',
+              'Dedicated SEO Strategist',
+            ],
+          },
+          {
+            name: 'Global Enterprise SEO',
+            description: 'For multi-region brands operating across multiple storefronts and languages.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '5,999', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '4,799', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '22,000', period: '/mo' },
+            ],
+            features: [
+              'Multi-Domain & Subfolder Hreflang Matrix',
+              'International Keyword Research',
+              'Custom Headless SEO Middleware',
+              'Bi-Weekly Strategy Calls',
+              'Quarterly Content Audits',
+              'Priority Engineering Execution',
+            ],
+          },
+        ],
+      },
+      'website-maintenance': {
+        category: 'Operations & Retainers',
+        tagline: 'Proactive 24/7 SLA monitoring, emergency fixes, and ongoing performance retainers.',
+        iconName: 'ShieldCheck',
+        keyFeatures: [
+          '24/7 Real-Time Uptime & Heartbeat Monitoring',
+          'Sub-60 Minute Emergency Escalation SLA',
+          'Staging-Verified App & Theme Updates',
+          'Dedicated Developer Access via Slack',
+        ],
+        deliverables: [
+          'Monthly Health, Speed & Security Report',
+          'Dedicated Staging Sandboxes for Pre-Release Testing',
+          'Automated Daily Cloud Backups',
+          'Security & PCI Compliance Monitoring',
+          'Rollover Unused Development Hours',
+        ],
+        technologies: ['Shopify', 'GitHub', 'Datadog', 'UptimeRobot', 'Slack Connect', 'Trello/Jira'],
+        process: [
+          {
+            step: '01',
+            title: 'Onboarding & Codebase Audit',
+            description: 'We audit your theme repository, identify legacy script bloat, and establish sandbox staging environments.',
+          },
+          {
+            step: '02',
+            title: 'Telemetrics & Heartbeat Setup',
+            description: 'Configuring 24/7 checkout monitoring, SSL expiration checks, and automated alerting protocols.',
+          },
+          {
+            step: '03',
+            title: 'Continuous Proactive Maintenance',
+            description: 'Regular app updates, security patch testing, and speed checks performed without disruption to live shoppers.',
+          },
+          {
+            step: '04',
+            title: 'Monthly Feature Iterations',
+            description: 'Allocating retainer hours to build new promotional banners, A/B tests, and conversion improvements.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Zero Downtime Revenue Loss',
+            description: 'Immediate intervention the moment a third-party app or payment gateway misbehaves.',
+          },
+          {
+            title: 'Direct Slack Access',
+            description: 'Skip frustrating ticket queues and communicate directly with senior Shopify engineers.',
+          },
+          {
+            title: 'Safe Staging Deployments',
+            description: 'Never test code directly on live customers; every change is verified on private staging themes.',
+          },
+          {
+            title: 'Hours Rollover',
+            description: 'Unused monthly hours carry over so you get 100% of the value you pay for.',
+          },
+          {
+            title: 'Security Assurance',
+            description: 'Continuous monitoring against script injection, unauthorized app permissions, and API exploits.',
+          },
+          {
+            title: 'Stress-Free Scaling',
+            description: 'High-demand events like Black Friday / Cyber Monday are fully monitored with engineers on standby.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'What is your response time for emergency issues?',
+            answer: 'Critical checkout or site-down emergencies are escalated immediately with a guaranteed response time under 60 minutes, 24/7/365.',
+          },
+          {
+            question: 'Can we use retainer hours for new feature development?',
+            answer: 'Absolutely! Retainer hours can be used for bug fixes, app installations, custom sections, page redesigns, or speed enhancements.',
+          },
+          {
+            question: 'Do unused hours expire?',
+            answer: 'No. Unused retainer hours roll over to the subsequent month, giving you the flexibility to tackle larger projects when ready.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Essential Care',
+            description: 'Core monitoring and maintenance for established single-market Shopify stores.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '1,499', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '1,199', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '5,500', period: '/mo' },
+            ],
+            features: [
+              '10 Dev Hours / Month',
+              '24/7 Uptime & Heartbeat Monitoring',
+              'Sub-2-Hour Emergency Response',
+              'Staging Environment Setup',
+              'Monthly Speed & Health Audit',
+              'Shared Slack Channel',
+            ],
+          },
+          {
+            name: 'Pro Retainer',
+            description: 'For growing D2C brands wanting regular UX updates, A/B testing, and fast turnarounds.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '2,999', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '2,399', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '11,000', period: '/mo' },
+            ],
+            features: [
+              '25 Dev Hours / Month',
+              'Sub-60 Minute Emergency SLA',
+              'Dedicated Lead Shopify Developer',
+              'Continuous Speed Optimization',
+              'A/B Testing Implementation',
+              'Hours Rollover Included',
+            ],
+          },
+          {
+            name: 'Enterprise Dedicated',
+            description: 'Full-service engineering team extension for high-scale Shopify Plus stores.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '5,999', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '4,799', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '22,000', period: '/mo' },
+            ],
+            features: [
+              '60 Dev Hours / Month',
+              '24/7 Priority Emergency Coverage',
+              'Dedicated Technical Project Manager',
+              'BFCM / Flash Sale Live Standby',
+              'Custom Private App Maintenance',
+              'Weekly Sprint Planning Calls',
+            ],
+          },
+        ],
+      },
+      'theme-customization': {
+        category: 'Design & Engineering',
+        tagline: 'Bespoke Shopify theme engineering tailored to your brand identity and conversion goals.',
+        iconName: 'Sliders',
+        keyFeatures: [
+          'Native Shopify OS 2.0 Section Architecture',
+          'Dynamic In-Cart Upsells & Bundle Builders',
+          'Tailored Product Detail Page (PDP) Layouts',
+          'Clean, Vanilla Code without App Subscriptions',
+        ],
+        deliverables: [
+          'Custom Modular Theme Sections with Full Admin Controls',
+          'Sticky Add-to-Cart & Slide-Out Cart Drawer',
+          'Custom Swatch & Variant Selector Modules',
+          'Social Proof & Review Integration Blocks',
+          '1-on-1 Admin Training for Marketing Team',
+        ],
+        technologies: ['Shopify Liquid', 'Theme App Extensions', 'CSS Modules', 'JavaScript ES6+', 'Figma'],
+        process: [
+          {
+            step: '01',
+            title: 'Theme Audit & Scoping',
+            description: 'Analyzing your current theme architecture, identifying limitations, and planning required custom components.',
+          },
+          {
+            step: '02',
+            title: 'Design & Interaction Specification',
+            description: 'Designing bespoke modules and interactions in Figma to match your visual guidelines.',
+          },
+          {
+            step: '03',
+            title: 'Modular Liquid Development',
+            description: 'Writing performant, modular Liquid sections equipped with customizer settings for effortless editing.',
+          },
+          {
+            step: '04',
+            title: 'Testing & Preview Handover',
+            description: 'Verifying on preview themes across mobile and desktop before seamless publishing.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Replace Monthly App Fees',
+            description: 'Native code replaces costly monthly apps for sticky carts, swatches, and badges, saving thousands annually.',
+          },
+          {
+            title: 'Tailored to Your Identity',
+            description: 'Break free from rigid templates with sections customized to your exact creative direction.',
+          },
+          {
+            title: 'Higher Conversion on PDPs',
+            description: 'Custom product tabs, size guides, countdown timers, and trust badges designed to eliminate hesitation.',
+          },
+          {
+            title: 'Effortless Marketing Management',
+            description: 'Your marketing team can drag, reorder, and tweak content without writing a single line of HTML.',
+          },
+          {
+            title: 'Zero Negative Speed Impact',
+            description: 'Ultra-lightweight native code ensures your store maintains top speed ratings.',
+          },
+          {
+            title: 'Future-Proof Compatibility',
+            description: 'Strict adherence to modern Shopify standards guarantees themes remain stable through updates.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'Can you customize our existing theme without starting from scratch?',
+            answer: 'Yes! Most of our customization clients retain their existing base theme while we design and code high-impact custom sections.',
+          },
+          {
+            question: 'Will our changes affect live customers during development?',
+            answer: 'Never. All customization work is developed on an unpublished preview theme until you have reviewed and approved every detail.',
+          },
+          {
+            question: 'Can we configure the new sections in the Shopify customizer?',
+            answer: 'Yes, every custom section includes rich schema settings allowing your team to update headings, colors, images, and layout options directly.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Single Feature Sprint',
+            description: 'Quick implementation of a specific custom feature (e.g., custom cart drawer or bundle builder).',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '1,499' },
+              { currency: 'GBP', symbol: '£', amount: '1,199' },
+              { currency: 'AED', symbol: 'AED ', amount: '5,500' },
+            ],
+            features: [
+              '1 Custom Feature or Section',
+              'Full Shopify Customizer Controls',
+              'Desktop & Mobile Optimization',
+              'Staging Preview Review',
+              '7-Day Revision Window',
+            ],
+          },
+          {
+            name: 'PDP Overhaul Pack',
+            description: 'Complete redesign and custom build of your product detail and collection pages.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '3,999' },
+              { currency: 'GBP', symbol: '£', amount: '3,199' },
+              { currency: 'AED', symbol: 'AED ', amount: '14,500' },
+            ],
+            features: [
+              '3 Bespoke Modular Sections',
+              'Custom Sticky Add-to-Cart',
+              'Dynamic Swatches & Size Guides',
+              'In-Cart Upsell & Cross-Sell Drawer',
+              'Core Web Vitals Check',
+              '14-Day Post-Launch Support',
+            ],
+          },
+          {
+            name: 'Full Theme Transformation',
+            description: 'Comprehensive transformation of your entire storefront into a bespoke digital flagship.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '7,999' },
+              { currency: 'GBP', symbol: '£', amount: '6,399' },
+              { currency: 'AED', symbol: 'AED ', amount: '29,500' },
+            ],
+            features: [
+              'Up to 8 Custom Modular Sections',
+              'Global Brand Typography & Styling',
+              'Bespoke Header & Mega-Menu',
+              'Slide-Out Quick View & Cart Drawer',
+              'Full Native App Replacement',
+              '30-Day Post-Launch Support',
+            ],
+          },
+        ],
+      },
+      'store-optimization': {
+        category: 'Performance & CRO',
+        tagline: 'Boost conversions, slash bounce rates, and accelerate page speed to maximize revenue.',
+        iconName: 'Zap',
+        keyFeatures: [
+          'Conversion Rate Optimization (CRO) Funnel Audits',
+          'Google Core Web Vitals 90+ Score Guarantee',
+          'Unused Script & Heavy App Purge',
+          'Checkout Friction Removal & Cart Optimization',
+        ],
+        deliverables: [
+          'Full Behavioral CRO & Speed Benchmark Report',
+          'Critical Rendering Path Code Optimization',
+          'Elimination of Render-Blocking JavaScript',
+          'Optimized Image & Font Delivery Setup',
+          'Before-and-After Performance & Conversion Verification',
+        ],
+        technologies: ['Google Lighthouse', 'PageSpeed Insights', 'Hotjar', 'Microsoft Clarity', 'WebP/AVIF', 'GA4'],
+        process: [
+          {
+            step: '01',
+            title: 'Diagnostic Audit & Heatmap Analysis',
+            description: 'We analyze page drop-offs, user session replays, and Core Web Vitals scores to pinpoint revenue leaks.',
+          },
+          {
+            step: '02',
+            title: 'Prioritized Action Blueprint',
+            description: 'Formulating a tactical remediation plan targeting high-impact speed gains and checkout friction removal.',
+          },
+          {
+            step: '03',
+            title: 'Deep Code Refactoring',
+            description: 'Purging dead app code, deferring non-critical scripts, pre-loading critical fonts, and minifying payloads.',
+          },
+          {
+            step: '04',
+            title: 'Validation & Conversion Tracking',
+            description: 'Benchmarking on Google Lighthouse and real-world field metrics to document measurable ROI and conversion lift.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Lower Customer Acquisition Cost (CAC)',
+            description: 'Converting a higher percentage of visitors multiplies the return on every ad dollar spent.',
+          },
+          {
+            title: '90+ Google PageSpeed Scores',
+            description: 'Passing Google Core Web Vitals earns search ranking boosts and lower bounce rates.',
+          },
+          {
+            title: 'Frictionless Mobile Checkout',
+            description: 'Eliminate frustrating layout shifts (CLS) and input delays on touch devices.',
+          },
+          {
+            title: 'Higher Average Order Value',
+            description: 'Deploy smart in-cart cross-sells, free shipping thresholds, and volume discount tiers.',
+          },
+          {
+            title: 'Clean Codebase',
+            description: 'Remove ghost scripts left behind by uninstalled apps that secretly drag your store down.',
+          },
+          {
+            title: 'Data-Backed Conversions',
+            description: 'Every recommendation is proven through real user recordings, heatmaps, and funnel analytics.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'How much faster will our store get?',
+            answer: 'Most stores we optimize see page load times decrease by 40% to 70%, with mobile PageSpeed scores jumping from the 20s–40s into the 85–95+ range.',
+          },
+          {
+            question: 'Will speed optimization break our tracking pixels or apps?',
+            answer: 'Never. We safely defer and asynchronously load marketing pixels (Meta, TikTok, Google) so they record every event accurately without blocking visual page rendering.',
+          },
+          {
+            question: 'Is your score guarantee based on lab data or real users?',
+            answer: 'Both! We optimize for Google Lighthouse lab scores and real-world Chrome User Experience (CrUX) field data to pass Core Web Vitals.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Speed Sprint',
+            description: 'Targeted Core Web Vitals remediation focused on mobile page speed acceleration.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '1,999' },
+              { currency: 'GBP', symbol: '£', amount: '1,599' },
+              { currency: 'AED', symbol: 'AED ', amount: '7,500' },
+            ],
+            features: [
+              'Core Web Vitals Optimization',
+              'Dead Script & App Purge',
+              'Font & Media Preloading',
+              'JavaScript Deferral & Minification',
+              'Before/After Performance Report',
+            ],
+          },
+          {
+            name: 'Speed + CRO Engine',
+            description: 'Comprehensive speed overhaul combined with full conversion funnel optimization.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '4,499' },
+              { currency: 'GBP', symbol: '£', amount: '3,599' },
+              { currency: 'AED', symbol: 'AED ', amount: '16,500' },
+            ],
+            features: [
+              'Everything in Speed Sprint',
+              'Full Heatmap & Session Replay Audit',
+              'Checkout & Cart Drawer Optimization',
+              'Mobile Friction & UX Enhancement',
+              'Free Shipping Threshold Bar',
+              '30-Day Conversion Monitoring',
+            ],
+          },
+          {
+            name: 'Continuous Growth Retainer',
+            description: 'Ongoing speed maintenance, monthly A/B experiments, and conversion rate maximization.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '3,499', period: '/mo' },
+              { currency: 'GBP', symbol: '£', amount: '2,799', period: '/mo' },
+              { currency: 'AED', symbol: 'AED ', amount: '12,900', period: '/mo' },
+            ],
+            features: [
+              'Continuous Performance Monitoring',
+              'Monthly A/B Test Implementation',
+              'PDP & Cart Conversion Iterations',
+              'Dedicated CRO Specialist',
+              'Bi-Weekly Results Review Call',
+              'Guaranteed Core Web Vitals Compliance',
+            ],
+          },
+        ],
+      },
+      'store-setup': {
+        category: 'Setup & Launch',
+        tagline: 'Turnkey Shopify store setup, configuration, and launch — executed right the first time.',
+        iconName: 'Rocket',
+        keyFeatures: [
+          'Turnkey Shopify Store & Account Configuration',
+          'Global Payment Gateway & Payout Setup',
+          'Shipping Zones, Rates & Tax Nexus Matrix',
+          'Product Catalog Hierarchy & Collection Setup',
+        ],
+        deliverables: [
+          'Complete, Launch-Ready Shopify Store',
+          'Standard Legal Pages (Privacy, Terms, Refunds)',
+          'Branded Order Notification Emails',
+          'Google Analytics 4 & Meta Pixel Integration',
+          '1-on-1 Operational Handoff & Training Call',
+        ],
+        technologies: ['Shopify', 'Stripe', 'PayPal', 'Klaviyo', 'Google Merchant Center', 'Meta Business'],
+        process: [
+          {
+            step: '01',
+            title: 'Onboarding & Asset Collection',
+            description: 'Gathering your brand assets, catalog spreadsheets, payment documentation, and shipping requirements.',
+          },
+          {
+            step: '02',
+            title: 'Platform Architecture & Settings',
+            description: 'Configuring Shopify admin settings, tax Nexus rules, shipping zones, and currency configurations.',
+          },
+          {
+            step: '03',
+            title: 'Catalog & Payment Integrations',
+            description: 'Structuring product categories, importing SKUs, connecting gateways, and wiring up customer accounts.',
+          },
+          {
+            step: '04',
+            title: 'Test Orders & Official Launch',
+            description: 'Executing end-to-end test transactions, connecting custom domain, and handing over the keys.',
+          },
+        ],
+        benefits: [
+          {
+            title: 'Fast-Track Go-to-Market',
+            description: 'Go from concept to a live, payment-ready store in as little as 10 to 14 business days.',
+          },
+          {
+            title: 'Eliminate Technical Headaches',
+            description: 'No wrestling with complex tax calculations, DNS records, or payment gateway verification.',
+          },
+          {
+            title: 'Clean Data Taxonomy',
+            description: 'Correct collection structures and product tags prevent operational friction as you scale.',
+          },
+          {
+            title: 'Professional Customer Touchpoints',
+            description: 'Branded email confirmations, packing slips, and order tracking notifications.',
+          },
+          {
+            title: '100% Account Ownership',
+            description: 'You own every account, asset, and integration directly with no agency hostage situations.',
+          },
+          {
+            title: 'Hands-On Admin Training',
+            description: 'We teach your team how to fulfill orders, manage inventory, and launch new products with ease.',
+          },
+        ],
+        faqs: [
+          {
+            question: 'How fast can our store go live?',
+            answer: 'Turnkey store setup is typically completed within 10 to 14 business days once all catalog data and branding assets are received.',
+          },
+          {
+            question: 'Do we need an active paid Shopify subscription to start?',
+            answer: 'No. As official Shopify Partners, we build your store on a development account with unlimited trial time, so you only pay Shopify once you are ready to launch.',
+          },
+          {
+            question: 'What happens after the store is launched?',
+            answer: 'We provide 14 to 30 days of post-launch hypercare to assist with live orders and operational questions, plus options for ongoing maintenance retainers.',
+          },
+        ],
+        pricing: [
+          {
+            name: 'Quick Launch',
+            description: 'Essential turnkey setup for new merchants with a curated catalog ready to start selling.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '2,499' },
+              { currency: 'GBP', symbol: '£', amount: '1,999' },
+              { currency: 'AED', symbol: 'AED ', amount: '9,200' },
+            ],
+            features: [
+              'Complete Shopify Account Setup',
+              'Up to 25 Products Configured',
+              'Payment & Shipping Setup',
+              'Standard Legal & Policy Pages',
+              'Custom Domain DNS Connection',
+              '14-Day Post-Launch Support',
+            ],
+          },
+          {
+            name: 'Turnkey Flagship Setup',
+            description: 'Comprehensive setup including advanced shipping rules, review apps, and email marketing.',
+            isPopular: true,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '4,999' },
+              { currency: 'GBP', symbol: '£', amount: '3,999' },
+              { currency: 'AED', symbol: 'AED ', amount: '18,500' },
+            ],
+            features: [
+              'Complete Store & Theme Setup',
+              'Up to 100 Products Configured',
+              'Advanced Shipping Zones & Tax Rules',
+              'Klaviyo Email Template Integration',
+              'Product Reviews & Trust Badges',
+              '1-on-1 Admin Training Session',
+              '30-Day Dedicated Support',
+            ],
+          },
+          {
+            name: 'Multi-Channel Enterprise',
+            description: 'For brands launching with complex catalogs, wholesale B2B channels, or marketplace sync.',
+            isPopular: false,
+            prices: [
+              { currency: 'USD', symbol: '$', amount: '9,999+' },
+              { currency: 'GBP', symbol: '£', amount: '7,999+' },
+              { currency: 'AED', symbol: 'AED ', amount: '36,500+' },
+            ],
+            features: [
+              'Unlimited Catalog SKU Migration',
+              'Amazon / eBay / TikTok Shop Sync',
+              'B2B Customer Tiers & Pricing',
+              'Multi-Warehouse Inventory Routing',
+              'Custom Notification Workflows',
+              '60-Day Post-Launch Support',
+            ],
+          },
+        ],
+      },
+    };
+
+    return metadata[slug] || {
+      category: 'E-Commerce',
+      tagline: '',
       iconName: 'Layers',
       keyFeatures: [
-        'Active-Active Multi-Region Orchestration',
-        'Deterministic Zero-Data-Loss Ledger (RPO=0)',
-        'Sub-Millisecond Byzantine Consensus (< 2.4ms P99)',
-        'Automated Chaos-Engineered Failover Protocols',
+        'Enterprise Shopify Architecture',
+        'Custom Liquid & Headless Stack',
+        'High-Speed Core Web Vitals SLA',
+        'Dedicated Senior Engineer Execution',
       ],
       deliverables: [
-        'Production Architecture Blueprint (TOGAF / C4 model)',
-        'Automated OpenTofu & Kubernetes Multi-Region Topology',
-        'Sovereign Security Attestation & Hardened Perimeters',
+        'Production-Ready Shopify Theme Files',
+        'Custom Admin Settings & Modular Sections',
+        'Quality Assurance & Speed Benchmarking Report',
       ],
-      technologies: ['Kubernetes', 'Apache Kafka', 'PostgreSQL Distributed', 'Rust Systems', 'eBPF Mesh'],
+      technologies: ['Shopify Plus', 'Liquid', 'TypeScript', 'TailwindCSS'],
+      process: [],
+      benefits: [],
+      faqs: [],
+      pricing: [],
     };
   }
 
@@ -413,14 +1620,186 @@ export class CmsService {
   }
 
   // 9. Dynamic Pages & Sections
+  async getAllPages(): Promise<any[]> {
+    const pages = await this.prisma.page.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sections: {
+          orderBy: { displayOrder: 'asc' },
+        },
+        seoMetadata: {
+          include: {
+            ogImage: { select: { variants: true } },
+          },
+        },
+      },
+    });
+
+    return pages.map((page) => ({
+      id: page.id,
+      slug: page.slug,
+      title: page.title,
+      description: page.description,
+      layoutType: page.layoutType,
+      status: page.status,
+      locale: page.locale,
+      sectionsCount: page.sections.length,
+      publishedAt: page.publishedAt,
+      createdAt: page.createdAt,
+      updatedAt: page.updatedAt,
+      sections: page.sections,
+      seoMetadata: page.seoMetadata
+        ? {
+            metaTitle: page.seoMetadata.metaTitle,
+            metaDescription: page.seoMetadata.metaDescription,
+            canonicalUrl: page.seoMetadata.canonicalUrl,
+            ogTitle: page.seoMetadata.ogTitle,
+            ogDescription: page.seoMetadata.ogDescription,
+            ogImageUrl: page.seoMetadata.ogImage ? this.logoUrlFromMedia(page.seoMetadata.ogImage) : null,
+            noIndex: !page.seoMetadata.robotsIndex,
+          }
+        : null,
+    }));
+  }
+
+  async createPage(body: {
+    title: string;
+    slug?: string;
+    description?: string;
+    layoutType?: any;
+    status?: any;
+    seoMetadata?: any;
+  }): Promise<any> {
+    const slugBase = (body.slug || body.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const slug = slugBase || `page-${Date.now()}`;
+
+    const existing = await this.prisma.page.findFirst({
+      where: { slug, deletedAt: null },
+    });
+    if (existing) {
+      throw new Error(`A page with slug '/${slug}' already exists.`);
+    }
+
+    const page = await this.prisma.page.create({
+      data: {
+        title: body.title,
+        slug,
+        description: body.description || null,
+        layoutType: body.layoutType || 'DEFAULT',
+        status: body.status || 'PUBLISHED',
+      },
+    });
+
+    if (body.seoMetadata) {
+      await this.prisma.seoMetadata.create({
+        data: {
+          pageId: page.id,
+          metaTitle: body.seoMetadata.metaTitle || body.title,
+          metaDescription: body.seoMetadata.metaDescription || body.description || '',
+          canonicalUrl: body.seoMetadata.canonicalUrl || null,
+          ogTitle: body.seoMetadata.ogTitle || body.seoMetadata.metaTitle || body.title,
+          ogDescription: body.seoMetadata.ogDescription || body.seoMetadata.metaDescription || body.description || '',
+          robotsIndex: body.seoMetadata.noIndex ? false : true,
+          robotsFollow: body.seoMetadata.noIndex ? false : true,
+        },
+      });
+    }
+
+    return this.getPageBySlug(page.slug);
+  }
+
+  async updatePage(slug: string, body: any): Promise<any> {
+    const page = await this.prisma.page.findFirst({
+      where: { slug, deletedAt: null },
+      include: { seoMetadata: true },
+    });
+    if (!page) {
+      throw new NotFoundException(`Page '${slug}' not found`);
+    }
+
+    const updateData: any = {};
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.layoutType !== undefined) updateData.layoutType = body.layoutType;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.slug !== undefined && body.slug !== page.slug) {
+      if (page.slug === 'home') {
+        throw new Error("Cannot change URL slug of the root 'home' landing page.");
+      }
+      const existingSlug = await this.prisma.page.findFirst({
+        where: { slug: body.slug, deletedAt: null },
+      });
+      if (existingSlug && existingSlug.id !== page.id) {
+        throw new Error(`A page with slug '/${body.slug}' already exists.`);
+      }
+      updateData.slug = body.slug;
+    }
+
+    const updated = await this.prisma.page.update({
+      where: { id: page.id },
+      data: updateData,
+    });
+
+    if (body.seoMetadata) {
+      const seo = body.seoMetadata;
+      if (page.seoMetadata) {
+        await this.prisma.seoMetadata.update({
+          where: { id: page.seoMetadata.id },
+          data: {
+            metaTitle: seo.metaTitle ?? page.seoMetadata.metaTitle,
+            metaDescription: seo.metaDescription ?? page.seoMetadata.metaDescription,
+            canonicalUrl: seo.canonicalUrl ?? page.seoMetadata.canonicalUrl,
+            ogTitle: seo.ogTitle ?? page.seoMetadata.ogTitle,
+            ogDescription: seo.ogDescription ?? page.seoMetadata.ogDescription,
+            robotsIndex: seo.noIndex !== undefined ? !seo.noIndex : page.seoMetadata.robotsIndex,
+            robotsFollow: seo.noIndex !== undefined ? !seo.noIndex : page.seoMetadata.robotsFollow,
+          },
+        });
+      } else {
+        await this.prisma.seoMetadata.create({
+          data: {
+            pageId: page.id,
+            metaTitle: seo.metaTitle || page.title,
+            metaDescription: seo.metaDescription || page.description || '',
+            canonicalUrl: seo.canonicalUrl || null,
+            ogTitle: seo.ogTitle || page.title,
+            ogDescription: seo.ogDescription || page.description || '',
+            robotsIndex: seo.noIndex ? false : true,
+            robotsFollow: seo.noIndex ? false : true,
+          },
+        });
+      }
+    }
+
+    return this.getPageBySlug(updated.slug);
+  }
+
+  async deletePage(slug: string): Promise<void> {
+    if (slug === 'home' || slug === 'services' || slug === 'portfolio' || slug === 'contact' || slug === 'book') {
+      throw new Error(`The core system page '/${slug}' is protected and cannot be deleted.`);
+    }
+
+    const page = await this.prisma.page.findFirst({
+      where: { slug },
+    });
+    if (!page) {
+      throw new NotFoundException(`Page '${slug}' not found`);
+    }
+
+    await this.prisma.page.delete({
+      where: { id: page.id },
+    });
+  }
+
   async getPageBySlug(slug: string): Promise<any> {
-    const isPortfolio = slug === 'portfolio' || slug === 'our-work';
+    const targetSlug = slug === 'our-work' ? 'portfolio' : slug;
     const page = await this.prisma.page.findFirst({
       where: {
-        ...(isPortfolio
-          ? { slug: { in: ['portfolio', 'our-work'] } }
-          : { slug }),
-        status: 'PUBLISHED',
+        slug: targetSlug,
         deletedAt: null,
       },
       include: {
@@ -433,7 +1812,7 @@ export class CmsService {
     });
 
     if (!page) {
-      throw new NotFoundException(`Page '${slug}' not found or not published`);
+      throw new NotFoundException(`Page '${slug}' not found`);
     }
 
     // Load live dependencies concurrently

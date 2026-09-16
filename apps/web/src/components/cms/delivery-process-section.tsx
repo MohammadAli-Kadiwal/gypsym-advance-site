@@ -208,14 +208,14 @@ export function DeliveryProcessSection({ section }: DeliveryProcessSectionProps)
       <div
         className={`${
           stickyScrollEnabled && !prefersReducedMotion
-            ? 'lg:sticky lg:top-12 xl:top-16 relative py-8 sm:py-10 md:py-12'
-            : 'relative py-8 sm:py-10 md:py-12'
-        } flex flex-col justify-center`}
+            ? 'lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden relative flex flex-col justify-center py-4 sm:py-6 lg:py-0'
+            : 'relative py-8 sm:py-10 md:py-12 flex flex-col justify-center'
+        }`}
       >
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
           {/* Section Header */}
           <ScrollReveal direction="up">
-            <div className="text-center max-w-3xl mx-auto space-y-3.5 mb-8 sm:mb-10">
+            <div className="text-center max-w-3xl mx-auto space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
               {eyebrow && (
                 <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
                   <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
@@ -223,7 +223,7 @@ export function DeliveryProcessSection({ section }: DeliveryProcessSectionProps)
                 </div>
               )}
 
-              <h2 className="text-3xl sm:text-4xl lg:text-[50px] xl:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line">
+              <h2 className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] whitespace-pre-line">
                 <span className="block">{renderTitleWithHighlight(title, titleHighlight)}</span>
               </h2>
 
@@ -240,7 +240,7 @@ export function DeliveryProcessSection({ section }: DeliveryProcessSectionProps)
             {/* Desktop: GSAP Smooth Expanding Width Accordion (>= 1024px) */}
             <div
               ref={cardsContainerRef}
-              className="hidden lg:flex flex-row gap-5 items-stretch h-[460px] lg:h-[480px] w-full"
+              className="hidden lg:flex flex-row gap-5 items-stretch h-[420px] lg:h-[450px] xl:h-[470px] w-full"
             >
                 {steps.map((step, idx) => {
                   const isActive = idx === activeStep;

@@ -823,7 +823,7 @@ export default function PortfolioAdminPage() {
       const [projData, catData, pageRes] = await Promise.all([
         fetchApi<PortfolioProjectRecord[]>('/portfolio/admin/projects'),
         fetchApi<PortfolioCategoryRecord[]>('/portfolio/admin/categories'),
-        fetchApi<any>('/pages/our-work').catch(() => null),
+        fetchApi<any>('/pages/portfolio').catch(() => null),
       ]);
       setProjects(Array.isArray(projData) ? projData : []);
       setCategories(Array.isArray(catData) ? catData : []);

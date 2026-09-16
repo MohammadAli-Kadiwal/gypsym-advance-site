@@ -1,14 +1,55 @@
 import { MetadataRoute } from 'next';
+import { getServices } from '@/lib/api';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gypsym.com';
+  const now = new Date();
 
-  return [
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
+      lastModified: now,
+      changeFrequency: 'daily',
       priority: 1.0,
     },
+    {
+      url: `${baseUrl}/services`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/portfolio`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/book`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
   ];
+
+  try {
+    const services = await getServices();
+    const serviceRoutes: MetadataRoute.Sitemap = services.map((s) => ({
+      url: `${baseUrl}/services/${s.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
+
+    return [...staticRoutes, ...serviceRoutes];
+  } catch {
+    return staticRoutes;
+  }
 }
+

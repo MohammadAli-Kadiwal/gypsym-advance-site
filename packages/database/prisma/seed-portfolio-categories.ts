@@ -285,8 +285,8 @@ async function main() {
     console.log(`  ✓ Project: ${p.title} (${p.slug})`);
   }
 
-  // 4. Update / Upsert CMS Pages ("portfolio" and "our-work")
-  const pagesToUpdate = ['our-work', 'portfolio'];
+  // 4. Update / Upsert CMS Page ("portfolio")
+  const pagesToUpdate = ['portfolio'];
 
   for (const pageSlug of pagesToUpdate) {
     let page = await prisma.page.findFirst({

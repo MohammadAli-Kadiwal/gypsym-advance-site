@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export function RouteProgressBar() {
+function RouteProgressBarInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isNavigating, setIsNavigating] = React.useState<boolean>(false);
@@ -47,5 +47,13 @@ export function RouteProgressBar() {
         }}
       />
     </div>
+  );
+}
+
+export function RouteProgressBar() {
+  return (
+    <React.Suspense fallback={null}>
+      <RouteProgressBarInner />
+    </React.Suspense>
   );
 }

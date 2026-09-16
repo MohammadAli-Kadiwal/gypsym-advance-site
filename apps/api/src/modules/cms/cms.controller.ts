@@ -10,9 +10,39 @@ export class CmsController {
     return this.cmsService.getServices();
   }
 
+  @Post('services')
+  async createService(@Body() body: any) {
+    return this.cmsService.createService(body);
+  }
+
+  @Put('services/reorder')
+  async reorderServices(@Body() body: { items: Array<{ id: string; displayOrder: number }> }) {
+    return this.cmsService.reorderServices(body.items);
+  }
+
+  @Put('services/bulk-status')
+  async bulkUpdateServiceStatus(@Body() body: { ids: string[]; status: any }) {
+    return this.cmsService.bulkUpdateServiceStatus(body.ids, body.status);
+  }
+
+  @Post('services/bulk-delete')
+  async bulkDeleteServices(@Body() body: { ids: string[] }) {
+    return this.cmsService.bulkDeleteServices(body.ids);
+  }
+
   @Get('services/:slug')
   async getServiceBySlug(@Param('slug') slug: string) {
     return this.cmsService.getServiceBySlug(slug);
+  }
+
+  @Put('services/:id')
+  async updateService(@Param('id') id: string, @Body() body: any) {
+    return this.cmsService.updateService(id, body);
+  }
+
+  @Delete('services/:id')
+  async deleteService(@Param('id') id: string) {
+    return this.cmsService.deleteService(id);
   }
 
   @Get('solutions')
@@ -80,9 +110,29 @@ export class CmsController {
     return this.cmsService.updateSiteSetting(key, body.value);
   }
 
+  @Get('pages')
+  async getAllPages(): Promise<any[]> {
+    return this.cmsService.getAllPages();
+  }
+
+  @Post('pages')
+  async createPage(@Body() body: any): Promise<any> {
+    return this.cmsService.createPage(body);
+  }
+
   @Get('pages/:slug')
   async getPageBySlug(@Param('slug') slug: string): Promise<any> {
     return this.cmsService.getPageBySlug(slug);
+  }
+
+  @Put('pages/:slug')
+  async updatePage(@Param('slug') slug: string, @Body() body: any): Promise<any> {
+    return this.cmsService.updatePage(slug, body);
+  }
+
+  @Delete('pages/:slug')
+  async deletePage(@Param('slug') slug: string): Promise<any> {
+    return this.cmsService.deletePage(slug);
   }
 
   @Post('pages/:slug/sections')
