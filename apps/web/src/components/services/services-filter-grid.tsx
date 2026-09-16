@@ -82,29 +82,27 @@ export function ServicesFilterGrid({ services, showFilter = false }: ServicesFil
           const starterPrice = service.pricing?.[0]?.prices?.find((p) => p.currency === 'USD');
 
           return (
-            <div
+            <Link
               key={service.slug}
-              className="group relative flex flex-col justify-between rounded-2xl bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.08)] hover:border-neutral-300 transition-all duration-300 hover:-translate-y-1"
+              href={`/services/${service.slug}`}
+              className="group relative flex flex-col justify-between rounded-2xl bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.08)] hover:border-[#d9287c]/40 transition-all duration-300 hover:-translate-y-1 cursor-pointer block text-left"
             >
               <div>
                 {/* Header: Icon & Category Badge */}
                 <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 group-hover:bg-neutral-900 group-hover:text-white transition-colors duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 group-hover:bg-[#d9287c] group-hover:text-white transition-colors duration-300">
                     <IconComponent className="w-5 h-5 stroke-[1.8]" />
                   </div>
                   {service.category && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-neutral-100 text-neutral-600">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-neutral-100 text-neutral-600 group-hover:bg-[#d9287c]/10 group-hover:text-[#d9287c] transition-colors">
                       {service.category}
                     </span>
                   )}
                 </div>
 
                 {/* Service Title */}
-                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 group-hover:text-neutral-950 transition-colors">
-                  <Link href={`/services/${service.slug}`} className="focus:outline-none">
-                    <span className="absolute inset-0" aria-hidden="true" />
-                    {service.title}
-                  </Link>
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 group-hover:text-[#d9287c] transition-colors">
+                  {service.title}
                 </h3>
 
                 {/* Tagline / Short Description */}
@@ -148,12 +146,12 @@ export function ServicesFilterGrid({ services, showFilter = false }: ServicesFil
                   )}
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-900 group-hover:translate-x-1 transition-transform duration-300">
+                <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-900 group-hover:text-[#d9287c] group-hover:translate-x-1.5 transition-all duration-300">
                   <span>Explore</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

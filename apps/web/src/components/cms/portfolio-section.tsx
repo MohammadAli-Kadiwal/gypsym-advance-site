@@ -165,15 +165,27 @@ export function PortfolioSection({
 
   // ── Category Filter Mobile Scroll ─────────────────────────────────────────
   const categoryContainerRef = React.useRef<HTMLDivElement>(null);
+  const isInitialMount = React.useRef(true);
 
   React.useEffect(() => {
-    if (!categoryContainerRef.current) return;
-    const activeEl = categoryContainerRef.current.querySelector('[aria-selected="true"]') as HTMLElement;
+    // Prevent initial mount from scrolling the window or shifting page position
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const container = categoryContainerRef.current;
+    if (!container) return;
+    const activeEl = container.querySelector('[aria-selected="true"]') as HTMLElement;
     if (activeEl) {
-      activeEl.scrollIntoView({
+      // Only scroll the horizontal container internally; NEVER scroll window or document
+      const containerWidth = container.offsetWidth;
+      const elLeft = activeEl.offsetLeft;
+      const elWidth = activeEl.offsetWidth;
+      const targetScrollLeft = elLeft - containerWidth / 2 + elWidth / 2;
+      container.scrollTo({
+        left: Math.max(0, targetScrollLeft),
         behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
       });
     }
   }, [activeCategory]);
@@ -203,19 +215,10 @@ export function PortfolioSection({
   const scrollToMobileSlide = (index: number) => {
     if (!mobileSliderRef.current) return;
     const el = mobileSliderRef.current;
-    const target = el.children[index] as HTMLElement | undefined;
-    if (target) {
-      target.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
-    } else {
-      const slideWidth = el.firstElementChild
-        ? (el.firstElementChild as HTMLElement).offsetWidth + 12
-        : el.clientWidth;
-      el.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
-    }
+    const slideWidth = el.firstElementChild
+      ? (el.firstElementChild as HTMLElement).offsetWidth + 12
+      : el.clientWidth;
+    el.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
     setActiveMobileSlide(index);
   };
 

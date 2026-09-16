@@ -12,6 +12,10 @@ import {
   Loader2,
   ArrowRight,
   ExternalLink,
+  ShieldCheck,
+  Zap,
+  Sparkles,
+  Check,
 } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
@@ -404,6 +408,82 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                   </div>
                 </ScrollReveal>
               ))}
+
+              {/* Discovery Session Standards & Deliverables Card (Fills empty space symmetrically) */}
+              <ScrollReveal direction="up" delay={250}>
+                <div className="rounded-2xl sm:rounded-[24px] p-5 sm:p-6 bg-white dark:bg-card border border-neutral-200/80 dark:border-border shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#d9287c]/10 text-[#d9287c] flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-tight">
+                          Session Standards & Commitments
+                        </h4>
+                        <p className="text-[11px] text-neutral-500">
+                          100% Engineering Focused · Zero Sales Pressure
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Review
+                    </span>
+                  </div>
+
+                  {/* 3 Value Pillars */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="p-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/50 border border-neutral-200/60 dark:border-neutral-700/60 space-y-1">
+                      <div className="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 text-[11.5px]">
+                        <Zap className="w-3.5 h-3.5 text-[#d9287c] shrink-0" />
+                        <span>Live Code Audit</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-snug">
+                        Real-time inspection of theme speed, Liquid scripts & app overhead.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/50 border border-neutral-200/60 dark:border-neutral-700/60 space-y-1">
+                      <div className="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 text-[11.5px]">
+                        <Sparkles className="w-3.5 h-3.5 text-[#d9287c] shrink-0" />
+                        <span>CRO Insights</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-snug">
+                        Actionable mobile checkout & conversion friction takeaways.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/50 border border-neutral-200/60 dark:border-neutral-700/60 space-y-1">
+                      <div className="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 text-[11.5px]">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>NDA Protected</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-snug">
+                        Your store metrics, revenue data, and roadmap remain 100% confidential.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Trust Footer */}
+                  <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
+                      <div className="flex items-center text-amber-500 tracking-tighter text-xs">
+                        ★★★★★
+                      </div>
+                      <span className="font-bold text-neutral-900 dark:text-white">4.9/5 CSAT</span>
+                      <span className="text-neutral-400">· 120+ Shopify Plus Brands</span>
+                    </div>
+
+                    <a
+                      href="mailto:advisory@gypsym.com"
+                      className="font-semibold text-[#d9287c] hover:underline"
+                    >
+                      Need an NDA signed first?
+                    </a>
+                  </div>
+                </div>
+              </ScrollReveal>
             </div>
           </div>
 
@@ -645,54 +725,57 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                   </div>
                 )}
 
-                {/* STEP 2: ENTER YOUR DETAILS (COMPREHENSIVE LIKE CONTACT PAGE) */}
+                {/* STEP 2: ENTER YOUR DETAILS (COMPACT & COMPREHENSIVE) */}
                 {step === 2 && (
-                  <form onSubmit={handleConfirmBooking} className="space-y-5">
+                  <form onSubmit={handleConfirmBooking} className="space-y-3.5">
                     <div>
-                      <div className="text-[11px] font-bold text-[#d9287c] uppercase tracking-wider">
-                        STEP 2 OF 2
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10.5px] font-bold text-[#d9287c] uppercase tracking-wider">
+                          STEP 2 OF 2
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="text-[11px] font-semibold text-[#d9287c] hover:underline inline-flex items-center gap-1"
+                        >
+                          ← Change slot
+                        </button>
                       </div>
-                      <h3 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white mt-1">
-                        Your Details & Project Scope
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white mt-0.5">
+                        Your Details & Scope
                       </h3>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                        Tell us who is connecting and what you’d like our lead Shopify architect to review.
+                      <p className="text-[11.5px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Tell us who is connecting and what you’d like our lead engineer to review.
                       </p>
                     </div>
 
-                    {/* Slot Recap Badge */}
-                    <div className="p-3.5 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-neutral-800 dark:text-neutral-200">
-                        <Clock className="w-4 h-4 text-[#d9287c] shrink-0" />
-                        <div>
-                          <span className="font-bold">{selectedSlot?.slotTime}</span> on{' '}
-                          <span className="font-bold">{selectedDateStr}</span>
-                          <span className="text-[11px] text-neutral-500 block">
-                            Timezone: {selectedTimezone} · 30 min Video Call
+                    {/* Compact Slot Recap Badge */}
+                    <div className="py-2 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200">
+                        <Clock className="w-3.5 h-3.5 text-[#d9287c] shrink-0" />
+                        <span className="font-semibold text-[11.5px]">
+                          {selectedSlot?.slotTime} · {selectedDateStr}
+                          <span className="text-neutral-500 font-normal ml-1.5 hidden sm:inline">
+                            ({selectedTimezone})
                           </span>
-                        </div>
+                        </span>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setStep(1)}
-                        className="text-xs font-semibold text-[#d9287c] hover:underline"
-                      >
-                        Change Time
-                      </button>
+                      <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                        30m Video
+                      </span>
                     </div>
 
                     {submitError && (
-                      <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                      <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
                         {submitError}
                       </div>
                     )}
 
-                    <div className="space-y-3.5 text-xs">
+                    <div className="space-y-2.5 text-xs">
                       {/* Name & Work Email */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
                             Full Name *
                           </label>
                           <input
@@ -701,12 +784,12 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
                             placeholder="Dr. Evelyn Reed"
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
                             Work Email *
                           </label>
                           <input
@@ -715,44 +798,44 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="evelyn@brand.com"
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Company & Phone */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                            Company / Brand Name
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
+                            Company / Brand
                           </label>
                           <input
                             type="text"
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
                             placeholder="Acme Stores Inc."
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                            Phone / WhatsApp Number
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
+                            Phone / WhatsApp
                           </label>
                           <input
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="+1 (555) 019-2834"
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           />
                         </div>
                       </div>
 
                       {/* Store URL & Service Area */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
                             Shopify / Website URL
                           </label>
                           <input
@@ -760,24 +843,24 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                             value={storeUrl}
                             onChange={(e) => setStoreUrl(e.target.value)}
                             placeholder="https://yourbrand.com"
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                          <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
                             Area of Interest
                           </label>
                           <select
                             value={serviceInterest}
                             onChange={(e) => setServiceInterest(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
                           >
                             <option value="Custom Shopify Plus Storefront">Custom Shopify Plus Storefront</option>
-                            <option value="Headless Hydrogen & Next.js">Headless Hydrogen & Next.js Architecture</option>
-                            <option value="Sub-Second Mobile Speed Optimization">Sub-Second Speed & Core Web Vitals</option>
-                            <option value="Checkout Extensibility & Funnel CRO">Checkout Extensibility & Funnel CRO</option>
-                            <option value="24/7 Senior Engineering Retainer">24/7 Dedicated Engineering Retainer</option>
+                            <option value="Headless Hydrogen & Next.js">Headless Hydrogen & Next.js</option>
+                            <option value="Sub-Second Mobile Speed Optimization">Sub-Second Speed & Web Vitals</option>
+                            <option value="Checkout Extensibility & Funnel CRO">Checkout CRO & Extensibility</option>
+                            <option value="24/7 Senior Engineering Retainer">24/7 Senior Retainer</option>
                             <option value="General Technical Consultation">General Technical Consultation</option>
                           </select>
                         </div>
@@ -785,35 +868,35 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
 
                       {/* Why We Connect / Project Scope */}
                       <div>
-                        <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                        <label className="block font-medium text-[11px] text-neutral-700 dark:text-neutral-300 mb-1">
                           Why are you looking to connect? *
                         </label>
                         <textarea
-                          rows={3}
+                          rows={2}
                           required
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Tell us about your conversion goals, upcoming theme redesign, or specific bottlenecks you'd like our lead engineer to review live on the call..."
-                          className="w-full p-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white resize-none transition-all"
+                          placeholder="Briefly describe conversion bottlenecks, theme redesign plans, or questions for our lead architect..."
+                          className="w-full p-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs resize-none transition-all"
                         />
                       </div>
                     </div>
 
-                    <div className="pt-2 space-y-2">
+                    <div className="pt-1.5 space-y-1.5">
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-3.5 px-6 rounded-xl font-bold text-xs sm:text-sm bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        className="w-full py-2.5 sm:py-3 px-5 rounded-xl font-bold text-xs bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
                         {submitting ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Confirming your reservation...</span>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Confirming reservation...</span>
                           </>
                         ) : (
                           <>
                             <span>Confirm Discovery Call · {selectedSlot?.slotTime}</span>
-                            <ArrowRight className="w-4 h-4" />
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </>
                         )}
                       </button>
@@ -821,7 +904,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                       <button
                         type="button"
                         onClick={() => setStep(1)}
-                        className="w-full py-2 text-center text-xs font-semibold text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        className="w-full py-1 text-center text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                       >
                         ← Back to calendar
                       </button>

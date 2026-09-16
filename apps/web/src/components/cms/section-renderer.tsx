@@ -49,7 +49,8 @@ export function SectionRenderer({ sections }: SectionRendererProps) {
         const animIntensity = animConfig.intensity || 'subtle';
         const animRepeat = Boolean(animConfig.repeat);
 
-        const isStickySection = section.componentType === 'DELIVERY_PROCESS';
+        const isStickySection =
+          section.componentType === 'DELIVERY_PROCESS' || section.componentType === 'HERO';
 
         return (
           <section

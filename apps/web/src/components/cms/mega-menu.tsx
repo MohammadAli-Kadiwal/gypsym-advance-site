@@ -26,6 +26,9 @@ import {
   Calendar,
   Store,
   Home,
+  Search,
+  Rocket,
+  ShoppingBag,
   LucideIcon,
 } from 'lucide-react';
 import { MegaMenuConfig } from '@/lib/cms-types';
@@ -50,6 +53,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Clock,
   Smartphone,
   ShoppingCart,
+  ShoppingBag,
+  Search,
+  Rocket,
   GraduationCap,
   Calendar,
   Store,

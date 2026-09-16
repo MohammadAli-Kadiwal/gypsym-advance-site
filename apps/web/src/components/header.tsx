@@ -1,20 +1,23 @@
 import * as React from 'react';
-import { getHeaderData } from '@/lib/api';
+import { getHeaderData, getServices } from '@/lib/api';
 import { HeaderView } from './header-view';
 
 /**
  * Dynamic CMS Header (Server Component).
- * Strictly dynamic: fetches navigation tree, branding, and header config from NestJS API / PostgreSQL.
- * ZERO hardcoded links, ZERO hardcoded branding.
+ * Strictly dynamic: fetches navigation tree, branding, header config, and active services.
  */
 export async function Header() {
-  const headerData = await getHeaderData();
+  const [headerData, services] = await Promise.all([
+    getHeaderData(),
+    getServices().catch(() => []),
+  ]);
 
   return (
     <HeaderView
       navigation={headerData.navigation}
       brand={headerData.branding}
       config={headerData.config}
+      services={services}
     />
   );
 }

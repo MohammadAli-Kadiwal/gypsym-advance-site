@@ -16,6 +16,7 @@ import {
   BrandSettingsDto,
   HeaderConfigDto,
 } from '@/lib/cms-types';
+import { ServiceItemDto } from '@/lib/api';
 import { ThemeToggle } from './theme-toggle';
 import { MegaMenu } from './cms/mega-menu';
 
@@ -23,9 +24,10 @@ interface HeaderViewProps {
   navigation: NavigationDto | null;
   brand: BrandSettingsDto | null;
   config: HeaderConfigDto | null;
+  services?: ServiceItemDto[];
 }
 
-export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
+export function HeaderView({ navigation, brand, config, services }: HeaderViewProps) {
   const pathname = usePathname();
   const [headerVisible, setHeaderVisible] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -92,7 +94,53 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const navItems = navigation?.items || [];
+  const rawNavItems = navigation?.items || [];
+
+  // Dynamically ensure the Services mega menu always has the actual published services
+  const navItems = React.useMemo(() => {
+    if (!services || services.length === 0) return rawNavItems;
+
+    const SERVICE_ICONS: Record<string, string> = {
+      'e-commerce-solutions': 'ShoppingCart',
+      'web-design-development': 'Layout',
+      'search-engine-optimization': 'Search',
+      'website-maintenance': 'ShieldCheck',
+      'theme-customization': 'Palette',
+      'store-optimization': 'Zap',
+      'store-setup': 'Rocket',
+    };
+
+    return rawNavItems.map((item) => {
+      if (item.url === '/services' || item.label.toLowerCase() === 'services') {
+        const actualItems = services.map((s) => ({
+          title: s.title,
+          description: s.tagline || s.shortDescription || 'Shopify engineering and growth service.',
+          url: `/services/${s.slug}`,
+          icon: SERVICE_ICONS[s.slug] || s.iconName || 'Layers',
+        }));
+
+        return {
+          ...item,
+          megaMenuConfig: {
+            enabled: true,
+            category: item.megaMenuConfig?.category || 'OUR SERVICES',
+            layout: '2-column' as const,
+            maxWidth: '5xl',
+            items: actualItems,
+            featuredCta: item.megaMenuConfig?.featuredCta || {
+              enabled: true,
+              title: 'Looking for bespoke Shopify architecture?',
+              description: 'Schedule a free 30-minute discovery consultation with our lead engineer.',
+              buttonText: 'Book a Discovery Call',
+              buttonUrl: '/book',
+            },
+          },
+        };
+      }
+      return item;
+    });
+  }, [rawNavItems, services]);
+
   const cta = config?.cta;
 
   const isValidLogoUrl = (url?: string | null): boolean => {
@@ -243,11 +291,8 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
                       <Link
                         href={item.url}
                         id={`nav-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                        onClick={(e) => {
-                          if (hasMega) {
-                            e.preventDefault();
-                            setActiveMegaMenu((prev) => (prev === item.id ? null : item.id));
-                          }
+                        onClick={() => {
+                          setActiveMegaMenu(null);
                         }}
                         className={`text-[14px] lg:text-[15px] font-normal transition-colors inline-flex items-center gap-1.5 py-2 px-3 rounded-lg ${
                           isMenuOpen || isActive
@@ -310,7 +355,7 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
                 {/* Mobile Hamburger Toggle */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="inline-flex lg:hidden h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 transition-colors active:scale-95"
+                  className="inline-flex lg:hidden h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/90 bg-[#f4f3ef] text-neutral-800 hover:bg-[#eae8e3] transition-colors active:scale-95"
                   aria-label="Toggle Mobile Menu"
                   aria-expanded={mobileMenuOpen}
                 >
@@ -338,7 +383,7 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
 
             {/* Mobile Drawer Navigation Panel */}
             {mobileMenuOpen && (
-              <div className="lg:hidden w-full px-4 pt-3 pb-2 border-t border-neutral-200/70 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="lg:hidden w-full px-4 pt-3 pb-2 border-t border-neutral-200/70 animate-in fade-in slide-in-from-top-2 duration-200">
                 <nav className="flex flex-col space-y-2 max-h-[72vh] overflow-y-auto pr-1">
                   {navItems.map((item) => {
                     const hasMega = Boolean(item.megaMenuConfig?.enabled);
@@ -350,35 +395,35 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
                         key={item.id}
                         className={`rounded-xl border transition-all ${
                           isActive
-                            ? 'border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20'
-                            : 'border-neutral-200/70 bg-neutral-50/60 dark:border-neutral-800/60 dark:bg-neutral-900/40'
+                            ? 'border-[#d9287c]/35 bg-[#d9287c]/[0.06]'
+                            : 'border-neutral-200/70 bg-[#f4f3ef]/80 hover:bg-[#f4f3ef]'
                         }`}
                       >
                         <div className="flex items-center justify-between p-1.5 sm:p-2">
                           <Link
                             href={item.url}
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`font-semibold text-sm py-2 px-3 rounded-lg flex-1 flex items-center justify-between ${
+                            className={`font-semibold text-sm py-2 px-3 rounded-lg flex-1 flex items-center justify-between transition-colors ${
                               isActive
-                                ? 'text-blue-600 dark:text-blue-400 font-bold'
-                                : 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white'
+                                ? 'text-[#d9287c] font-bold'
+                                : 'text-neutral-800 hover:text-[#d9287c]'
                             }`}
                           >
                             <span>{item.label}</span>
                             {isActive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
                             )}
                           </Link>
                           {hasMega && (
                             <button
                               type="button"
                               onClick={() => toggleMobileAccordion(item.id)}
-                              className="p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-800 transition-colors"
+                              className="p-2 text-neutral-400 hover:text-neutral-900 rounded-lg hover:bg-neutral-200/50 transition-colors"
                               aria-label="Toggle subcategories"
                             >
                               <ChevronDown
                                 className={`h-4 w-4 transition-transform duration-200 ${
-                                  isExpanded ? 'rotate-180 text-neutral-900 dark:text-neutral-100' : ''
+                                  isExpanded ? 'rotate-180 text-[#d9287c]' : ''
                                 }`}
                               />
                             </button>
@@ -387,20 +432,20 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
 
                         {/* Mobile Mega-Menu Accordion Items */}
                         {hasMega && isExpanded && item.megaMenuConfig && (
-                          <div className="pt-2 pb-2.5 px-3 border-t border-neutral-200/60 dark:border-neutral-800 space-y-1 bg-white/70 dark:bg-neutral-950/70 rounded-b-xl">
+                          <div className="pt-2 pb-2.5 px-3 border-t border-neutral-200/60 space-y-1 bg-white rounded-b-xl">
                             {item.megaMenuConfig.items.map((sub, sIdx) => (
                               <Link
                                 key={sIdx}
                                 href={sub.url}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="block p-2 rounded-lg hover:bg-blue-50/70 dark:hover:bg-blue-950/40 transition-colors group"
+                                className="block p-2 rounded-lg hover:bg-[#d9287c]/[0.05] transition-colors group"
                               >
-                                <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-between">
+                                <div className="font-semibold text-xs text-neutral-900 group-hover:text-[#d9287c] flex items-center justify-between transition-colors">
                                   <span>{sub.title}</span>
-                                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity" />
+                                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 text-[#d9287c] transition-opacity" />
                                 </div>
                                 {sub.description && (
-                                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">
+                                  <p className="text-[11px] text-neutral-500 line-clamp-1 mt-0.5">
                                     {sub.description}
                                   </p>
                                 )}
@@ -418,7 +463,7 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
                       <Link
                         href={cta.url || '/book'}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="w-full inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-neutral-950 hover:bg-black text-white dark:bg-white dark:text-neutral-950 font-bold text-sm tracking-normal transition-all shadow-md active:scale-98"
+                        className="w-full inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-neutral-950 hover:bg-black text-white font-bold text-sm tracking-normal transition-all shadow-md active:scale-98"
                       >
                         <span>{cta.label}</span>
                         <ArrowUpRight className="h-4 w-4 stroke-[2.4]" />
@@ -429,7 +474,7 @@ export function HeaderView({ navigation, brand, config }: HeaderViewProps) {
                     <Link
                       href="/contact"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="w-full inline-flex items-center justify-center h-9 px-4 rounded-xl border border-neutral-200/90 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-100 font-medium text-xs hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+                      className="w-full inline-flex items-center justify-center h-9 px-4 rounded-xl border border-neutral-200/90 text-neutral-600 hover:text-[#d9287c] font-medium text-xs bg-[#f4f3ef] hover:bg-[#eae8e3] transition-colors"
                     >
                       <span>Need architectural consultation? Reach out directly →</span>
                     </Link>

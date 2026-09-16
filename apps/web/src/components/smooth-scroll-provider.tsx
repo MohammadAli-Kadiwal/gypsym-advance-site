@@ -80,8 +80,12 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  // On route change across any page, recalculate scroll dimensions and reset
+  // On route change across any page, recalculate scroll dimensions and reset to top
   React.useEffect(() => {
+    if (typeof window !== 'undefined' && !window.location.hash) {
+      window.scrollTo(0, 0);
+      lenisRef.current?.scrollTo(0, { immediate: true });
+    }
     const timer = setTimeout(() => {
       lenisRef.current?.resize();
     }, 50);

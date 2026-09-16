@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -20,6 +21,11 @@ interface HeroSectionProps {
 export function HeroSection({ section }: HeroSectionProps) {
   const payload = (section.contentPayload as HeroPayload) || {};
   const [videoOpen, setVideoOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const titleHighlight = payload.titleHighlight;
   const headline = payload.headline;
@@ -257,31 +263,43 @@ export function HeroSection({ section }: HeroSectionProps) {
 
       </div>
 
-      {/* 4. Floating WhatsApp Button — fixed position, works from outside section */}
-      {floatingAction?.enabled && (
+      {/* 4. Floating WhatsApp Button — portalled to document.body so it is truly sticky across page scrolling */}
+      {mounted && floatingAction?.enabled && typeof document !== 'undefined' && createPortal(
         <aside
           aria-label="Direct contact action"
-          className="fixed bottom-6 right-6 z-40"
+          className="fixed bottom-6 right-6 z-50 pointer-events-auto"
         >
           <a
             href={floatingAction.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-12 w-12 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white shadow-xl hover:scale-110 transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/30"
+            className="relative flex items-center justify-center h-12 w-12 sm:h-13 sm:w-13 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white shadow-[0_4px_20px_rgba(18,140,126,0.45)] hover:shadow-[0_6px_28px_rgba(18,140,126,0.65)] hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 cursor-pointer group"
             aria-label={floatingAction.label || 'Contact us via WhatsApp'}
           >
-            <MessageCircle className="h-6 w-6" />
+            {/* Tooltip on hover (desktop) */}
+            <span className="pointer-events-none absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-neutral-900/90 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 group-hover:-translate-x-1 hidden sm:block">
+              {floatingAction.label || 'Chat on WhatsApp'}
+            </span>
+
+            {/* Online Status Pulse Indicator */}
+            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
+            </span>
+
+            <MessageCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
           </a>
-        </aside>
+        </aside>,
+        document.body
       )}
 
-      {/* 5. Video Modal — fixed position portal */}
-      {videoOpen && videoCta?.videoUrl && (
+      {/* 5. Video Modal — portalled to document.body for clean viewport overlay */}
+      {mounted && videoOpen && videoCta?.videoUrl && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in-0">
           <div className="relative w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black border border-neutral-800 shadow-2xl">
             <button
               onClick={() => setVideoOpen(false)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-neutral-900/80 text-white hover:bg-neutral-800 transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-neutral-900/80 text-white hover:bg-neutral-800 transition-colors cursor-pointer"
               aria-label="Close video player"
             >
               <X className="h-5 w-5" />
@@ -304,7 +322,8 @@ export function HeroSection({ section }: HeroSectionProps) {
               />
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
