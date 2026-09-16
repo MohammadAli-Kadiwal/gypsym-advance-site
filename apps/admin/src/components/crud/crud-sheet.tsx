@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { Loader2 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api-client';
@@ -27,7 +28,7 @@ import { normalizeErrorMessage } from '@/lib/api-client';
 export interface FieldConfig {
   name: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'switch' | 'number';
+  type?: 'text' | 'textarea' | 'select' | 'switch' | 'number' | 'image';
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: string }>;
@@ -213,6 +214,13 @@ export function CrudSheet({
                               ))}
                             </SelectContent>
                           </Select>
+                        ) : field.type === 'image' ? (
+                          <ImageUploadField
+                            value={formData[field.name] || ''}
+                            onChange={(val) => handleChange(field.name, val)}
+                            placeholder={field.placeholder}
+                            description={field.description}
+                          />
                         ) : field.type === 'switch' ? (
                           <div className="flex items-center space-x-3 pt-1">
                             <Switch

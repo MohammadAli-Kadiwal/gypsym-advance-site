@@ -163,6 +163,21 @@ export function PortfolioSection({
     }
   };
 
+  // ── Category Filter Mobile Scroll ─────────────────────────────────────────
+  const categoryContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!categoryContainerRef.current) return;
+    const activeEl = categoryContainerRef.current.querySelector('[aria-selected="true"]') as HTMLElement;
+    if (activeEl) {
+      activeEl.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [activeCategory]);
+
   // ── Mobile Slider Controls ────────────────────────────────────────────────
   const mobileSliderRef = React.useRef<HTMLDivElement>(null);
   const [activeMobileSlide, setActiveMobileSlide] = React.useState<number>(0);
@@ -267,7 +282,8 @@ export function PortfolioSection({
           <ScrollReveal direction="up" delay={80}>
             <div className="w-full pb-8 sm:pb-12">
               <div
-                className="flex items-center justify-center gap-2 sm:gap-2.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 py-1 flex-nowrap md:flex-wrap max-w-[1360px] mx-auto"
+                ref={categoryContainerRef}
+                className="flex items-center justify-start md:justify-center gap-2 sm:gap-2.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 py-1.5 flex-nowrap md:flex-wrap max-w-[1360px] mx-auto scroll-smooth touch-pan-x"
                 role="tablist"
                 aria-label="Filter portfolio by category"
               >
@@ -277,10 +293,10 @@ export function PortfolioSection({
                   role="tab"
                   aria-selected={activeCategory === 'all'}
                   onClick={() => handleCategorySelect('all')}
-                  className={`shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
+                  className={`shrink-0 whitespace-nowrap px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
                     activeCategory === 'all'
-                      ? 'bg-[#d9287c] text-white shadow-lg shadow-[#d9287c]/30 ring-2 ring-[#d9287c]/30'
-                      : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800 shadow-xs'
+                      ? 'bg-[#d9287c] text-white'
+                      : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800'
                   }`}
                 >
                   All
@@ -296,10 +312,10 @@ export function PortfolioSection({
                       role="tab"
                       aria-selected={isSelected}
                       onClick={() => handleCategorySelect(cat.slug)}
-                      className={`shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
+                      className={`shrink-0 whitespace-nowrap px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 select-none hover:scale-105 active:scale-95 cursor-pointer ${
                         isSelected
-                          ? 'bg-[#d9287c] text-white shadow-lg shadow-[#d9287c]/30 ring-2 ring-[#d9287c]/30'
-                          : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800 shadow-xs'
+                          ? 'bg-[#d9287c] text-white'
+                          : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-[#d9287c]/40 border border-neutral-200/80 dark:border-neutral-800'
                       }`}
                     >
                       {cat.name}

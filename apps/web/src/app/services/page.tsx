@@ -115,9 +115,13 @@ export default async function ServicesPage() {
     cmsPayload.backgroundImageUrl ||
     '/assets/editorial/agency-hero-editorial.png';
 
-  const rawCtaSection = homePage?.sections?.find(
-    (s: any) => s.componentType === 'CTA' || s.sectionIdentifier === 'homepage-cta'
-  );
+  const rawCtaSection =
+    servicesPage?.sections?.find(
+      (s: any) => s.componentType === 'CTA' || s.sectionIdentifier === 'services-cta'
+    ) ||
+    homePage?.sections?.find(
+      (s: any) => s.componentType === 'CTA' || s.sectionIdentifier === 'homepage-cta'
+    );
 
   const ctaSectionToRender: PageSectionDto = rawCtaSection || {
     id: 'services-cta-section',
@@ -140,6 +144,11 @@ export default async function ServicesPage() {
     },
   };
 
+  const activeComparisonPoints =
+    Array.isArray(advantagePayload?.comparisonPoints) && advantagePayload.comparisonPoints.length > 0
+      ? advantagePayload.comparisonPoints
+      : COMPARISON_POINTS;
+
   return (
     <div className="w-full bg-[#f4f3ef] min-h-screen">
       {/* ── 1. Unified Subpage Hero Component ── */}
@@ -147,27 +156,34 @@ export default async function ServicesPage() {
         ariaLabel="Services Hero"
         backgroundImageUrl={heroBackgroundImage}
         imageAlt="Gypsym Technology E-commerce Architecture"
-        eyebrow="Specialized Shopify & D2C Capabilities"
+        eyebrow={cmsPayload.eyebrow || 'Specialized Shopify & D2C Capabilities'}
         eyebrowBulletColor="bg-emerald-400"
-        titlePrefix="Engineering High-Growth Shopify Stores That"
-        titleHighlight="Convert"
-        description="From bespoke Shopify Plus builds to sub-second speed optimization and ongoing 24/7 engineering retainers — we help ambitious brands outpace competition at 40–60% less cost than traditional US/UK agencies."
-        credentials={CREDENTIALS}
-        showHeroStrip={true}
+        titlePrefix={cmsPayload.titlePrefix || 'Engineering High-Growth Shopify Stores That'}
+        titleHighlight={cmsPayload.titleHighlight || 'Convert'}
+        description={
+          cmsPayload.description ||
+          'From bespoke Shopify Plus builds to sub-second speed optimization and ongoing 24/7 engineering retainers — we help ambitious brands outpace competition at 40–60% less cost than traditional US/UK agencies.'
+        }
+        credentials={
+          Array.isArray(cmsPayload.credentials) && cmsPayload.credentials.length > 0
+            ? cmsPayload.credentials
+            : CREDENTIALS
+        }
+        showHeroStrip={cmsPayload.showHeroStrip !== undefined ? cmsPayload.showHeroStrip : true}
         actions={
           <>
             <Link
-              href="/book"
+              href={cmsPayload.primaryCta?.url || '/book'}
               className="inline-flex items-center px-6 sm:px-7 py-3 rounded-full bg-white text-neutral-950 font-semibold text-xs sm:text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-xl shadow-black/20"
             >
-              <span>Schedule Strategy Call</span>
+              <span>{cmsPayload.primaryCta?.label || 'Schedule Strategy Call'}</span>
               <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
             </Link>
             <Link
-              href="/contact"
+              href={cmsPayload.secondaryCta?.url || '/contact'}
               className="inline-flex items-center px-5 sm:px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/25 text-white font-medium text-xs sm:text-sm transition-all"
             >
-              <span>Inquire About a Project</span>
+              <span>{cmsPayload.secondaryCta?.label || 'Inquire About a Project'}</span>
             </Link>
           </>
         }
@@ -259,7 +275,7 @@ export default async function ServicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs sm:text-sm">
-                {COMPARISON_POINTS.map((pt, idx) => (
+                {activeComparisonPoints.map((pt, idx) => (
                   <tr key={idx} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-800/30 transition-colors">
                     <td className="py-4 px-5 sm:px-6 font-semibold text-neutral-900 dark:text-white">
                       {pt.feature}

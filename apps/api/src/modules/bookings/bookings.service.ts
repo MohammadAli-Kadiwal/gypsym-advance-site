@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { BookingStatus } from '@gypsym/database';
+import { getPublicHoliday } from './public-holidays';
 
 export interface CreateBookingDto {
   fullName: string;
@@ -110,8 +111,9 @@ export class BookingsService {
     const dateObj = new Date(Date.UTC(year, month - 1, day));
     const dayOfWeek = dateObj.getUTCDay();
 
-    // If weekend (Sunday = 0, Saturday = 6), return empty slots or closed
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    // If weekend (Sunday = 0, Saturday = 6) or public holiday, return empty slots (closed)
+    const holidayName = getPublicHoliday(dateStr);
+    if (dayOfWeek === 0 || dayOfWeek === 6 || holidayName) {
       return [];
     }
 
@@ -179,6 +181,24 @@ export class BookingsService {
     }
     if (!dto.date || !dto.slotTime) {
       throw new BadRequestException('Date and time slot are required.');
+    }
+
+    // Validate that the requested date is not on a public holiday
+    const holidayName = getPublicHoliday(dto.date);
+    if (holidayName) {
+      throw new BadRequestException(
+        `Cannot schedule discovery call on an official public holiday (${holidayName}). Please pick an open business day.`
+      );
+    }
+
+    // Validate not on weekend
+    const datePartsForCheck = dto.date.split('-');
+    const checkYear = Number(datePartsForCheck[0]) || 2026;
+    const checkMonth = Number(datePartsForCheck[1]) || 1;
+    const checkDay = Number(datePartsForCheck[2]) || 1;
+    const checkDateObj = new Date(Date.UTC(checkYear, checkMonth - 1, checkDay));
+    if (checkDateObj.getUTCDay() === 0 || checkDateObj.getUTCDay() === 6) {
+      throw new BadRequestException('Cannot schedule discovery call on weekends. Please pick a Monday - Friday slot.');
     }
 
     const timezone = dto.timezone || HOST_TIMEZONE;

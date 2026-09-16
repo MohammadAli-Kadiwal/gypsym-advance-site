@@ -16,6 +16,8 @@ import {
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { getPublicHoliday } from '@/lib/public-holidays';
 
 export interface BookingCalendarPayload {
   eyebrow?: string;
@@ -56,7 +58,7 @@ const TIMEZONES = [
 const DEFAULT_BULLETS = [
   {
     number: 1,
-    text: '30 minutes with Anil — no pitch, just a straight conversation about your store',
+    text: '30 minutes with our lead architect — no pitch, just a straight conversation about your store',
   },
   {
     number: 2,
@@ -116,25 +118,12 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
     p.subtitle ||
     'Free 30-minute call · No commitment. A straight conversation about your Shopify store.';
   const bullets = p.bullets && p.bullets.length > 0 ? p.bullets : DEFAULT_BULLETS;
-  const host = p.host || {
-    name: 'Anil Jangid',
-    role: 'Founder & Lead Developer · Gypsym',
-    avatarUrl: '/images/anil-avatar.jpg',
-  };
 
-  // Calendar navigation state
+  // Calendar navigation state: NO date selected by default per user requirement
   const today = React.useMemo(() => new Date(), []);
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth()); // 0-indexed
-  const [selectedDateStr, setSelectedDateStr] = React.useState<string>(() => {
-    // Default to tomorrow or next business day
-    const next = new Date(today);
-    next.setDate(next.getDate() + 1);
-    while (next.getDay() === 0 || next.getDay() === 6) {
-      next.setDate(next.getDate() + 1);
-    }
-    return next.toISOString().split('T')[0] || '';
-  });
+  const [selectedDateStr, setSelectedDateStr] = React.useState<string>('');
 
   // Timezone selection
   const [selectedTimezone, setSelectedTimezone] = React.useState<string>(() => {
@@ -155,10 +144,13 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
   // Step state: 1 = Pick Time, 2 = Enter Details, 3 = Confirmation
   const [step, setStep] = React.useState<1 | 2 | 3>(1);
 
-  // Form inputs
+  // Form inputs (comprehensive like Contact page form)
   const [fullName, setFullName] = React.useState('');
   const [email, setEmail] = React.useState('');
+  const [companyName, setCompanyName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
   const [storeUrl, setStoreUrl] = React.useState('');
+  const [serviceInterest, setServiceInterest] = React.useState('Custom Shopify Plus Storefront');
   const [notes, setNotes] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -173,7 +165,8 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
       const day = Number(parts[2]) || 1;
 
       const dateObj = new Date(Date.UTC(year, month - 1, day));
-      if (dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6) {
+      // Weekends (Sunday = 0, Saturday = 6) or official public holidays return no slots
+      if (dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6 || getPublicHoliday(dateStr)) {
         return [];
       }
 
@@ -240,11 +233,16 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
     const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-    const matrix: Array<{ dayNum: number | null; dateStr: string | null; isSelectable: boolean }> = [];
+    const matrix: Array<{
+      dayNum: number | null;
+      dateStr: string | null;
+      isSelectable: boolean;
+      holidayName: string | null;
+    }> = [];
 
     // Empty cells before start of month
     for (let i = 0; i < firstDayIndex; i++) {
-      matrix.push({ dayNum: null, dateStr: null, isSelectable: false });
+      matrix.push({ dayNum: null, dateStr: null, isSelectable: false, holidayName: null });
     }
 
     // Days in current month
@@ -255,17 +253,19 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
 
       const dateObj = new Date(currentYear, currentMonth, d);
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+      const holidayName = getPublicHoliday(dateStr);
 
-      // Allow future days only (or today)
+      // Allow future days only (or today), strictly excluding weekends and public holidays
       const isPast =
         dateObj.setHours(23, 59, 59, 999) < today.setHours(0, 0, 0, 0);
 
-      const isSelectable = !isWeekend && !isPast;
+      const isSelectable = !isWeekend && !isPast && !holidayName;
 
       matrix.push({
         dayNum: d,
         dateStr,
         isSelectable,
+        holidayName,
       });
     }
 
@@ -298,15 +298,29 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
       setSubmitError('Please provide your name and valid email address.');
       return;
     }
+    if (!notes.trim()) {
+      setSubmitError('Please tell us why you are looking to connect so our engineers can prepare.');
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError(null);
 
+    const compiledNotes = [
+      companyName.trim() ? `Company: ${companyName.trim()}` : '',
+      phone.trim() ? `Phone: ${phone.trim()}` : '',
+      serviceInterest.trim() ? `Area of Interest: ${serviceInterest.trim()}` : '',
+      notes.trim() ? `Why We Connect:\n${notes.trim()}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
     const bookingPayload = {
       fullName: fullName.trim(),
       email: email.trim().toLowerCase(),
+      phone: phone.trim() || undefined,
       storeUrl: storeUrl.trim() || undefined,
-      notes: notes.trim() || undefined,
+      notes: compiledNotes || undefined,
       date: selectedDateStr,
       slotTime: selectedSlot.slotTime,
       timezone: selectedTimezone,
@@ -350,22 +364,24 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
       className="w-full py-8 sm:py-10 md:py-12 transition-colors"
     >
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* ── LEFT COLUMN: Value Proposition & Benefit Steps ─────── */}
-          <div className="lg:col-span-5 space-y-6 sm:space-y-7">
+        {/* 50-50% Layout for Book a Discovery & Booking Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+          {/* ── LEFT COLUMN: Value Proposition & Benefit Steps (50%) ── */}
+          <div className="w-full space-y-6 sm:space-y-7">
             <ScrollReveal direction="up">
               {/* Eyebrow badge */}
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#127a51] dark:text-emerald-400 uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#127a51] dark:bg-emerald-400" />
-                <span>{eyebrow}</span>
+              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                <span>{eyebrow || 'GYPSYM / BOOK'}</span>
               </div>
 
               {/* Headline */}
-              <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.12] mt-3">
-                {title}{' '}
-                <span className="font-serif italic font-normal text-[#127a51] dark:text-emerald-400">
-                  {titleHighlight}
-                </span>
+              <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.15] sm:leading-[1.12] whitespace-pre-line mt-3">
+                {renderTitleWithHighlight(
+                  title || 'Book a discovery',
+                  titleHighlight || 'call.',
+                  'font-serif italic font-normal text-[1.12em] tracking-normal inline-block px-1'
+                )}
               </h2>
 
               {/* Subtitle */}
@@ -379,7 +395,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
               {bullets.map((b, idx) => (
                 <ScrollReveal key={b.number || idx} direction="up" delay={idx * 50}>
                   <div className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-card border border-neutral-200/80 dark:border-border shadow-2xs flex items-start gap-3.5 sm:gap-4 transition-all hover:border-neutral-300 dark:hover:border-neutral-700">
-                    <span className="w-6 h-6 rounded-full bg-[#e6f4ea] dark:bg-emerald-950/60 text-[#127a51] dark:text-emerald-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-6 h-6 rounded-full bg-[#d9287c]/10 text-[#d9287c] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
                       {b.number || idx + 1}
                     </span>
                     <p className="text-xs sm:text-[13.5px] text-neutral-700 dark:text-neutral-300 leading-relaxed font-normal">
@@ -389,30 +405,10 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                 </ScrollReveal>
               ))}
             </div>
-
-            {/* Host Profile Card */}
-            <ScrollReveal direction="up" delay={250}>
-              <div className="rounded-2xl p-4 bg-[#141517] dark:bg-neutral-900 border border-neutral-800 text-white flex items-center gap-3.5 shadow-sm">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center font-bold text-white text-sm shrink-0 border border-white/20">
-                  {host.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white tracking-tight">
-                    {host.name}
-                  </div>
-                  <div className="text-xs text-neutral-400">
-                    {host.role}
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
           </div>
 
-          {/* ── RIGHT COLUMN: Interactive Booking Widget ──────────── */}
-          <div className="lg:col-span-7">
+          {/* ── RIGHT COLUMN: Interactive Booking Widget (50%) ─────── */}
+          <div className="w-full">
             <ScrollReveal direction="up" delay={100}>
               <div className="bg-white dark:bg-card rounded-[28px] sm:rounded-[36px] p-6 sm:p-8 lg:p-9 border border-neutral-200/80 dark:border-border shadow-[0_8px_32px_-8px_rgba(0,0,0,0.06)]">
                 {/* STEP 1: PICK A TIME */}
@@ -438,18 +434,18 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                         <button
                           type="button"
                           onClick={handlePrevMonth}
-                          className="p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
+                          className="p-1.5 rounded-full bg-[#f4f3ef] hover:bg-[#eae8e3] dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
                           aria-label="Previous month"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <span className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 min-w-[120px] text-center">
+                        <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 min-w-[130px] text-center">
                           {MONTH_NAMES[currentMonth]} {currentYear}
                         </span>
                         <button
                           type="button"
                           onClick={handleNextMonth}
-                          className="p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors"
+                          className="p-1.5 rounded-full bg-[#f4f3ef] hover:bg-[#eae8e3] dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
                           aria-label="Next month"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -483,18 +479,53 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                             type="button"
                             disabled={!item.isSelectable}
                             onClick={() => item.dateStr && setSelectedDateStr(item.dateStr)}
-                            className={`h-9 sm:h-11 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${
+                            title={
+                              item.holidayName
+                                ? `Public Holiday: ${item.holidayName} (Closed)`
+                                : !item.isSelectable
+                                ? 'Unavailable / Closed'
+                                : undefined
+                            }
+                            aria-label={
+                              item.holidayName
+                                ? `Day ${item.dayNum} - Public Holiday: ${item.holidayName}`
+                                : `Day ${item.dayNum}`
+                            }
+                            className={`h-9 sm:h-11 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center relative ${
                               isSelected
                                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-md scale-105'
                                 : item.isSelectable
-                                ? 'bg-neutral-50 hover:bg-neutral-100 text-neutral-800 dark:bg-neutral-800/60 dark:hover:bg-neutral-800 dark:text-neutral-200 border border-neutral-200/50 dark:border-neutral-700/50'
+                                ? 'bg-[#f4f3ef] hover:bg-[#eae8e3] text-neutral-800 dark:bg-neutral-800/60 dark:hover:bg-neutral-800 dark:text-neutral-200 border border-neutral-200/70 dark:border-neutral-700/50'
+                                : item.holidayName
+                                ? 'bg-rose-50/70 text-rose-500 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/50 cursor-not-allowed opacity-85'
                                 : 'text-neutral-300 dark:text-neutral-700 cursor-not-allowed opacity-50'
                             }`}
                           >
-                            {item.dayNum}
+                            <span className="relative flex flex-col items-center justify-center">
+                              <span>{item.dayNum}</span>
+                              {item.holidayName && (
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-rose-400 mt-0.5"
+                                  title={`Public Holiday: ${item.holidayName}`}
+                                />
+                              )}
+                            </span>
                           </button>
                         );
                       })}
+                    </div>
+
+                    {/* Calendar legend */}
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-neutral-400 pt-1 px-0.5">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span>Public Holidays (Closed)</span>
+                        </span>
+                        <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                        <span>Weekends Closed</span>
+                      </div>
+                      <span className="font-medium text-neutral-500">Mon – Fri Open</span>
                     </div>
 
                     {/* Timezone Selector Strip */}
@@ -502,7 +533,9 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <span className="text-xs font-bold text-neutral-400 dark:text-neutral-500 tracking-wider uppercase flex items-center gap-1.5">
                           <Globe className="w-3.5 h-3.5 text-neutral-400" />
-                          <span>PICK A TIME</span>
+                          <span>
+                            PICK A TIME{selectedDateStr ? ` · ${selectedDateStr}` : ''}
+                          </span>
                         </span>
 
                         <div className="relative min-w-[210px] sm:min-w-[240px]">
@@ -517,19 +550,29 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                         </div>
                       </div>
 
-                      {/* Time Slots Grid */}
+                      {/* Time Slots Grid: No Scroller per user requirement */}
                       <div className="pt-2">
-                        {loadingSlots ? (
-                          <div className="h-28 flex items-center justify-center text-xs text-neutral-400 gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                        {!selectedDateStr ? (
+                          <div className="py-8 px-4 flex flex-col items-center justify-center text-center text-xs text-neutral-400 gap-2 border border-dashed rounded-2xl border-neutral-200 dark:border-neutral-800 bg-[#f4f3ef]/80 dark:bg-neutral-800/30">
+                            <CalendarIcon className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+                            <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">
+                              No date selected yet
+                            </div>
+                            <span className="text-neutral-500 dark:text-neutral-400 max-w-xs text-xs">
+                              Please click any available business day on the calendar above to view open slots.
+                            </span>
+                          </div>
+                        ) : loadingSlots ? (
+                          <div className="py-8 flex items-center justify-center text-xs text-neutral-400 gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-[#d9287c]" />
                             <span>Calculating slots for your timezone...</span>
                           </div>
                         ) : slots.length === 0 ? (
-                          <div className="h-28 flex items-center justify-center text-xs text-neutral-400 border border-dashed rounded-xl border-neutral-200 dark:border-neutral-800">
+                          <div className="py-8 px-4 flex items-center justify-center text-xs text-neutral-400 border border-dashed rounded-xl border-neutral-200 dark:border-neutral-800">
                             No open slots available on this day. Please choose another date.
                           </div>
                         ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1">
                             {slots.map((s, idx) => {
                               const isSlotSelected = selectedSlot?.utcStartTime === s.utcStartTime;
                               return (
@@ -542,8 +585,8 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                                     isSlotSelected
                                       ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 border-neutral-900 dark:border-white shadow-xs'
                                       : s.available
-                                      ? 'bg-neutral-50/70 hover:bg-neutral-100 text-neutral-800 dark:bg-neutral-800/50 dark:hover:bg-neutral-800 dark:text-neutral-200 border-neutral-200/80 dark:border-neutral-700/60'
-                                      : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-300 dark:text-neutral-700 border-transparent line-through cursor-not-allowed'
+                                      ? 'bg-[#f4f3ef] hover:bg-[#eae8e3] text-neutral-800 dark:bg-neutral-800/50 dark:hover:bg-neutral-800 dark:text-neutral-200 border-neutral-200/80 dark:border-neutral-700/60'
+                                      : 'bg-[#f4f3ef]/40 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-700 border-neutral-200/40 line-through cursor-not-allowed'
                                   }`}
                                 >
                                   {s.slotTime}
@@ -564,13 +607,15 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                         className={`w-full py-3.5 px-6 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
                           selectedSlot
                             ? 'bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 shadow-md cursor-pointer'
-                            : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600 cursor-not-allowed'
+                            : 'bg-[#f4f3ef] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600 border border-neutral-200/60 cursor-not-allowed'
                         }`}
                       >
                         <span>
-                          {selectedSlot
-                            ? `Continue with ${selectedSlot.slotTime}`
-                            : 'Select a day and time'}
+                          {!selectedDateStr
+                            ? 'Select a date on the calendar'
+                            : !selectedSlot
+                            ? 'Select an available time slot'
+                            : `Continue with ${selectedSlot.slotTime}`}
                         </span>
                         {selectedSlot && <ArrowRight className="w-4 h-4" />}
                       </button>
@@ -591,7 +636,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                         href="https://wa.me/917339726403"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-[#127a51] dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                        className="font-semibold text-[#d9287c] hover:underline inline-flex items-center gap-1"
                       >
                         <span>Prefer WhatsApp?</span>
                         <ArrowRight className="w-3 h-3" />
@@ -600,27 +645,30 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                   </div>
                 )}
 
-                {/* STEP 2: ENTER YOUR DETAILS */}
+                {/* STEP 2: ENTER YOUR DETAILS (COMPREHENSIVE LIKE CONTACT PAGE) */}
                 {step === 2 && (
                   <form onSubmit={handleConfirmBooking} className="space-y-5">
                     <div>
-                      <div className="text-[11px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                      <div className="text-[11px] font-bold text-[#d9287c] uppercase tracking-wider">
                         STEP 2 OF 2
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white mt-1">
-                        Your details
+                        Your Details & Project Scope
                       </h3>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Tell us who is connecting and what you’d like our lead Shopify architect to review.
+                      </p>
                     </div>
 
                     {/* Slot Recap Badge */}
-                    <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700 flex items-center justify-between">
+                    <div className="p-3.5 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700 flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-neutral-800 dark:text-neutral-200">
-                        <Clock className="w-4 h-4 text-[#127a51] dark:text-emerald-400 shrink-0" />
+                        <Clock className="w-4 h-4 text-[#d9287c] shrink-0" />
                         <div>
                           <span className="font-bold">{selectedSlot?.slotTime}</span> on{' '}
                           <span className="font-bold">{selectedDateStr}</span>
                           <span className="text-[11px] text-neutral-500 block">
-                            Timezone: {selectedTimezone}
+                            Timezone: {selectedTimezone} · 30 min Video Call
                           </span>
                         </div>
                       </div>
@@ -628,70 +676,125 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                       <button
                         type="button"
                         onClick={() => setStep(1)}
-                        className="text-xs font-semibold text-[#127a51] dark:text-emerald-400 hover:underline"
+                        className="text-xs font-semibold text-[#d9287c] hover:underline"
                       >
-                        Change
+                        Change Time
                       </button>
                     </div>
 
                     {submitError && (
-                      <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                      <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
                         {submitError}
                       </div>
                     )}
 
                     <div className="space-y-3.5 text-xs">
-                      <div>
-                        <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Dr. Evelyn Reed"
-                          className="w-full h-10 px-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 text-neutral-900 dark:text-white"
-                        />
+                      {/* Name & Work Email */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="Dr. Evelyn Reed"
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Work Email *
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="evelyn@brand.com"
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          />
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                          Work Email *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="evelyn@brand.com"
-                          className="w-full h-10 px-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 text-neutral-900 dark:text-white"
-                        />
+                      {/* Company & Phone */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Company / Brand Name
+                          </label>
+                          <input
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Acme Stores Inc."
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Phone / WhatsApp Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="+1 (555) 019-2834"
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          />
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                          Shopify Store URL
-                        </label>
-                        <input
-                          type="text"
-                          value={storeUrl}
-                          onChange={(e) => setStoreUrl(e.target.value)}
-                          placeholder="https://yourbrand.com or store.myshopify.com"
-                          className="w-full h-10 px-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 text-neutral-900 dark:text-white"
-                        />
+                      {/* Store URL & Service Area */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Shopify / Website URL
+                          </label>
+                          <input
+                            type="text"
+                            value={storeUrl}
+                            onChange={(e) => setStoreUrl(e.target.value)}
+                            placeholder="https://yourbrand.com"
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+                            Area of Interest
+                          </label>
+                          <select
+                            value={serviceInterest}
+                            onChange={(e) => setServiceInterest(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white transition-all"
+                          >
+                            <option value="Custom Shopify Plus Storefront">Custom Shopify Plus Storefront</option>
+                            <option value="Headless Hydrogen & Next.js">Headless Hydrogen & Next.js Architecture</option>
+                            <option value="Sub-Second Mobile Speed Optimization">Sub-Second Speed & Core Web Vitals</option>
+                            <option value="Checkout Extensibility & Funnel CRO">Checkout Extensibility & Funnel CRO</option>
+                            <option value="24/7 Senior Engineering Retainer">24/7 Dedicated Engineering Retainer</option>
+                            <option value="General Technical Consultation">General Technical Consultation</option>
+                          </select>
+                        </div>
                       </div>
 
+                      {/* Why We Connect / Project Scope */}
                       <div>
                         <label className="block font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
-                          What would you like to discuss?
+                          Why are you looking to connect? *
                         </label>
                         <textarea
                           rows={3}
+                          required
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Tell us about your conversion goals, upcoming theme redesign, or custom tech stack..."
-                          className="w-full p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 text-neutral-900 dark:text-white resize-none"
+                          placeholder="Tell us about your conversion goals, upcoming theme redesign, or specific bottlenecks you'd like our lead engineer to review live on the call..."
+                          className="w-full p-3 rounded-xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white resize-none transition-all"
                         />
                       </div>
                     </div>
@@ -709,7 +812,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                           </>
                         ) : (
                           <>
-                            <span>Confirm Booking</span>
+                            <span>Confirm Discovery Call · {selectedSlot?.slotTime}</span>
                             <ArrowRight className="w-4 h-4" />
                           </>
                         )}
@@ -745,7 +848,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                       </p>
                     </div>
 
-                    <div className="max-w-md mx-auto p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 text-left space-y-2 text-xs">
+                    <div className="max-w-md mx-auto p-4 rounded-2xl bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 text-left space-y-2 text-xs">
                       <div className="flex items-center justify-between border-b border-neutral-200/60 dark:border-neutral-700/60 pb-2">
                         <span className="text-neutral-500">Date & Time:</span>
                         <span className="font-bold text-neutral-800 dark:text-neutral-200">
@@ -787,7 +890,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                           setStep(1);
                           setSelectedSlot(null);
                         }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:bg-[#f4f3ef] dark:hover:bg-neutral-800 transition-colors"
                       >
                         <CalendarIcon className="w-3.5 h-3.5" />
                         <span>Book another session</span>

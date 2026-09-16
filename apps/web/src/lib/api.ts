@@ -263,3 +263,41 @@ export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | n
   }
 }
 
+export async function getClients(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/clients`, {
+      cache: 'no-store',
+      next: { tags: ['clients'] },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list = json?.data ?? json;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getTeamMembers(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cms/collections/team`, {
+      cache: 'no-store',
+      next: { tags: ['team'] },
+    });
+    if (!res.ok) {
+      const fallback = await fetch(`${API_BASE_URL}/team`, { cache: 'no-store' }).catch(() => null);
+      if (fallback?.ok) {
+        const fj = await fallback.json();
+        const flist = fj?.data ?? fj;
+        return Array.isArray(flist) ? flist : [];
+      }
+      return [];
+    }
+    const json = await res.json();
+    const list = json?.data ?? json;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+

@@ -77,7 +77,15 @@ export function SubpageHero({
           {eyebrow && (
             <ScrollReveal direction="down" delay={60}>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-[12px] font-mono uppercase tracking-[0.2em] text-neutral-200 shadow-sm">
-                <span className={`w-2 h-2 rounded-full ${eyebrowBulletColor} animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${eyebrowBulletColor} animate-pulse ${
+                    eyebrowBulletColor.includes('#d9287c') || eyebrowBulletColor.includes('pink')
+                      ? 'shadow-[0_0_8px_rgba(217,40,124,0.8)]'
+                      : eyebrowBulletColor.includes('blue')
+                      ? 'shadow-[0_0_8px_rgba(96,165,250,0.8)]'
+                      : 'shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                  }`}
+                />
                 <span>{eyebrow}</span>
               </div>
             </ScrollReveal>

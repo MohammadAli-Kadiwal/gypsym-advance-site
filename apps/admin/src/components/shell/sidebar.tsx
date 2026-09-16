@@ -89,6 +89,11 @@ export function Sidebar() {
           icon: Briefcase,
         },
         {
+          label: 'Team Profiles',
+          href: '/content/team',
+          icon: Users,
+        },
+        {
           label: 'Testimonials',
           href: '/content/testimonials',
           icon: MessageSquareQuote,

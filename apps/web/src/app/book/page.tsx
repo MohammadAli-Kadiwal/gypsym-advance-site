@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { ArrowDown, MessageSquare } from 'lucide-react';
 import { getPageBySlug } from '@/lib/api';
+import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
 import { BookingCalendarSection } from '@/components/cms/booking-calendar-section';
 import { DirectContactSection } from '@/components/cms/direct-contact-section';
 import { ClientOutcomesSection } from '@/components/cms/client-outcomes-section';
-import { ScrollReveal, AnimatedCounter } from '@/components/motion';
+import { ScrollReveal } from '@/components/motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,15 +21,22 @@ export const metadata: Metadata = {
   },
 };
 
-const CREDENTIAL_ITEMS = [
-  { value: 4, label: 'Avg. Response Time', sub: 'Hours' },
-  { value: 120, label: 'Shopify Stores Built', sub: 'Global' },
-  { value: 100, label: 'Senior Engineers', sub: 'Direct Contact' },
-  { value: 99, label: 'Client Satisfaction', sub: 'CSAT Score' },
+const CREDENTIAL_ITEMS: CredentialItem[] = [
+  { value: '< 60m', label: 'Average Response Time', sub: 'Business Hours' },
+  { value: '120+', label: 'Shopify Stores Built', sub: 'Global Brands' },
+  { value: '25+', label: 'Senior Engineers', sub: 'Liquid & Hydrogen' },
+  { value: '99%', label: 'Client Satisfaction', sub: 'CSAT Rating' },
 ];
 
 export default async function BookPage() {
   const page = await getPageBySlug('book').catch(() => null);
+
+  const rawHeroSection = page?.sections?.find(
+    (s: any) =>
+      s.componentType === 'HERO' ||
+      s.sectionIdentifier === 'book-hero'
+  );
+  const heroPayload = (rawHeroSection?.contentPayload as any) || {};
 
   const rawBookingSection = page?.sections?.find(
     (s: any) =>
@@ -54,85 +63,52 @@ export default async function BookPage() {
       s.sectionIdentifier === 'store-outcomes'
   );
 
+  const heroBackgroundImage =
+    heroPayload.backgroundImage ||
+    heroPayload.heroBackgroundImage ||
+    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2200&auto=format&fit=crop';
+
+  const credentials =
+    Array.isArray(heroPayload.credentials) && heroPayload.credentials.length > 0
+      ? heroPayload.credentials
+      : CREDENTIAL_ITEMS;
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#fafaf9] dark:bg-background transition-colors duration-300">
-      {/* ── 1. Hero Section: Matching Contact Page Pattern ────────── */}
-      <div className="w-full px-1.5 sm:px-2 md:px-3 pt-2">
-        <section
-          aria-label="Book Discovery Call Hero"
-          className="relative min-h-[360px] sm:min-h-[420px] md:min-h-[460px] rounded-2xl md:rounded-3xl overflow-hidden bg-neutral-950 text-white flex flex-col justify-between p-6 sm:p-10 md:p-14 lg:p-16 border border-neutral-800/80 shadow-2xl"
-        >
-          {/* Ambient lighting effects */}
-          <div
-            aria-hidden="true"
-            className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-600/15 blur-3xl pointer-events-none"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute top-1/2 -right-32 w-96 h-96 rounded-full bg-[#127a51]/10 blur-3xl pointer-events-none"
-          />
-
-          {/* Top Row: Eyebrow + Live Indicator */}
-          <div className="relative z-10 flex items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-emerald-400 uppercase">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>DISCOVERY & ARCHITECTURE</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Host Time: Gujarat, India (IST)</span>
-            </div>
-          </div>
-
-          {/* Center Content: Headline & Description */}
-          <div className="relative z-10 my-auto py-8 sm:py-10 max-w-4xl">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
-              Schedule a Technical Discovery{' '}
-              <span className="font-serif italic font-normal text-emerald-400">
-                Session
-              </span>
-            </h1>
-            <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl text-neutral-300 max-w-2xl font-normal leading-relaxed">
-              Connect directly with our lead Shopify Plus architects. Live review of your store, zero sales pitch, and tailored recommendations.
-            </p>
-          </div>
-
-          {/* Bottom Row: Key Credentials Strip */}
-          <div className="relative z-10 pt-6 border-t border-neutral-800/60">
-            <div className="max-w-5xl mx-auto rounded-xl sm:rounded-2xl p-3 sm:p-4 bg-white/[0.04] backdrop-blur-md border border-white/10 shadow-xs">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
-                {CREDENTIAL_ITEMS.map((item, i) => (
-                  <div
-                    key={item.label}
-                    className={`flex flex-col items-center justify-center text-center ${
-                      i > 0 ? 'pt-3 sm:pt-0' : ''
-                    }`}
-                  >
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xl sm:text-2xl md:text-3xl font-bold font-mono tracking-tight text-white">
-                        <AnimatedCounter
-                          from={0}
-                          value={item.value}
-                          duration={1.8}
-                          delay={i * 120}
-                          threshold={0}
-                          rootMargin="100px 0px 100px 0px"
-                        />
-                      </span>
-                    </div>
-                    <span className="text-[11px] sm:text-[12px] font-semibold text-neutral-200 tracking-tight">
-                      {item.label}
-                    </span>
-                    <span className="text-[10px] text-neutral-400 font-mono">
-                      {item.sub}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+    <div className="w-full">
+      {/* ── 1. Hero Section: Using Canonical SubpageHero Component ── */}
+      <SubpageHero
+        ariaLabel="Book Discovery Call Hero"
+        backgroundImageUrl={heroBackgroundImage}
+        imageAlt="Gypsym Technology Technical Discovery Session"
+        eyebrow={heroPayload.eyebrow || 'Gypsym Technology · Discovery Call'}
+        eyebrowBulletColor="bg-[#d9287c]"
+        titlePrefix={heroPayload.headline || heroPayload.title || 'Schedule a Technical Discovery'}
+        titleHighlight={heroPayload.highlight || heroPayload.titleHighlight || 'Session'}
+        description={
+          heroPayload.description ||
+          'Connect directly with our lead Shopify Plus architects. Live review of your storefront, zero sales pitch, and tailored engineering recommendations.'
+        }
+        credentials={credentials}
+        showHeroStrip={heroPayload.showHeroStrip !== undefined ? heroPayload.showHeroStrip : true}
+        actions={
+          <>
+            <a
+              href="#booking-widget"
+              className="inline-flex items-center px-6 sm:px-7 py-3 rounded-full bg-white text-neutral-950 font-semibold text-xs sm:text-sm hover:bg-neutral-100 hover:scale-105 transition-all shadow-xl shadow-black/20"
+            >
+              <span>Pick Date & Time</span>
+              <ArrowDown className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+            <a
+              href="#reach-us-directly"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/25 text-white font-medium text-xs sm:text-sm transition-all"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>Direct Channels</span>
+            </a>
+          </>
+        }
+      />
 
       {/* ── 2. Discovery Call & Timezone Slot Picker Section ───────── */}
       <div id="booking-widget" className="w-full relative overflow-x-clip">

@@ -51,6 +51,13 @@ export default async function ContactPage() {
       s.sectionIdentifier === 'contact',
   );
 
+  const rawHeroSection = page?.sections?.find(
+    (s: any) =>
+      s.componentType === 'HERO' ||
+      s.sectionIdentifier === 'contact-hero'
+  );
+  const heroPayload = (rawHeroSection?.contentPayload as any) || {};
+
   const rawHomeContact = homePage?.sections?.find(
     (s: any) =>
       s.componentType === 'CONTACT' ||
@@ -188,16 +195,16 @@ export default async function ContactPage() {
     <div className="w-full">
       <SubpageHero
         ariaLabel="Contact Hero"
-        backgroundImageUrl="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2200&auto=format&fit=crop"
+        backgroundImageUrl={heroPayload.backgroundImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2200&auto=format&fit=crop"}
         imageAlt="Gypsym Technology — Modern collaborative workspace"
-        eyebrow="Gypsym Technology · Get In Touch"
+        eyebrow={heroPayload.eyebrow || "Gypsym Technology · Get In Touch"}
         eyebrowBulletColor="bg-[#d9287c]"
-        titlePrefix="Let's Build Something"
-        titleHighlight="Remarkable"
+        titlePrefix={heroPayload.title || "Let's Build Something"}
+        titleHighlight={heroPayload.titleHighlight || "Remarkable"}
         titleSuffix="Together"
-        description="Whether you need a new Shopify Plus storefront, a performance overhaul, or a long-term engineering partner — our team is ready. Every message is read personally and replied to within one business day."
-        credentials={CONTACT_CREDENTIALS}
-        showHeroStrip={true}
+        description={heroPayload.description || "Whether you need a new Shopify Plus storefront, a performance overhaul, or a long-term engineering partner — our team is ready. Every message is read personally and replied to within one business day."}
+        credentials={Array.isArray(heroPayload.credentials) && heroPayload.credentials.length > 0 ? heroPayload.credentials : CONTACT_CREDENTIALS}
+        showHeroStrip={heroPayload.showHeroStrip !== undefined ? heroPayload.showHeroStrip : true}
         actions={
           <>
             <a

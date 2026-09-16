@@ -40,6 +40,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 import type { PageData } from './types';
 
 export type PageSlug = string;
@@ -398,9 +399,20 @@ export function PagesTable({
                         <span>Settings</span>
                       </Button>
 
-                      {/* Studio / Builder buttons with dedicated URL navigation */}
+                      {/* Dedicated Section Studio navigation for all pages */}
                       {page.slug === 'home' ? (
                         <Link href="/pages/home">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : page.slug === 'services' ? (
+                        <Link href="/pages/services">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -421,14 +433,47 @@ export function PagesTable({
                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Button>
                         </Link>
-                      ) : page.id ? (
-                        <Link href={`/pages/${page.id}/builder`}>
+                      ) : page.slug === 'about' ? (
+                        <Link href="/pages/about">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 px-3 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
                           >
-                            <span>Builder</span>
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : page.slug === 'contact' ? (
+                        <Link href="/pages/contact">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : page.slug === 'book' ? (
+                        <Link href="/pages/book">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : page.id ? (
+                        <Link href={`/pages/${page.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Button>
                         </Link>
@@ -439,7 +484,7 @@ export function PagesTable({
                           onClick={() => handleOpenSettings(page)}
                           className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
                         >
-                          <span>Configure</span>
+                          <span>Studio</span>
                           <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Button>
                       )}
@@ -594,17 +639,14 @@ export function PagesTable({
                   </p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Social OpenGraph Image URL</label>
-                  <Input
+                <div>
+                  <ImageUploadField
+                    label="Social OpenGraph (OG) Image"
+                    description="Upload directly or specify a URL (1200x630 recommended for LinkedIn, X, and WhatsApp previews)."
                     value={formOgImageUrl}
-                    onChange={(e) => setFormOgImageUrl(e.target.value)}
+                    onChange={setFormOgImageUrl}
                     placeholder="https://example.com/assets/og-image.jpg"
-                    className="text-sm font-mono"
                   />
-                  <p className="text-[11px] text-slate-400">
-                    Preview image when sharing on LinkedIn, X/Twitter, WhatsApp (1200x630 recommended).
-                  </p>
                 </div>
 
                 <div className="space-y-1.5">
