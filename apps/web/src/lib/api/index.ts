@@ -12,3 +12,4 @@ export type {
 
 // Re-export Server CMS functions and DTO types
 export * from './cms';
+export * from './seo';

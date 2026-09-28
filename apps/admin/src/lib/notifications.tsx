@@ -43,10 +43,21 @@ class NotificationManager {
     };
   }
 
-  show(type: NotificationType, message: string, options?: NotificationOptions): string {
+  show(
+    type: NotificationType,
+    messageOrObj: string | { title?: string; description?: string; message?: string },
+    options?: NotificationOptions
+  ): string {
     const id = Math.random().toString(36).slice(2, 9);
     const duration =
       options?.duration ?? (type === 'error' ? 8000 : type === 'warning' ? 6000 : 4000);
+
+    const message =
+      typeof messageOrObj === 'string'
+        ? messageOrObj
+        : [messageOrObj.title, messageOrObj.description || messageOrObj.message]
+            .filter(Boolean)
+            .join(' - ');
 
     // Max 4 toasts at a time
     if (this.toasts.length >= 4) {
@@ -77,16 +88,28 @@ class NotificationManager {
     this.emit();
   }
 
-  success(message: string, options?: NotificationOptions) {
+  success(
+    message: string | { title?: string; description?: string; message?: string },
+    options?: NotificationOptions
+  ) {
     return this.show('success', message, options);
   }
-  error(message: string, options?: NotificationOptions) {
+  error(
+    message: string | { title?: string; description?: string; message?: string },
+    options?: NotificationOptions
+  ) {
     return this.show('error', message, options);
   }
-  warning(message: string, options?: NotificationOptions) {
+  warning(
+    message: string | { title?: string; description?: string; message?: string },
+    options?: NotificationOptions
+  ) {
     return this.show('warning', message, options);
   }
-  info(message: string, options?: NotificationOptions) {
+  info(
+    message: string | { title?: string; description?: string; message?: string },
+    options?: NotificationOptions
+  ) {
     return this.show('info', message, options);
   }
 }

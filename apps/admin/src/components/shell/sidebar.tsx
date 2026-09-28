@@ -159,7 +159,7 @@ export function Sidebar() {
           icon: PanelBottom,
         },
         {
-          label: 'SEO & Metadata',
+          label: 'SEO & Discoverability',
           href: '/site/seo',
           icon: Search,
         },

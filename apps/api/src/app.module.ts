@@ -23,6 +23,7 @@ import { RecaptchaModule } from './modules/recaptcha/recaptcha.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { SeoModule } from './modules/seo/seo.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { UsersModule } from './modules/users/users.module';
     BookingsModule,
     AuthModule,
     UsersModule,
+    SeoModule,
   ],
 })
 export class AppModule implements NestModule {

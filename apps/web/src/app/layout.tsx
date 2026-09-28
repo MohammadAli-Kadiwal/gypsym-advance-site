@@ -7,29 +7,19 @@ import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
 import { DynamicBrandStyleTag } from '@/components/branding-provider';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
 import { GlobalWebsiteLoader, RouteProgressBar } from '@/components/motion';
-import { getHeaderData, getSeoSettings, getScriptSettings } from '@/lib/api';
+import { getHeaderData, getScriptSettings, getPublicGlobalSeo } from '@/lib/api';
 import { ScriptInjector } from '@/components/script-injector';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getSeoSettings().catch(() => null);
+  const seo = await getPublicGlobalSeo().catch(() => null);
 
-  const defaultTitle = seo?.defaultTitle || 'Gypsym Technology | Shopify & Shopify Plus Agency';
-  const template = seo?.metaTitleTemplate || '%s | Gypsym Technology';
-  const description =
-    seo?.defaultDescription ||
-    'Gypsym Technology is a leading Shopify & Shopify Plus agency specializing in custom store design, e-commerce development, conversion rate optimization, and D2C growth strategies for global brands.';
-  const keywords = seo?.defaultKeywords || [
-    'Shopify agency',
-    'Shopify Plus agency',
-    'e-commerce development',
-    'Shopify store design',
-    'D2C e-commerce',
-    'conversion rate optimization',
-    'custom Shopify theme',
-    'Shopify experts',
-  ];
-  const baseUrl = seo?.canonicalBaseUrl || 'https://gypsym.com';
-  const ogImage = seo?.ogDefaultImage ? [{ url: seo.ogDefaultImage }] : undefined;
+  const siteName = seo?.siteName || 'Gypsym Technology';
+  const defaultTitle = seo?.defaultTitle || `${siteName} | Enterprise Architecture`;
+  const template = seo?.metaTitleTemplate || `%s | ${siteName}`;
+  const description = seo?.defaultDescription || undefined;
+  const keywords = seo?.defaultKeywords || [];
+  const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || 'https://gypsym.com';
+  const ogImage = seo?.defaultOgImage || seo?.ogDefaultImage ? [{ url: seo.defaultOgImage || seo.ogDefaultImage }] : undefined;
   const twitterCard = (seo?.twitterCard as any) || 'summary_large_image';
 
   return {
@@ -38,14 +28,14 @@ export async function generateMetadata(): Promise<Metadata> {
       template: template,
     },
     description,
-    keywords,
-    authors: [{ name: 'Gypsym Technology' }],
+    keywords: keywords.length > 0 ? keywords : undefined,
+    authors: seo?.defaultAuthor ? [{ name: seo.defaultAuthor }] : [{ name: siteName }],
     metadataBase: new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`),
     openGraph: {
       type: 'website',
-      locale: 'en_US',
+      locale: seo?.defaultLocale || 'en_US',
       url: baseUrl,
-      siteName: 'Gypsym Technology',
+      siteName: siteName,
       title: defaultTitle,
       description,
       images: ogImage,
@@ -55,9 +45,10 @@ export async function generateMetadata(): Promise<Metadata> {
       title: defaultTitle,
       description,
       images: ogImage?.[0]?.url ? [ogImage[0].url] : undefined,
+      creator: seo?.twitterHandle || undefined,
     },
     icons: {
-      icon: '/favicon.ico',
+      icon: seo?.favicon || '/favicon.ico',
     },
     robots: seo?.robotsIndex === false ? { index: false, follow: false } : { index: true, follow: true },
     verification: {
@@ -75,27 +66,53 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [headerData, scriptSettings] = await Promise.all([
+  const [headerData, scriptSettings, globalSeo] = await Promise.all([
     getHeaderData(),
     getScriptSettings().catch(() => null),
+    getPublicGlobalSeo().catch(() => null),
   ]);
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Corporation',
-    name: headerData.branding?.companyName || 'Gypsym Technology',
-    url: 'https://gypsym.com',
-    logo: headerData.branding?.logoLight || 'https://gypsym.com/logo.svg',
-    sameAs: [
-      'https://linkedin.com/company/gypsym',
-      'https://twitter.com/gypsymtech',
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+1-212-555-0199',
-      contactType: 'Enterprise Architecture Advisory',
-      areaServed: 'Worldwide',
+
+  const companyName = globalSeo?.organizationName || headerData.branding?.companyName || 'Gypsym Technology';
+  const siteUrl = globalSeo?.siteUrl || 'https://gypsym.com';
+  const logoUrl = globalSeo?.organizationLogo || headerData.branding?.logoLight || `${siteUrl}/logo.svg`;
+  const socialProfiles = (globalSeo?.socialProfiles || []).map((s) => s.url).filter(Boolean);
+
+  // Dynamic Organization & WebSite JSON-LD Schema
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: companyName,
+      url: siteUrl,
+      logo: logoUrl,
+      description: globalSeo?.organizationDescription || undefined,
+      email: globalSeo?.email || undefined,
+      telephone: globalSeo?.phone || undefined,
+      address: globalSeo?.address
+        ? {
+            '@type': 'PostalAddress',
+            streetAddress: globalSeo.address,
+            addressCountry: globalSeo.country || undefined,
+          }
+        : undefined,
+      sameAs: socialProfiles.length > 0 ? socialProfiles : undefined,
+      contactPoint: globalSeo?.phone
+        ? {
+            '@type': 'ContactPoint',
+            telephone: globalSeo.phone,
+            contactType: 'Customer Service & Architecture Advisory',
+            areaServed: 'Worldwide',
+          }
+        : undefined,
     },
-  };
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: companyName,
+      url: siteUrl,
+      description: globalSeo?.siteDescription || undefined,
+    },
+  ];
 
   return (
     <html lang="en" suppressHydrationWarning>
