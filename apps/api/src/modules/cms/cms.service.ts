@@ -2313,7 +2313,101 @@ export class CmsService implements OnModuleInit {
       this.prisma.brandSetting.findFirst({ where: { isActive: true } }).catch(() => null),
     ]);
 
-    const sections = page.sections.map((section: any) => {
+    // Country pages: Hero(1) Verified Results(2) Portfolio(3) Delivery(4) Client Love(5) Clients & Partners(6) Direct Engagement(7) Enterprise Architecture CTA(8)
+    const isCountryPage = page.layoutType === 'LANDING' && targetSlug !== 'home';
+
+    // Fetch all required home sections in one query
+    let homeVerifiedResultsSection: any = null;
+    let homePortfolioSection: any = null;
+    let homeDeliverySection: any = null;
+    let homeClientLoveSection: any = null;
+    let homeClientsPartnersSection: any = null;
+    let homeDirectEngagementSection: any = null;
+    let homeEnterpriseSection: any = null;
+    if (isCountryPage) {
+      try {
+        const homePage = await (this.prisma as any).page.findFirst({
+          where: { slug: 'home', deletedAt: null },
+          include: {
+            sections: {
+              where: {
+                isActive: true,
+              },
+              orderBy: { displayOrder: 'asc' },
+            },
+          },
+        });
+
+        for (const s of homePage?.sections ?? []) {
+          const cType = (s.componentType || '').toUpperCase();
+          const sId = (s.sectionIdentifier || '').toLowerCase();
+
+          if (!homeVerifiedResultsSection && (
+            cType === 'VERIFIED_RESULTS' || cType === 'METRICS_BANNER' || sId === 'verified-results-metrics'
+          )) {
+            homeVerifiedResultsSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 2 };
+          }
+          if (!homePortfolioSection && (
+            sId === 'portfolio-showcase' || sId === 'portfolio' || sId === 'our-work' ||
+            cType === 'PORTFOLIO' || cType === 'OUR_WORK' || cType === 'PORTFOLIO_SHOWCASE'
+          )) {
+            homePortfolioSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 3 };
+          }
+          if (!homeDeliverySection && (
+            cType === 'DELIVERY_PROCESS' || cType === 'TABBED_SOLUTIONS' || sId === 'delivery-process'
+          )) {
+            homeDeliverySection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 4 };
+          }
+          if (!homeClientLoveSection && (
+            cType === 'CLIENT_TESTIMONIALS' || cType === 'TESTIMONIAL_SLIDER' || sId === 'client-testimonials'
+          )) {
+            homeClientLoveSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 5 };
+          }
+          if (!homeClientsPartnersSection && (
+            cType === 'LOGO_CLOUD' || sId === 'clients-trusted-by' || sId === 'clients-partners' || sId === 'clients-and-partners' ||
+            cType === 'CLIENTS_PARTNERS' || cType === 'CLIENTS_AND_PARTNERS' || cType === 'CLIENTS_TRUSTED_BY' ||
+            cType === 'TRUSTED_BY' || cType === 'CLIENTS' || cType === 'BRAND_LOGOS'
+          )) {
+            homeClientsPartnersSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 6 };
+          }
+          if (!homeDirectEngagementSection && (
+            cType === 'CONTACT' || sId === 'contact-inquiry' || sId === 'contact' ||
+            cType === 'CONTACT_INQUIRY' || cType === 'CONTACT_US' || cType === 'INQUIRY'
+          )) {
+            homeDirectEngagementSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 7 };
+          }
+          if (!homeEnterpriseSection && (
+            cType === 'CTA' || sId === 'homepage-cta' || sId === 'cta-banner' || sId === 'cta' ||
+            cType === 'CTA_BANNER' || cType === 'CALL_TO_ACTION' || cType === 'HOMEPAGE_CTA'
+          )) {
+            homeEnterpriseSection = { ...s, id: `home-inherited-${s.id}`, pageId: page.id, displayOrder: 8 };
+          }
+        }
+      } catch (err) {
+        // silent — country page still renders with whatever sections resolved
+      }
+    }
+
+    // Build section list: [Hero, Verified Results, Portfolio, Delivery, Client Love, Clients & Partners, Direct Engagement, Enterprise Architecture CTA]
+    // For all other pages: use sections as-is from DB
+    const rawSections: any[] = isCountryPage
+      ? [
+          ...page.sections
+            .filter((s: any) => (s.componentType || '').toUpperCase() === 'HERO')
+            .map((s: any) => ({ ...s, displayOrder: 1 })),
+          ...(homeVerifiedResultsSection  ? [homeVerifiedResultsSection]  : []),
+          ...(homePortfolioSection        ? [homePortfolioSection]        : []),
+          ...(homeDeliverySection         ? [homeDeliverySection]         : []),
+          ...(homeClientLoveSection       ? [homeClientLoveSection]       : []),
+          ...(homeClientsPartnersSection  ? [homeClientsPartnersSection]  : []),
+          ...(homeDirectEngagementSection ? [homeDirectEngagementSection] : []),
+          ...(homeEnterpriseSection       ? [homeEnterpriseSection]       : []),
+        ]
+      : page.sections;
+
+
+
+    const sections = rawSections.map((section: any) => {
       const cType = (section.componentType || '').toUpperCase();
       const sId = (section.sectionIdentifier || '').toLowerCase();
 

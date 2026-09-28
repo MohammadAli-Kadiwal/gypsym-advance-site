@@ -20,7 +20,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { authService } from '@/services/auth.service';
 
 interface SecuritySettings {
   maxFailedAttempts: number;
@@ -54,8 +54,8 @@ export default function SecuritySettingsPage() {
   const loadData = React.useCallback(async () => {
     try {
       const [secRes, ipsRes] = await Promise.all([
-        fetchApi<any>('/auth/security-settings').catch(() => null),
-        fetchApi<any>('/auth/blocked-ips').catch(() => []),
+        authService.getSecuritySettings().catch(() => null),
+        authService.getBlockedIps().catch(() => []),
       ]);
 
       if (secRes) {
@@ -98,10 +98,7 @@ export default function SecuritySettingsPage() {
 
     setSaving(true);
     try {
-      await fetchApi('/auth/security-settings', {
-        method: 'PUT',
-        body: JSON.stringify(settings),
-      });
+      await authService.updateSecuritySettings(settings);
 
       setHasChanges(false);
       notify.success('Security policies and session expiration updated successfully!');
@@ -115,10 +112,7 @@ export default function SecuritySettingsPage() {
   const handleUnblock = async (ip: string) => {
     setUnblockingIp(ip);
     try {
-      await fetchApi('/auth/unblock-ip', {
-        method: 'POST',
-        body: JSON.stringify({ ip }),
-      });
+      await authService.unblockIp(ip);
       notify.success(`IP address ${ip} has been unblocked.`);
       setBlockedIps((prev) => prev.filter((item) => item.ip !== ip));
     } catch (err: any) {

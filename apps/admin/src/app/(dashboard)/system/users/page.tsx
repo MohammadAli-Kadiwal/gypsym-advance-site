@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { fetchApi } from '@/lib/api-client';
+import { usersService } from '@/services/users.service';
 import { notify } from '@/lib/notifications';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateTime } from '@/lib/utils';
@@ -95,7 +95,7 @@ export default function UsersAdminPage() {
   const loadUsers = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApi<any>('/users');
+      const res: any = await usersService.getAll();
       const data = res?.data || res;
       if (Array.isArray(data)) {
         setUsers(data);
@@ -175,16 +175,13 @@ export default function UsersAdminPage() {
 
     setSubmitting(true);
     try {
-      await fetchApi('/users', {
-        method: 'POST',
-        body: JSON.stringify({
-          firstName: createForm.firstName.trim(),
-          lastName: createForm.lastName.trim(),
-          email: createForm.email.trim().toLowerCase(),
-          role: createForm.role,
-          password: createForm.password,
-          isActive: createForm.isActive,
-        }),
+      await usersService.create({
+        firstName: createForm.firstName.trim(),
+        lastName: createForm.lastName.trim(),
+        email: createForm.email.trim().toLowerCase(),
+        role: createForm.role,
+        password: createForm.password,
+        isActive: createForm.isActive,
       });
 
       notify.success(`User account for ${createForm.email} created successfully.`);
@@ -245,10 +242,7 @@ export default function UsersAdminPage() {
         payload.password = editForm.newPassword.trim();
       }
 
-      await fetchApi<any>(`/users/${selectedUser.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      await usersService.update(selectedUser.id, payload);
 
       setEditModalOpen(false);
 
@@ -283,9 +277,7 @@ export default function UsersAdminPage() {
     if (!selectedUser) return;
     setSubmitting(true);
     try {
-      await fetchApi(`/users/${selectedUser.id}`, {
-        method: 'DELETE',
-      });
+      await usersService.delete(selectedUser.id);
       notify.success(`User ${selectedUser.email} has been deactivated and removed.`);
       setDeleteModalOpen(false);
       setSelectedUser(null);

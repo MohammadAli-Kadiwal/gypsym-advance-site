@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
 import {
   ShieldCheck,
@@ -69,7 +69,7 @@ export default function RecaptchaSettingsPage() {
   const loadSettings = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchApi<RecaptchaConfigData>('/settings/recaptcha');
+      const data = await settingsService.getRecaptcha();
       if (data) {
         setSettings(data);
         if (data.hasSecretKey) {
@@ -103,10 +103,7 @@ export default function RecaptchaSettingsPage() {
         payload.secretKey = secretKeyInput.trim();
       }
 
-      const updated = await fetchApi<RecaptchaConfigData>('/settings/recaptcha', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      const updated = await settingsService.updateRecaptcha(payload);
 
       if (updated) {
         setSettings(updated);
@@ -132,15 +129,7 @@ export default function RecaptchaSettingsPage() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetchApi<{
-        success: boolean;
-        score: number;
-        action?: string;
-        errorCodes?: string[];
-      }>('/settings/recaptcha/test', {
-        method: 'POST',
-        body: JSON.stringify({ token: testTokenInput.trim() }),
-      });
+      const res = await settingsService.testRecaptcha({ token: testTokenInput.trim() });
 
       if (res) {
         setTestResult({

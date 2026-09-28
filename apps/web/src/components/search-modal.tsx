@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Search, X, ArrowRight, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { cmsService } from '@/services/cms.service';
 
 interface SearchResult {
   title: string;
@@ -40,21 +41,16 @@ export function SearchModal() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-        const res = await fetch(`${apiUrl}/pages/${encodeURIComponent(query.trim().toLowerCase())}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.data) {
-            setResults([
-              {
-                title: json.data.title,
-                type: 'Page',
-                href: `/${json.data.slug === 'home' ? '' : json.data.slug}`,
-              },
-            ]);
-          } else {
-            setResults([]);
-          }
+        const pageData: any = await cmsService.getPage(query.trim().toLowerCase());
+        const data = pageData?.data || pageData;
+        if (data && data.title) {
+          setResults([
+            {
+              title: data.title,
+              type: 'Page',
+              href: `/${data.slug === 'home' ? '' : data.slug}`,
+            },
+          ]);
         } else {
           setResults([]);
         }

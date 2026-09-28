@@ -17,11 +17,9 @@ import {
   Send,
   Globe,
 } from 'lucide-react';
-import axios from 'axios';
+import { inquiriesService } from '@/services/inquiries.service';
 import { useRecaptcha } from '@/lib/use-recaptcha';
 import { CustomSelect } from '@/components/ui/custom-select';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export interface ContactFieldConfig {
   id: string;
@@ -408,28 +406,16 @@ function ContactForm({
       const serviceInterest = formData.serviceInterest || formData.service || formData.subject;
       const projectDescription = formData.message || formData.description || formData.projectBrief || '';
 
-      await axios.post(`${API_BASE_URL}/inquiries`, {
+      await inquiriesService.submit({
         recaptchaToken: recaptchaToken || undefined,
-        data: {
-          ...formData,
-          recaptchaToken: recaptchaToken || undefined,
-          fullName,
-          email,
-          businessEmail: email,
-          companyName,
-          phone,
-          serviceInterest,
-          projectDescription,
-        },
         fullName,
         businessEmail: email,
         companyName,
         phone,
-        serviceInterest,
+        serviceCategory: serviceInterest,
         projectDescription,
-        submittedData: formData,
-        source: 'homepage-contact-section',
-      });
+        ...formData,
+      } as any);
 
       setSubmitted(true);
     } catch (err: any) {

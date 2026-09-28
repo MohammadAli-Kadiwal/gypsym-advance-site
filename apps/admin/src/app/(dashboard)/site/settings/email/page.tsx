@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
 
 import {
@@ -104,7 +104,7 @@ export default function EmailSmtpSettingsPage() {
   const loadSettings = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchApi<SmtpSettingsData>('/settings/smtp');
+      const data: any = await settingsService.getSmtp();
       if (data) {
         setSettings(data);
         const resolvedAdminList = Array.isArray(data.adminNotificationRecipients) && data.adminNotificationRecipients.length > 0
@@ -216,10 +216,7 @@ export default function EmailSmtpSettingsPage() {
         payload.password = passwordInput;
       }
 
-      const updated = await fetchApi<SmtpSettingsData>('/settings/smtp', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      const updated: any = await settingsService.updateSmtp(payload);
 
       setSettings(updated);
       if (updated.adminNotificationRecipients) {
@@ -244,10 +241,7 @@ export default function EmailSmtpSettingsPage() {
 
     setSendingTest(true);
     try {
-      await fetchApi('/settings/smtp/test', {
-        method: 'POST',
-        body: JSON.stringify({ toEmail: testEmailInput }),
-      });
+      await settingsService.testSmtp(testEmailInput);
       notify.success('✓ Test email sent successfully.');
       setShowTestModal(false);
     } catch {

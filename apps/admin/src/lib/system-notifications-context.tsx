@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { fetchApi } from '@/lib/api-client';
+import { inquiriesService } from '@/services/inquiries.service';
+import { bookingsService } from '@/services/bookings.service';
 import { notify } from '@/lib/notifications';
 
 export type NotificationCategory = 'INQUIRY' | 'BOOKING' | 'SECURITY' | 'SYSTEM';
@@ -122,9 +123,9 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
 
     // 1. Fetch live inquiries from backend
     try {
-      const inquiriesRes = await fetchApi<{ items: any[]; total: number }>('/inquiries?limit=25');
+      const inquiriesRes: any = await inquiriesService.getAll({ limit: 25 });
       if (inquiriesRes && Array.isArray(inquiriesRes.items)) {
-        inquiriesRes.items.forEach((item) => {
+        inquiriesRes.items.forEach((item: any) => {
           const notifId = `inquiry-${item.id}`;
           if (deletedIds.has(notifId)) return;
 
@@ -158,9 +159,9 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
 
     // 2. Fetch live discovery call bookings from backend
     try {
-      const bookingsRes = await fetchApi<{ items: any[]; total: number }>('/bookings?limit=25');
+      const bookingsRes: any = await bookingsService.getAll({ limit: 25 });
       if (bookingsRes && Array.isArray(bookingsRes.items)) {
-        bookingsRes.items.forEach((item) => {
+        bookingsRes.items.forEach((item: any) => {
           const notifId = `booking-${item.id}`;
           if (deletedIds.has(notifId)) return;
 
@@ -233,10 +234,7 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
       // If inquiry, optionally sync backend status
       if (id.startsWith('inquiry-')) {
         const sourceId = id.replace('inquiry-', '');
-        fetchApi(`/inquiries/${sourceId}/status`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'READ' }),
-        }).catch(() => {});
+        inquiriesService.updateStatus(sourceId, 'READ').catch(() => {});
       }
     },
     [getStoredSets]

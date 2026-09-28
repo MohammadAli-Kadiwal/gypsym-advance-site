@@ -4,10 +4,10 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 import { isValidImageUrl } from '@/lib/branding-context';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -23,8 +23,8 @@ export default function LoginPage() {
   const [logoError, setLogoError] = React.useState(false);
 
   React.useEffect(() => {
-    fetchApi<any>('/branding')
-      .then((res) => {
+    settingsService.getBranding()
+      .then((res: any) => {
         const resolvedLogo =
           (isValidImageUrl(res?.logoLight) && res.logoLight) ||
           (isValidImageUrl(res?.favicon) && res.favicon) ||
@@ -290,6 +290,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+      <LoginForm />
+    </React.Suspense>
   );
 }
 

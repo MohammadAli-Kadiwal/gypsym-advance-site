@@ -28,14 +28,14 @@ import { fetchApi } from '@/lib/api-client';
 import type { PageData } from '../../_components/types';
 
 const EIGHT_SECTIONS_SPEC = [
-  { id: 'hero-banner', type: 'HERO', label: '1. Hero Section', desc: 'Prominent banner with localized headline, subtext, background image & CTA' },
-  { id: 'portfolio-showcase', type: 'FEATURE_GRID', label: '2. Portfolio Component', desc: 'Flagship client store deployments and conversion case studies' },
-  { id: 'verified-results-metrics', type: 'METRICS_BANNER', label: '3. Verified Results', desc: '+318% volume surge, 42ms TTFB, $1.4B+ GMV metrics strip' },
-  { id: 'clients-partners', type: 'LOGO_CLOUD', label: '4. Clients & Partners', desc: 'Enterprise logo cloud and performance ribbon' },
-  { id: 'delivery-process', type: 'TABBED_SOLUTIONS', label: '5. Delivery Methodology', desc: '4-phase engineering lifecycle: Audit, Build, CRO & SLA' },
-  { id: 'client-testimonials', type: 'TESTIMONIAL_SLIDER', label: '6. Client Love', desc: 'Executive endorsements, client ratings & reviews slider' },
-  { id: 'contact-inquiry', type: 'CONTACT', label: '7. Direct Engagement', desc: 'Engineering inquiry consultation form with NDA guarantee' },
-  { id: 'homepage-cta', type: 'CTA', label: '8. Enterprise Architecture', desc: 'Final conversion banner before footer' },
+  { id: 'hero-banner',              type: 'HERO',               label: '1. Hero Section',          desc: 'Localized headline, subtext, background image & CTA' },
+  { id: 'verified-results-metrics', type: 'VERIFIED_RESULTS',   label: '2. Verified Results',       desc: '+318% volume surge, 42ms TTFB, $1.4B+ GMV' },
+  { id: 'portfolio-showcase',       type: 'PORTFOLIO',          label: '3. Portfolio',              desc: 'High-conversion flagship case studies' },
+  { id: 'delivery-process',         type: 'DELIVERY_PROCESS',   label: '4. Delivery Methodology',   desc: '4-phase architecture, build, CRO & SLA' },
+  { id: 'client-testimonials',      type: 'CLIENT_TESTIMONIALS',label: '5. Client Love',            desc: 'Executive endorsements & client ratings' },
+  { id: 'clients-partners',         type: 'CLIENTS_PARTNERS',   label: '6. Clients & Partners',     desc: 'Global enterprise logo cloud & metrics ribbon' },
+  { id: 'contact-inquiry',          type: 'CONTACT',            label: '7. Direct Engagement',      desc: 'High-intent consultation form with NDA' },
+  { id: 'homepage-cta',             type: 'CTA',                label: '8. Enterprise Architecture',desc: 'Final conversion banner before footer' },
 ];
 
 export default function CountryStudioPage() {

@@ -19,7 +19,7 @@ import {
   FileCode,
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 
 interface ScriptSettings {
   googleAnalytics: {
@@ -65,7 +65,7 @@ export default function AnalyticsScriptsSettingsPage() {
   React.useEffect(() => {
     async function loadSettings() {
       try {
-        const res = await fetchApi<any>('/settings/scripts');
+        const res: any = await settingsService.getScripts();
         if (res) {
           setSettings({
             googleAnalytics: {
@@ -130,10 +130,7 @@ export default function AnalyticsScriptsSettingsPage() {
 
     setSaving(true);
     try {
-      await fetchApi('/settings/scripts', {
-        method: 'PUT',
-        body: JSON.stringify(settings),
-      });
+      await settingsService.updateScripts(settings);
 
       setHasChanges(false);
       notify.success('Analytics and custom scripts successfully updated and deployed to public website!');

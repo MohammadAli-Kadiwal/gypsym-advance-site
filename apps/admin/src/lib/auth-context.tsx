@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { fetchApi, getAuthToken } from './api-client';
+import { getAuthToken } from './api';
+import { authService } from '@/services/auth.service';
 
 export type RoleType = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'VIEWER';
 
@@ -126,8 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const response = await fetchApi<{ success?: boolean; data?: AdminUser }>('/auth/me');
-        const activeUser = (response as any).data || response;
+        const response = await authService.getMe();
+        const activeUser = (response as any)?.data || response;
 
         if (isMounted && activeUser && (activeUser as AdminUser).email) {
           setUser(activeUser as AdminUser);
@@ -164,13 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = React.useCallback(
     async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        const res = await fetchApi<any>('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
+        const res = await authService.login({ email, password });
 
-        const token = res.token;
-        const loggedUser: AdminUser = res.user;
+        const token = (res as any)?.token;
+        const loggedUser: AdminUser = (res as any)?.user;
 
         if (!token || !loggedUser) {
           return { success: false, error: 'Authentication failed. No access token returned.' };
@@ -196,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sign out and revoke session
   const logout = React.useCallback(async () => {
     try {
-      await fetchApi('/auth/logout', { method: 'POST' }).catch(() => null);
+      await authService.logout().catch(() => null);
     } finally {
       document.cookie = 'gypsym_admin_token=; path=/; max-age=0';
       localStorage.removeItem('gypsym_admin_token');

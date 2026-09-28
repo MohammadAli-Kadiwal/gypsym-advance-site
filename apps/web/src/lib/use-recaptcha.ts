@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import axios from 'axios';
+import { recaptchaService, type PublicRecaptchaConfig } from '@/services/recaptcha.service';
 
 declare global {
   interface Window {
@@ -12,17 +12,10 @@ declare global {
   }
 }
 
-interface RecaptchaPublicConfig {
-  enabled: boolean;
-  siteKey: string | null;
-}
+let cachedConfig: PublicRecaptchaConfig | null = null;
+let configPromise: Promise<PublicRecaptchaConfig> | null = null;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-
-let cachedConfig: RecaptchaPublicConfig | null = null;
-let configPromise: Promise<RecaptchaPublicConfig> | null = null;
-
-async function fetchRecaptchaPublicConfig(): Promise<RecaptchaPublicConfig> {
+async function fetchRecaptchaPublicConfig(): Promise<PublicRecaptchaConfig> {
   if (cachedConfig) {
     return cachedConfig;
   }
@@ -30,15 +23,15 @@ async function fetchRecaptchaPublicConfig(): Promise<RecaptchaPublicConfig> {
     return configPromise;
   }
 
-  configPromise = axios
-    .get<RecaptchaPublicConfig>(`${API_BASE_URL}/settings/recaptcha/public`, { timeout: 5000 })
-    .then((res) => {
-      cachedConfig = res.data;
-      return res.data;
+  configPromise = recaptchaService
+    .getPublicConfig()
+    .then((data) => {
+      cachedConfig = data;
+      return data;
     })
     .catch((err) => {
       console.warn('[reCAPTCHA] Failed to load config, failing open:', err?.message);
-      const fallback: RecaptchaPublicConfig = { enabled: false, siteKey: null };
+      const fallback: PublicRecaptchaConfig = { enabled: false, siteKey: null };
       cachedConfig = fallback;
       return fallback;
     });
@@ -47,7 +40,7 @@ async function fetchRecaptchaPublicConfig(): Promise<RecaptchaPublicConfig> {
 }
 
 export function useRecaptcha() {
-  const [config, setConfig] = React.useState<RecaptchaPublicConfig | null>(cachedConfig);
+  const [config, setConfig] = React.useState<PublicRecaptchaConfig | null>(cachedConfig);
   const [scriptLoaded, setScriptLoaded] = React.useState(false);
 
   React.useEffect(() => {

@@ -69,15 +69,16 @@ function getCountryMeta(slug?: string, title?: string): CountryMeta {
 }
 
 const EIGHT_SECTIONS_SPEC = [
-  { id: 'hero-banner', type: 'HERO', label: '1. Hero Section', desc: 'Localized headline, subtext, background image & CTA' },
-  { id: 'portfolio-showcase', type: 'PORTFOLIO', label: '2. Portfolio Component', desc: 'High-conversion flagship case studies' },
-  { id: 'verified-results-metrics', type: 'VERIFIED_RESULTS', label: '3. Verified Results', desc: '+318% volume surge, 42ms TTFB, $1.4B+ GMV' },
-  { id: 'clients-partners', type: 'CLIENTS_PARTNERS', label: '4. Clients & Partners', desc: 'Global enterprise logo cloud & metrics ribbon' },
-  { id: 'delivery-process', type: 'DELIVERY_PROCESS', label: '5. Delivery Methodology', desc: '4-phase architecture, build, CRO & SLA' },
-  { id: 'client-testimonials', type: 'CLIENT_TESTIMONIALS', label: '6. Client Love', desc: 'Executive endorsements & client ratings' },
-  { id: 'contact-inquiry', type: 'CONTACT', label: '7. Direct Engagement', desc: 'High-intent consultation form with NDA' },
-  { id: 'homepage-cta', type: 'CTA', label: '8. Enterprise Architecture', desc: 'Final conversion banner before footer' },
+  { id: 'hero-banner',              type: 'HERO',               label: '1. Hero Section',          desc: 'Localized headline, subtext, background image & CTA' },
+  { id: 'verified-results-metrics', type: 'VERIFIED_RESULTS',   label: '2. Verified Results',       desc: '+318% volume surge, 42ms TTFB, $1.4B+ GMV' },
+  { id: 'portfolio-showcase',       type: 'PORTFOLIO',          label: '3. Portfolio',              desc: 'High-conversion flagship case studies' },
+  { id: 'delivery-process',         type: 'DELIVERY_PROCESS',   label: '4. Delivery Methodology',   desc: '4-phase architecture, build, CRO & SLA' },
+  { id: 'client-testimonials',      type: 'CLIENT_TESTIMONIALS',label: '5. Client Love',            desc: 'Executive endorsements & client ratings' },
+  { id: 'clients-partners',         type: 'CLIENTS_PARTNERS',   label: '6. Clients & Partners',     desc: 'Global enterprise logo cloud & metrics ribbon' },
+  { id: 'contact-inquiry',          type: 'CONTACT',            label: '7. Direct Engagement',      desc: 'High-intent consultation form with NDA' },
+  { id: 'homepage-cta',             type: 'CTA',                label: '8. Enterprise Architecture',desc: 'Final conversion banner before footer' },
 ];
+
 
 export default function CountryPagesManagementPage() {
   const [loading, setLoading] = React.useState(true);
@@ -205,28 +206,30 @@ export default function CountryPagesManagementPage() {
         }),
       });
 
-      // 2. Update Hero Section payload if existing
-      const heroSection = editingPage.sections?.find((s) => s.componentType === 'HERO');
-      if (heroSection && heroSection.id) {
-        const curPayload = (heroSection.contentPayload as Record<string, any>) || {};
+      // 2. Update or Create the country Hero Section
+      const ownHeroSection = editingPage.sections?.find((s) => s.componentType === 'HERO');
+      const heroPayloadBase = {
+        country: { name: formCountryName.trim() },
+        headline: {
+          segments: [{ value: formHeroTitle.trim(), type: 'text' }],
+        },
+        titleHighlight: formHeroTitleHighlight.trim(),
+        description: {
+          content: formHeroDescription.trim(),
+          enabled: true,
+        },
+        backgroundMedia: {
+          desktopImageUrl: formHeroImage.trim() || '',
+          mobileImageUrl: formHeroImage.trim() || '',
+        },
+      };
+
+      if (ownHeroSection && ownHeroSection.id) {
+        // UPDATE: Merge into the country page's existing hero payload
+        const curPayload = (ownHeroSection.contentPayload as Record<string, any>) || {};
         const updatedPayload = {
           ...curPayload,
-          country: {
-            ...curPayload.country,
-            name: formCountryName.trim(),
-          },
-          headline: {
-            ...curPayload.headline,
-            segments: [
-              { value: formHeroTitle.trim(), type: 'text' },
-            ],
-          },
-          titleHighlight: formHeroTitleHighlight.trim(),
-          description: {
-            ...curPayload.description,
-            content: formHeroDescription.trim(),
-            enabled: true,
-          },
+          ...heroPayloadBase,
           backgroundMedia: {
             ...curPayload.backgroundMedia,
             desktopImageUrl: formHeroImage.trim() || curPayload.backgroundMedia?.desktopImageUrl,
@@ -234,10 +237,21 @@ export default function CountryPagesManagementPage() {
           },
         };
 
-        await fetchApi(`/sections/${heroSection.id}`, {
+        await fetchApi(`/sections/${ownHeroSection.id}`, {
           method: 'PUT',
+          body: JSON.stringify({ contentPayload: updatedPayload }),
+        });
+      } else {
+        // CREATE: Country page has no hero yet — save it now so it overrides the inherited home hero
+        const targetSlug = formSlug.trim() || editingPage.slug;
+        await fetchApi(`/pages/${targetSlug}/sections`, {
+          method: 'POST',
           body: JSON.stringify({
-            contentPayload: updatedPayload,
+            sectionIdentifier: 'hero-banner',
+            componentType: 'HERO',
+            displayOrder: 1,
+            isActive: true,
+            contentPayload: heroPayloadBase,
           }),
         });
       }

@@ -7,6 +7,7 @@ import {
   FooterRegionDto,
   NavigationItemDto,
 } from '@/lib/cms-types';
+import { cmsService } from '@/services/cms.service';
 import {
   Linkedin,
   Twitter,
@@ -66,16 +67,9 @@ export function FooterView({ data }: FooterViewProps) {
     let isMounted = true;
     const fetchLiveFooter = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-        const res = await fetch(`${apiUrl}/footer`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.data && isMounted) {
-            setFooterData(json.data);
-          }
+        const liveData = await cmsService.getFooter();
+        if (liveData && isMounted) {
+          setFooterData((liveData as any)?.data || liveData);
         }
       } catch {
         // Silently preserve current SSR data

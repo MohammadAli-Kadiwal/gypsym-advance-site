@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
 import {
   FileCode,
@@ -87,8 +87,8 @@ export default function EmailTemplatesPage() {
   const loadTemplates = React.useCallback(async (targetKey?: string) => {
     setLoading(true);
     try {
-      const res = await fetchApi<any>('/settings/email-templates');
-      const data = res?.data || res;
+      const res = await settingsService.getEmailTemplates();
+      const data = (res as any)?.data || res;
       if (data && typeof data === 'object') {
         setTemplates(data);
         const keyToSelect = targetKey || selectedKey || Object.keys(data)[0] || 'booking_confirmed';
@@ -145,16 +145,13 @@ export default function EmailTemplatesPage() {
     if (!selectedKey) return;
     setSaving(true);
     try {
-      const res = await fetchApi<any>(`/settings/email-templates/${selectedKey}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          subject: currentSubject,
-          htmlContent: currentHtml,
-          isActive: currentActive,
-        }),
+      const res = await settingsService.updateEmailTemplate(selectedKey, {
+        subject: currentSubject,
+        htmlContent: currentHtml,
+        isActive: currentActive,
       });
 
-      const updated = res?.data || res;
+      const updated = (res as any)?.data || res;
       setTemplates((prev) => ({ ...prev, [selectedKey]: updated }));
 
       notify.success(`HTML email template '${templates[selectedKey]?.name || selectedKey}' updated.`);
@@ -174,12 +171,7 @@ export default function EmailTemplatesPage() {
 
     setSendingTest(true);
     try {
-      await fetchApi(`/settings/email-templates/${selectedKey}/test`, {
-        method: 'POST',
-        body: JSON.stringify({
-          recipientEmail: testRecipient,
-        }),
-      });
+      await settingsService.testEmailTemplate(selectedKey, testRecipient);
 
       notify.success(`Sample email sent to ${testRecipient}. Check your inbox.`);
     } catch (err: any) {

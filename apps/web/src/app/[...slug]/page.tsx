@@ -4,6 +4,10 @@ import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
 
+// Always fetch fresh from the API — never serve a stale ISR-cached version.
+export const dynamic = 'force-dynamic';
+
+
 interface DynamicPageProps {
   params: {
     slug: string[];

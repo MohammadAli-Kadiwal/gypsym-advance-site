@@ -39,7 +39,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { notify } from '@/lib/notifications';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { normalizeErrorMessage } from '@/lib/api';
+import { settingsService } from '@/services/settings.service';
+import { pagesService } from '@/services/pages.service';
 
 interface GlobalSeoSettings {
   metaTitleTemplate: string;
@@ -129,9 +131,9 @@ export default function SeoManagementPage() {
   const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const [seoRes, pagesRes] = await Promise.all([
-        fetchApi<any>('/settings/seo').catch(() => null),
-        fetchApi<any>('/pages').catch(() => null),
+      const [seoRes, pagesRes]: [any, any] = await Promise.all([
+        settingsService.getSeo().catch(() => null),
+        pagesService.getAll().catch(() => null),
       ]);
 
       if (seoRes) {
@@ -169,10 +171,7 @@ export default function SeoManagementPage() {
     if (e) e.preventDefault();
     setSavingGlobal(true);
     try {
-      await fetchApi('/settings/seo', {
-        method: 'PUT',
-        body: JSON.stringify(globalSeo),
-      });
+      await settingsService.updateSeo(globalSeo);
 
       setGlobalSaved(true);
       notify.success('Global SEO settings and search directives saved successfully.');
@@ -248,10 +247,7 @@ export default function SeoManagementPage() {
         },
       };
 
-      await fetchApi(`/pages/${editingPage.slug}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      await pagesService.update(editingPage.slug, payload);
 
       notify.success(`SEO metadata updated for "/${editingPage.slug}".`);
 

@@ -21,7 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { settingsService } from '@/services/settings.service';
 
 export interface SocialProfileItem {
   id: string;
@@ -130,7 +130,7 @@ export default function SocialProfilesPage() {
   React.useEffect(() => {
     async function loadSocials() {
       try {
-        const res = await fetchApi<any>('/socials');
+        const res: any = await settingsService.getSocials();
         if (Array.isArray(res)) {
           const formatted: SocialProfileItem[] = res.map((item: any, idx: number) => ({
             id: item.id || `soc-${idx}-${Date.now()}`,
@@ -142,7 +142,7 @@ export default function SocialProfilesPage() {
           setProfiles(formatted);
         } else {
           // Fallback to checking /branding
-          const brandRes = await fetchApi<any>('/branding');
+          const brandRes: any = await settingsService.getBranding();
           if (Array.isArray(brandRes?.socialLinks)) {
             const formatted: SocialProfileItem[] = brandRes.socialLinks.map(
               (item: any, idx: number) => ({
@@ -255,17 +255,11 @@ export default function SocialProfilesPage() {
     setSaving(true);
     try {
       // 1. Save directly via dedicated /socials endpoint
-      await fetchApi('/socials', {
-        method: 'PUT',
-        body: JSON.stringify({ socialLinks: profiles }),
-      });
+      await settingsService.updateSocials(profiles);
 
       // 2. Also keep /branding synchronized
       try {
-        await fetchApi('/branding', {
-          method: 'PUT',
-          body: JSON.stringify({ socialLinks: profiles }),
-        });
+        await settingsService.updateBranding({ socialLinks: profiles });
       } catch {
         // Silently continue if /branding PUT had minor validation differences
       }

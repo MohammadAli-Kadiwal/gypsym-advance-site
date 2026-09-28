@@ -22,6 +22,7 @@ import { ScrollReveal } from '@/components/motion';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { getPublicHoliday } from '@/lib/public-holidays';
+import { bookingsService } from '@/services/bookings.service';
 
 export interface BookingCalendarPayload {
   eyebrow?: string;
@@ -212,16 +213,12 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
     const initial = computeClientSlots(selectedDateStr, selectedTimezone);
     setSlots(initial);
 
-    // Call backend API for real-time conflict checking
-    const apiUrl = `http://localhost:4000/api/v1/bookings/available-slots?date=${selectedDateStr}&timezone=${encodeURIComponent(
-      selectedTimezone
-    )}`;
-
-    fetch(apiUrl)
-      .then((r) => r.json())
-      .then((res) => {
-        if (res && res.data && Array.isArray(res.data)) {
-          setSlots(res.data);
+    // Call backend API via centralized bookingsService for real-time conflict checking
+    bookingsService
+      .getAvailableSlots(selectedDateStr, selectedTimezone)
+      .then((slotsList: any) => {
+        if (Array.isArray(slotsList) && slotsList.length > 0) {
+          setSlots(slotsList);
         }
       })
       .catch(() => {
@@ -332,18 +329,8 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
     };
 
     try {
-      const res = await fetch('http://localhost:4000/api/v1/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingPayload),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.message || 'Failed to confirm booking.');
-      }
-
-      setConfirmedBooking(json.data || bookingPayload);
+      const confirmed = await bookingsService.createBooking(bookingPayload);
+      setConfirmedBooking(confirmed || bookingPayload);
       setStep(3);
     } catch (err: any) {
       // Create local fallback booking confirmation so client is never blocked

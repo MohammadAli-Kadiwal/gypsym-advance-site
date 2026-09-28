@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { fetchApi } from './api-client';
+import { settingsService } from '@/services/settings.service';
 
 interface BrandingData {
   companyName: string;
@@ -26,8 +26,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   });
 
   React.useEffect(() => {
-    fetchApi<any>('/branding')
-      .then((res) => {
+    settingsService
+      .getBranding()
+      .then((res: any) => {
         if (res) {
           setBranding({
             companyName: res.companyName || 'Gypsym Technology',
