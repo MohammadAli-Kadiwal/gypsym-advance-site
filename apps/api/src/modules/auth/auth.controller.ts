@@ -15,6 +15,9 @@ import {
 import { Request, Response } from 'express';
 import { AuthService, LoginDto } from './auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RoleType } from '@gypsym/database';
 
 @Controller('auth')
 export class AuthController {
@@ -50,25 +53,29 @@ export class AuthController {
   }
 
   @Get('security-settings')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN)
   async getSecuritySettings() {
     return this.authService.getSecurityConfig();
   }
 
   @Put('security-settings')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN)
   async updateSecuritySettings(@Body() body: any) {
     return this.authService.updateSecurityConfig(body);
   }
 
   @Get('blocked-ips')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN)
   async getBlockedIps() {
     return this.authService.getBlockedIps();
   }
 
   @Post('unblock-ip')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN)
   async unblockIp(@Body('ip') ip: string) {
     const success = this.authService.unblockIp(ip);
     return { success, message: `IP ${ip} unblocked successfully.` };

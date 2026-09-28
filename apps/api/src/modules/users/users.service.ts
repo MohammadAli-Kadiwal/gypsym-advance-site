@@ -8,6 +8,9 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { RoleType } from '@gypsym/database';
 import * as crypto from 'crypto';
+import * as util from 'util';
+
+const scryptAsync = util.promisify(crypto.scrypt);
 
 export interface CreateUserDto {
   email: string;
@@ -32,10 +35,10 @@ export class UsersService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private hashPassword(password: string): string {
+  private async hashPassword(password: string): Promise<string> {
     const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `scrypt:${salt}:${hash}`;
+    const hash = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `scrypt:${salt}:${hash.toString('hex')}`;
   }
 
   async getAllUsers() {
@@ -108,7 +111,11 @@ export class UsersService {
     };
   }
 
-  async createUser(dto: CreateUserDto) {
+  async createUser(dto: CreateUserDto, currentUser?: { id: string; email?: string; role: string }) {
+    if (currentUser && currentUser.role !== RoleType.SUPER_ADMIN && (currentUser.role as any) !== 'SUPER_ADMIN') {
+      throw new ForbiddenException('Only Super Admins can create new user accounts.');
+    }
+
     const email = dto.email?.trim().toLowerCase();
     if (!email) {
       throw new BadRequestException('Email is required.');
@@ -134,7 +141,7 @@ export class UsersService {
       throw new BadRequestException(`Role ${dto.role} does not exist.`);
     }
 
-    const passwordHash = this.hashPassword(dto.password);
+    const passwordHash = await this.hashPassword(dto.password);
 
     const user = await this.prisma.user.create({
       data: {
@@ -160,6 +167,23 @@ export class UsersService {
 
     this.logger.log(`Created new user: ${email} (${user.id}) with role ${roleRecord.key}`);
 
+    // Audit log
+    if (currentUser?.email) {
+      await this.prisma.auditLog
+        .create({
+          data: {
+            actorId: currentUser.id,
+            actorEmail: currentUser.email,
+            actorRole: currentUser.role,
+            action: 'USER_CREATED',
+            resourceType: 'User',
+            resourceId: user.id,
+            diffSnapshot: { email: user.email, role: roleRecord.key },
+          },
+        })
+        .catch(() => null);
+    }
+
     return {
       id: user.id,
       email: user.email,
@@ -175,7 +199,7 @@ export class UsersService {
   async updateUser(
     id: string,
     dto: UpdateUserDto,
-    currentUser: { id: string; role: string }
+    currentUser: { id: string; email?: string; role: string }
   ) {
     const user = await this.prisma.user.findFirst({
       where: { id, deletedAt: null },
@@ -192,7 +216,7 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found.`);
     }
 
-    const isSuperAdmin = currentUser.role === RoleType.SUPER_ADMIN;
+    const isSuperAdmin = currentUser.role === RoleType.SUPER_ADMIN || (currentUser.role as any) === 'SUPER_ADMIN';
     const isSelf = currentUser.id === id;
 
     // Check permissions: Only Super Admin or the user themselves can edit
@@ -226,7 +250,7 @@ export class UsersService {
       if (dto.password.length < 8) {
         throw new BadRequestException('Password must be at least 8 characters long.');
       }
-      updateData.passwordHash = this.hashPassword(dto.password);
+      updateData.passwordHash = await this.hashPassword(dto.password);
       passwordChanged = true;
     }
 
@@ -275,8 +299,8 @@ export class UsersService {
     };
   }
 
-  async deleteUser(id: string, currentUser: { id: string; role: string }) {
-    if (currentUser.role !== RoleType.SUPER_ADMIN) {
+  async deleteUser(id: string, currentUser: { id: string; email?: string; role: string }) {
+    if (currentUser.role !== RoleType.SUPER_ADMIN && (currentUser.role as any) !== 'SUPER_ADMIN') {
       throw new ForbiddenException('Only Super Admins can delete users.');
     }
 
@@ -306,6 +330,22 @@ export class UsersService {
         isActive: false,
       },
     });
+
+    if (currentUser?.email) {
+      await this.prisma.auditLog
+        .create({
+          data: {
+            actorId: currentUser.id,
+            actorEmail: currentUser.email,
+            actorRole: currentUser.role,
+            action: 'USER_DELETED',
+            resourceType: 'User',
+            resourceId: id,
+            diffSnapshot: { email: user.email },
+          },
+        })
+        .catch(() => null);
+    }
 
     return { success: true, message: `User ${user.email} has been deactivated and deleted.` };
   }

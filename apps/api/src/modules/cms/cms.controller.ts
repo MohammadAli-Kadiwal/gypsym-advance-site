@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CmsService } from './cms.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RoleType } from '@gypsym/database';
 
 @Controller()
 export class CmsController {
@@ -93,6 +96,7 @@ export class CmsController {
 
   // Admin CMS Endpoints
   @Get('cms/blog')
+  @UseGuards(AuthGuard)
   async getCmsBlogPosts(
     @Query('search') search?: string,
     @Query('status') status?: string,
@@ -101,16 +105,19 @@ export class CmsController {
   }
 
   @Post('cms/blog')
+  @UseGuards(AuthGuard)
   async createBlogPost(@Body() body: any): Promise<any> {
     return this.cmsService.createBlogPost(body);
   }
 
   @Put('cms/blog/:id')
+  @UseGuards(AuthGuard)
   async updateBlogPost(@Param('id') id: string, @Body() body: any): Promise<any> {
     return this.cmsService.updateBlogPost(id, body);
   }
 
   @Delete('cms/blog/:id')
+  @UseGuards(AuthGuard)
   async deleteBlogPost(@Param('id') id: string): Promise<any> {
     return this.cmsService.deleteBlogPost(id);
   }
@@ -174,7 +181,8 @@ export class CmsController {
   }
 
   @Put('settings/scripts')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN, RoleType.SYSTEM_ADMIN)
   async updateScriptSettings(@Body() body: any): Promise<any> {
     return this.cmsService.updateScriptSettings(body);
   }

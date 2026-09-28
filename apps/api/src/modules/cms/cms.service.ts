@@ -3,6 +3,9 @@ import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class CmsService implements OnModuleInit {
+  private clientsCache: { data: any[]; expiresAt: number } | null = null;
+  private homepagePartnersCache: { data: any[]; expiresAt: number } | null = null;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
@@ -2976,13 +2979,16 @@ export class CmsService implements OnModuleInit {
   }
 
   async getClients(): Promise<any[]> {
+    if (this.clientsCache && Date.now() < this.clientsCache.expiresAt) {
+      return this.clientsCache.data;
+    }
     const clients = await this.prisma.client.findMany({
       orderBy: { displayOrder: 'asc' },
       include: {
         logoLight: { select: { variants: true } },
       },
     });
-    return clients.map((c) => ({
+    const mapped = clients.map((c) => ({
       id: c.id,
       name: c.name,
       logoUrl: this.logoUrlFromMedia(c.logoLight),
@@ -2993,6 +2999,8 @@ export class CmsService implements OnModuleInit {
       isActive: true,
       createdAt: c.createdAt,
     }));
+    this.clientsCache = { data: mapped, expiresAt: Date.now() + 60000 };
+    return mapped;
   }
 
   async createClient(body: {
@@ -3000,6 +3008,7 @@ export class CmsService implements OnModuleInit {
     logoUrl?: string;
     websiteUrl?: string;
   }): Promise<any> {
+    this.clientsCache = null;
     // Persist logoUrl in media.variants JSON so it survives without S3 upload
     const mediaRow = await this.prisma.media.create({
       data: {
@@ -3110,6 +3119,16 @@ export class CmsService implements OnModuleInit {
     partnerType?: string;
     search?: string;
   }): Promise<any[]> {
+    const isHomepageDefault =
+      filters?.status === 'PUBLISHED' &&
+      (filters?.showOnHomepage === true || filters?.showOnHomepage === 'true') &&
+      !filters?.partnerType &&
+      !filters?.search;
+
+    if (isHomepageDefault && this.homepagePartnersCache && Date.now() < this.homepagePartnersCache.expiresAt) {
+      return this.homepagePartnersCache.data;
+    }
+
     const where: any = {};
 
     if (filters?.status && filters.status !== 'ALL') {
@@ -3139,7 +3158,7 @@ export class CmsService implements OnModuleInit {
       },
     });
 
-    return partners.map((p) => ({
+    const mapped = partners.map((p) => ({
       id: p.id,
       slug: p.slug,
       name: p.name,
@@ -3158,6 +3177,12 @@ export class CmsService implements OnModuleInit {
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
+
+    if (isHomepageDefault) {
+      this.homepagePartnersCache = { data: mapped, expiresAt: Date.now() + 60000 };
+    }
+
+    return mapped;
   }
 
   async getPartnerById(id: string): Promise<any> {
@@ -3398,6 +3423,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async deletePartner(id: string): Promise<void> {
+    this.homepagePartnersCache = null;
     const existing = await this.prisma.partner.findUnique({
       where: { id },
       select: { logoId: true, logoDarkId: true },
@@ -3413,6 +3439,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async reorderPartners(items: Array<{ id: string; displayOrder: number }>): Promise<void> {
+    this.homepagePartnersCache = null;
     await this.prisma.$transaction(
       items.map((item) =>
         this.prisma.partner.update({
@@ -3424,6 +3451,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async updatePartnerHomepageVisibility(id: string, showOnHomepage: boolean): Promise<any> {
+    this.homepagePartnersCache = null;
     return this.prisma.partner.update({
       where: { id },
       data: { showOnHomepage },
@@ -3432,6 +3460,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async bulkUpdatePartnerStatus(ids: string[], status: any): Promise<{ count: number }> {
+    this.homepagePartnersCache = null;
     return this.prisma.partner.updateMany({
       where: { id: { in: ids } },
       data: { status },
@@ -3439,6 +3468,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async bulkDeletePartners(ids: string[]): Promise<{ count: number }> {
+    this.homepagePartnersCache = null;
     const existing = await this.prisma.partner.findMany({
       where: { id: { in: ids } },
       select: { logoId: true, logoDarkId: true },

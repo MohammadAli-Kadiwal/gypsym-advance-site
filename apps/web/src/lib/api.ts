@@ -18,7 +18,7 @@ export const apiClient = axios.create({
 export async function getPageBySlug(slug: string): Promise<PageDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/pages/${slug}`, {
-      cache: 'no-store',
+      next: { tags: [`page-${slug}`, 'pages'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -56,8 +56,7 @@ export async function getNavigation(key: string): Promise<NavigationDto | null> 
 export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/branding`, {
-      cache: 'no-store',
-      next: { tags: ['brand-settings'] },
+      next: { tags: ['brand-settings'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -76,8 +75,7 @@ export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
 export async function getSiteSettings(): Promise<Record<string, any>> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings`, {
-      cache: 'no-store',
-      next: { tags: ['site-settings'] },
+      next: { tags: ['site-settings'], revalidate: 60 },
     });
     if (!res.ok) {
       return {};
@@ -95,8 +93,7 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
 export async function getScriptSettings(): Promise<any | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings/scripts`, {
-      cache: 'no-store',
-      next: { tags: ['scripts-configuration'] },
+      next: { tags: ['scripts-configuration'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -115,8 +112,7 @@ export async function getScriptSettings(): Promise<any | null> {
 export async function getHeaderData(): Promise<HeaderDataDto> {
   try {
     const res = await fetch(`${API_BASE_URL}/header`, {
-      cache: 'no-store',
-      next: { tags: ['header-all'] },
+      next: { tags: ['header-all'], revalidate: 60 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -141,7 +137,6 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
 export async function getFooterData(): Promise<FooterDataDto> {
   try {
     const res = await fetch(`${API_BASE_URL}/footer`, {
-      cache: 'no-store',
       next: { tags: ['footer-all'], revalidate: 60 },
     });
     if (res.ok) {
@@ -198,8 +193,7 @@ export interface PortfolioProjectItemDto {
 export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/portfolio/categories`, {
-      cache: 'no-store',
-      next: { tags: ['portfolio-categories'] },
+      next: { tags: ['portfolio-categories'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -221,8 +215,7 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
       url.searchParams.set('category', categorySlug);
     }
     const res = await fetch(url.toString(), {
-      cache: 'no-store',
-      next: { tags: ['portfolio-projects'] },
+      next: { tags: ['portfolio-projects'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -281,8 +274,7 @@ export interface ServiceItemDto {
 export async function getServices(): Promise<ServiceItemDto[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/services`, {
-      cache: 'no-store',
-      next: { tags: ['services'] },
+      next: { tags: ['services'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -299,8 +291,7 @@ export async function getServices(): Promise<ServiceItemDto[]> {
 export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/services/${slug}`, {
-      cache: 'no-store',
-      next: { tags: [`service-${slug}`] },
+      next: { tags: [`service-${slug}`], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -324,8 +315,7 @@ export interface CmsPageSummary {
 export async function getPublishedPages(): Promise<CmsPageSummary[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/pages`, {
-      cache: 'no-store',
-      next: { tags: ['cms-pages'] },
+      next: { tags: ['cms-pages'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -342,8 +332,7 @@ export async function getPublishedPages(): Promise<CmsPageSummary[]> {
 export async function getClients(): Promise<any[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/clients`, {
-      cache: 'no-store',
-      next: { tags: ['clients'] },
+      next: { tags: ['clients'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -357,11 +346,10 @@ export async function getClients(): Promise<any[]> {
 export async function getTeamMembers(): Promise<any[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/cms/collections/team`, {
-      cache: 'no-store',
-      next: { tags: ['team'] },
+      next: { tags: ['team'], revalidate: 60 },
     });
     if (!res.ok) {
-      const fallback = await fetch(`${API_BASE_URL}/team`, { cache: 'no-store' }).catch(() => null);
+      const fallback = await fetch(`${API_BASE_URL}/team`, { next: { tags: ['team'], revalidate: 60 } }).catch(() => null);
       if (fallback?.ok) {
         const fj = await fallback.json();
         const flist = fj?.data ?? fj;
@@ -441,7 +429,6 @@ export interface BlogPostDetailDto extends BlogPostItemDto {
 export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/blog/categories`, {
-      cache: 'no-store',
       next: { tags: ['blog-categories'], revalidate: 60 },
     });
     if (!res.ok) return [];
@@ -472,7 +459,6 @@ export async function getBlogPosts(options?: {
 
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await fetch(`${API_BASE_URL}/blog${qs}`, {
-      cache: 'no-store',
       next: { tags: ['blog-posts'], revalidate: 60 },
     });
     if (!res.ok) return [];
@@ -487,7 +473,6 @@ export async function getBlogPosts(options?: {
 export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/blog/${slug}`, {
-      cache: 'no-store',
       next: { tags: [`blog-${slug}`], revalidate: 60 },
     });
     if (!res.ok) return null;
@@ -518,7 +503,6 @@ export interface SeoDefaultsDto {
 export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings/seo`, {
-      cache: 'no-store',
       next: { tags: ['seo-settings'], revalidate: 60 },
     });
     if (!res.ok) return null;

@@ -2,6 +2,9 @@ import { Injectable, Logger, UnauthorizedException, BadRequestException, HttpExc
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import * as crypto from 'crypto';
+import * as util from 'util';
+
+const scryptAsync = util.promisify(crypto.scrypt);
 
 export interface LoginDto {
   email: string;
@@ -34,14 +37,17 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-
   private getJwtSecret(): string {
-    return (
+    const secret =
       this.configService.get<string>('auth.jwtAccessSecret') ||
       process.env.JWT_ACCESS_SECRET ||
-      process.env.JWT_SECRET ||
-      'gypsym_jwt_default_enterprise_cluster_secret_fallback_key_2026'
-    );
+      process.env.JWT_SECRET;
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        'FATAL: JWT_ACCESS_SECRET must be configured in environment variables and be at least 32 characters long.'
+      );
+    }
+    return secret;
   }
 
   /**
@@ -80,16 +86,16 @@ export class AuthService {
   }
 
   /**
-   * Secure password verification using scrypt.
+   * Secure password verification using asynchronous scrypt.
    */
-  private verifyPassword(password: string, hash: string): boolean {
+  private async verifyPassword(password: string, hash: string): Promise<boolean> {
     if (!password || !hash) return false;
     const parts = hash.split(':');
     if (parts.length === 3 && parts[0] === 'scrypt') {
       const salt = parts[1]!;
       const keyHex = parts[2]!;
       try {
-        const derivedKey = crypto.scryptSync(password, salt, 64);
+        const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
         return crypto.timingSafeEqual(Buffer.from(keyHex, 'hex'), derivedKey);
       } catch {
         return false;
@@ -268,6 +274,21 @@ export class AuthService {
       const currentFailures = this.recordFailedAttempt(clientIp, security.maxFailedAttempts, security.lockoutDurationMinutes);
       const remaining = Math.max(0, security.maxFailedAttempts - currentFailures);
       this.logger.warn(`Failed login attempt: User not found for email ${email} from IP ${clientIp} (${currentFailures}/${security.maxFailedAttempts})`);
+
+      await this.prisma.auditLog
+        .create({
+          data: {
+            actorEmail: email,
+            actorRole: 'ANONYMOUS',
+            action: 'LOGIN_FAILED',
+            resourceType: 'User',
+            resourceId: email,
+            ipAddress: clientIp,
+            userAgent: meta?.userAgent || null,
+          },
+        })
+        .catch(() => null);
+
       throw new UnauthorizedException(
         remaining > 0
           ? `Invalid email or password. You have ${remaining} attempt(s) remaining before your IP is blocked.`
@@ -280,11 +301,27 @@ export class AuthService {
       throw new UnauthorizedException('Account has been deactivated. Please contact support.');
     }
 
-    const isPasswordValid = this.verifyPassword(password, user.passwordHash);
+    const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       const currentFailures = this.recordFailedAttempt(clientIp, security.maxFailedAttempts, security.lockoutDurationMinutes);
       const remaining = Math.max(0, security.maxFailedAttempts - currentFailures);
       this.logger.warn(`Failed login attempt: Incorrect password for email ${email} from IP ${clientIp} (${currentFailures}/${security.maxFailedAttempts})`);
+
+      await this.prisma.auditLog
+        .create({
+          data: {
+            actorId: user.id,
+            actorEmail: user.email,
+            actorRole: user.userRoles[0]?.role.key || 'UNKNOWN',
+            action: 'LOGIN_FAILED_BAD_PASSWORD',
+            resourceType: 'User',
+            resourceId: user.id,
+            ipAddress: clientIp,
+            userAgent: meta?.userAgent || null,
+          },
+        })
+        .catch(() => null);
+
       throw new UnauthorizedException(
         remaining > 0
           ? `Invalid email or password. You have ${remaining} attempt(s) remaining before your IP is blocked.`
@@ -325,6 +362,22 @@ export class AuthService {
     });
 
     const primaryRole = user.userRoles[0]?.role.key || 'SUPER_ADMIN';
+
+    // Record audit log for successful login
+    await this.prisma.auditLog
+      .create({
+        data: {
+          actorId: user.id,
+          actorEmail: user.email,
+          actorRole: primaryRole,
+          action: 'LOGIN_SUCCESS',
+          resourceType: 'Session',
+          resourceId: session.id,
+          ipAddress: clientIp,
+          userAgent: meta?.userAgent || null,
+        },
+      })
+      .catch(() => null);
     const permissions = Array.from(
       new Set(
         user.userRoles.flatMap((ur) =>
