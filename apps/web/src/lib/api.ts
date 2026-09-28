@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { PageDto, NavigationDto, BrandSettingsDto, HeaderDataDto } from './cms-types';
+import { PageDto, NavigationDto, BrandSettingsDto, HeaderDataDto, FooterDataDto } from './cms-types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -90,6 +90,25 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
 }
 
 /**
+ * Fetch dynamic analytics, Google Analytics, Meta Pixel, and header/footer scripts.
+ */
+export async function getScriptSettings(): Promise<any | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/settings/scripts`, {
+      cache: 'no-store',
+      next: { tags: ['scripts-configuration'] },
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const json = await res.json();
+    return json?.data || json || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch consolidated Header data (Branding, Navigation, Header Configuration)
  * Directly from NestJS API / PostgreSQL.
  */
@@ -112,6 +131,34 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
     branding: null,
     navigation: null,
     config: null,
+  };
+}
+
+/**
+ * Fetch consolidated dynamic Footer data (Branding, Navigation, Footer Configuration, Contact, Entity)
+ * Directly from NestJS API / PostgreSQL.
+ */
+export async function getFooterData(): Promise<FooterDataDto> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/footer`, {
+      cache: 'no-store',
+      next: { tags: ['footer-all'], revalidate: 60 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.data) {
+        return json.data as FooterDataDto;
+      }
+    }
+  } catch {
+    // Network failure
+  }
+  return {
+    branding: null,
+    navigation: null,
+    config: null,
+    contact: null,
+    entity: null,
   };
 }
 
@@ -263,6 +310,35 @@ export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | n
   }
 }
 
+export interface CmsPageSummary {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+}
+
+/**
+ * Fetch all published CMS pages (slug + title) for nav injection.
+ * Only returns pages with status === 'published'.
+ */
+export async function getPublishedPages(): Promise<CmsPageSummary[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/pages`, {
+      cache: 'no-store',
+      next: { tags: ['cms-pages'] },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list: any[] = json?.data ?? json;
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((p) => p.status === 'published')
+      .map((p) => ({ id: p.id, slug: p.slug, title: p.title, status: p.status }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getClients(): Promise<any[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/clients`, {
@@ -300,4 +376,157 @@ export async function getTeamMembers(): Promise<any[]> {
     return [];
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// EDITORIAL & BLOG API
+// ─────────────────────────────────────────────────────────────
+
+export interface BlogCategoryDto {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  postCount: number;
+}
+
+export interface BlogPostItemDto {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  status: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  author: {
+    name: string;
+    role: string;
+    avatar?: string;
+  };
+  coverImage: string;
+  readTimeMinutes: number;
+  readTime: string;
+  publishedAt: string;
+  publishedDate: string;
+  viewCount: number;
+  tags: string[];
+}
+
+export interface BlogPostDetailDto extends BlogPostItemDto {
+  bodyContent?: {
+    sections?: Array<{
+      heading?: string;
+      subheading?: string;
+      paragraphs?: string[];
+      callout?: {
+        title: string;
+        text: string;
+      };
+      quote?: {
+        text: string;
+        citation: string;
+      };
+      bulletPoints?: string[];
+      codeSnippet?: {
+        language: string;
+        code: string;
+      };
+    }>;
+  };
+  related?: BlogPostItemDto[];
+}
+
+export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/blog/categories`, {
+      cache: 'no-store',
+      next: { tags: ['blog-categories'], revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list = json?.data ?? json;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getBlogPosts(options?: {
+  category?: string;
+  search?: string;
+  limit?: number;
+}): Promise<BlogPostItemDto[]> {
+  try {
+    const params = new URLSearchParams();
+    if (options?.category && options.category !== 'all') {
+      params.set('category', options.category);
+    }
+    if (options?.search && options.search.trim()) {
+      params.set('search', options.search.trim());
+    }
+    if (options?.limit) {
+      params.set('limit', String(options.limit));
+    }
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/blog${qs}`, {
+      cache: 'no-store',
+      next: { tags: ['blog-posts'], revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list = json?.data ?? json;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/blog/${slug}`, {
+      cache: 'no-store',
+      next: { tags: [`blog-${slug}`], revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data ?? json) || null;
+  } catch {
+    return null;
+  }
+}
+
+export interface SeoDefaultsDto {
+  metaTitleTemplate?: string;
+  defaultTitle?: string;
+  defaultDescription?: string;
+  defaultKeywords?: string[];
+  canonicalBaseUrl?: string;
+  ogDefaultImage?: string;
+  twitterCard?: string;
+  twitterHandle?: string;
+  robotsIndex?: boolean;
+  robotsFollow?: boolean;
+  googleVerification?: string;
+  bingVerification?: string;
+  yandexVerification?: string;
+  baiduVerification?: string;
+}
+
+export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/settings/seo`, {
+      cache: 'no-store',
+      next: { tags: ['seo-settings'], revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data ?? json) || null;
+  } catch {
+    return null;
+  }
+}
+
 

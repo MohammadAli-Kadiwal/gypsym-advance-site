@@ -171,16 +171,15 @@ export default function RecaptchaSettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-4xl animate-in fade-in-50 duration-200">
+      <div className="w-full space-y-6 pb-24 animate-in fade-in-50 duration-200">
         <div className="h-8 w-64 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-44 bg-white rounded-2xl border border-slate-200 animate-pulse" />
         <div className="h-64 bg-white rounded-2xl border border-slate-200 animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-4xl pb-12">
+    <div className="space-y-6 w-full pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
         <div className="space-y-1">

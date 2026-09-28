@@ -332,7 +332,7 @@ export function BookStudio({ onBack }: BookStudioProps) {
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-6xl">
+    <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
         pageTitle="Book"
         pageRoute="/book"

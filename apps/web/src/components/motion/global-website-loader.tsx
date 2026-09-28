@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 import { BrandSettingsDto } from '@/lib/cms-types';
 
 interface GlobalWebsiteLoaderProps {
@@ -12,67 +11,89 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
   const [progress, setProgress] = React.useState<number>(0);
   const [isExiting, setIsExiting] = React.useState<boolean>(false);
   const [shouldRender, setShouldRender] = React.useState<boolean>(true);
-  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState<boolean>(false);
 
-  // Dynamic branding attributes
-  const companyName = brand?.companyName || 'Gypsym Technology';
-  const logoLight = brand?.logoLight || '';
-  const logoDark = brand?.logoDark || logoLight;
-  const hasLogo = Boolean(logoLight || logoDark);
+  // Dynamic branding attributes with local storage synchronization
+  const [companyName, setCompanyName] = React.useState<string>(brand?.companyName || 'Gypsym Technology');
+  const [brandIcon, setBrandIcon] = React.useState<string | null>(brand?.favicon || null);
+
+  React.useEffect(() => {
+    if (brand?.companyName) setCompanyName(brand.companyName);
+    if (brand?.favicon) setBrandIcon(brand.favicon);
+
+    try {
+      const stored = localStorage.getItem('gypsym_branding_settings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.companyName) setCompanyName(parsed.companyName);
+        if (parsed.faviconUrl) setBrandIcon(parsed.faviconUrl);
+      }
+    } catch {}
+  }, [brand]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check reduced motion
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
+    const barEl = document.getElementById('gypsym-loader-bar');
+    const pctEl = document.getElementById('gypsym-loader-pct');
+    const phaseEl = document.getElementById('gypsym-loader-phase');
 
-    // Check if initial session boot already completed
-    const hasLoadedThisSession = sessionStorage.getItem('gypsym_initial_boot_done');
-    if (hasLoadedThisSession) {
-      setShouldRender(false);
-      return;
-    }
+    const updateUI = (val: number) => {
+      setProgress(val);
+      if (barEl) barEl.style.width = `${val}%`;
+      if (pctEl) pctEl.textContent = `${val}%`;
+      if (phaseEl) {
+        if (val < 25) phaseEl.textContent = 'INITIALIZING CORE SYSTEMS';
+        else if (val < 55) phaseEl.textContent = 'CONNECTING NEURAL INFRASTRUCTURE';
+        else if (val < 85) phaseEl.textContent = 'OPTIMIZING RENDERING PIPELINE';
+        else if (val < 100) phaseEl.textContent = 'FINALIZING ENVIRONMENT';
+        else phaseEl.textContent = 'SYSTEM READY';
+      }
+    };
 
-    // Smooth simulated progress from 0 to 100%
     const startTime = performance.now();
-    const duration = 650; // ms for smooth progression
-
+    const duration = 1200; // Smooth 1.2s progression
     let animFrame: number;
-    const updateProgress = (now: number) => {
-      const elapsed = now - startTime;
-      const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      setProgress(pct);
+    let isDone = false;
 
-      if (pct < 100) {
-        animFrame = requestAnimationFrame(updateProgress);
+    const tick = (now: number) => {
+      if (isDone) return;
+      const elapsed = now - startTime;
+      const rawPct = Math.min(1, elapsed / duration);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - rawPct, 3);
+      const currentPct = Math.min(100, Math.max(0, Math.round(eased * 100)));
+
+      updateUI(currentPct);
+
+      if (rawPct < 1) {
+        animFrame = requestAnimationFrame(tick);
       } else {
-        // Complete! Wait a moment for visual satisfaction, then trigger smooth exit
+        isDone = true;
+        updateUI(100);
         setTimeout(() => {
           setIsExiting(true);
           setTimeout(() => {
             setShouldRender(false);
-            sessionStorage.setItem('gypsym_initial_boot_done', 'true');
           }, 450);
-        }, 120);
+        }, 180);
       }
     };
 
-    animFrame = requestAnimationFrame(updateProgress);
+    animFrame = requestAnimationFrame(tick);
 
-    // Safety timeout cap (1.5s max)
-    const safetyTimeout = setTimeout(() => {
-      setProgress(100);
-      setIsExiting(true);
-      setTimeout(() => {
-        setShouldRender(false);
-        sessionStorage.setItem('gypsym_initial_boot_done', 'true');
-      }, 300);
-    }, 1500);
+    // Guaranteed fallback cap
+    const fallbackTimer = setTimeout(() => {
+      if (!isDone) {
+        isDone = true;
+        updateUI(100);
+        setIsExiting(true);
+        setTimeout(() => setShouldRender(false), 300);
+      }
+    }, 2200);
 
     return () => {
       cancelAnimationFrame(animFrame);
-      clearTimeout(safetyTimeout);
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
@@ -80,72 +101,98 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
 
   return (
     <div
+      id="gypsym-loader-root"
       role="status"
-      aria-label="Loading application"
+      aria-label="Loading Gypsym Enterprise Platform"
       aria-live="polite"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#f4f3ef] dark:bg-[#050811] transition-all ${
-        prefersReducedMotion ? 'duration-200' : 'duration-500'
-      } ease-out ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#f4f3ef] dark:bg-[#050811] transition-all duration-500 ease-out ${
         isExiting
-          ? 'opacity-0 scale-95 pointer-events-none'
+          ? 'opacity-0 scale-98 pointer-events-none'
           : 'opacity-100 scale-100 pointer-events-auto'
       }`}
     >
-      <div className="flex flex-col items-center justify-center max-w-xs text-center px-4 space-y-4">
-        {/* Dynamic Logo or Fallback Text */}
-        {hasLogo ? (
-          /* When logo image exists: show ONLY the image, NO company name text */
-          <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-            {logoDark && (
-              <Image
-                src={logoDark}
-                alt="Brand Logo"
-                width={80}
-                height={80}
-                className="hidden dark:block object-contain max-h-16 w-auto"
-                priority
-              />
-            )}
-            {logoLight && (
-              <Image
-                src={logoLight}
-                alt="Brand Logo"
-                width={80}
-                height={80}
-                className="block dark:hidden object-contain max-h-16 w-auto"
-                priority
-              />
-            )}
-          </div>
-        ) : (
-          /* When NO logo image exists: show company name text and emblem */
-          <div className="flex flex-col items-center space-y-2 animate-in fade-in duration-400">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#d9127b] to-[#ff4b8b] flex items-center justify-center shadow-lg shadow-[#d9127b]/25">
-              <span className="text-white text-lg font-bold font-mono">G</span>
-            </div>
-            <div className="text-sm font-bold tracking-wider text-neutral-900 dark:text-neutral-100 uppercase">
-              {companyName}
-            </div>
-          </div>
-        )}
+      {/* Subtle ambient lighting backdrop */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
+        <div className="w-[360px] h-[360px] rounded-full bg-gradient-to-tr from-[#98c22a]/15 via-[#9ae625]/10 to-[#d9127b]/10 blur-[100px] animate-pulse" />
+      </div>
 
-        {/* Loading Progress Bar & Percentage */}
-        <div className="flex flex-col items-center space-y-2 w-36 sm:w-44 pt-1">
-          <div className="w-full h-[3px] rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden relative shadow-inner">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 max-w-sm">
+        {/* Brand Icon Showcase with High-Tech Orbital Ring */}
+        <div className="relative mb-6 flex items-center justify-center">
+          {/* Animated subtle rotating aura ring */}
+          <div className="absolute -inset-2.5 rounded-3xl opacity-70 bg-gradient-to-r from-[#98c22a]/30 via-transparent to-[#d9127b]/30 animate-[spin_8s_linear_infinite]" />
+
+          {/* Premium Glassmorphic Emblem Card */}
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-neutral-200/90 dark:border-neutral-800/80 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] flex items-center justify-center p-3.5 transition-transform">
+            {brandIcon ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brandIcon}
+                alt={companyName}
+                className="w-full h-full object-contain filter drop-shadow-sm select-none"
+              />
+            ) : (
+              /* Fallback Geometric High-Tech Brand Icon */
+              <div className="w-full h-full rounded-xl bg-gradient-to-tr from-[#98c22a] to-[#b8f53c] flex items-center justify-center shadow-inner">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-8 h-8 text-neutral-950"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic Company Name */}
+        <div className="text-xs sm:text-sm font-semibold tracking-[0.28em] text-neutral-800 dark:text-neutral-200 uppercase font-mono mb-4">
+          {companyName}
+        </div>
+
+        {/* High-Precision Progress Bar & Status Engine */}
+        <div className="w-48 sm:w-56 flex flex-col items-center space-y-2.5">
+          {/* Progress Bar Track */}
+          <div className="w-full h-[4px] rounded-full bg-neutral-200/80 dark:bg-neutral-800/90 overflow-hidden relative shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-[#d9127b] to-[#ff4b8b] rounded-full transition-all duration-100 ease-out"
+              id="gypsym-loader-bar"
+              className="h-full bg-gradient-to-r from-[#98c22a] via-[#b8f53c] to-[#9ae625] rounded-full transition-all duration-75 ease-out relative"
               style={{
                 width: `${progress}%`,
-                boxShadow: '0 0 12px rgba(217,18,123,0.6)',
+                boxShadow: '0 0 14px rgba(154,230,37,0.75)',
               }}
-            />
+            >
+              {/* Glowing flare at leading edge */}
+              <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/70 rounded-full blur-[1px]" />
+            </div>
           </div>
 
-          <span className="text-[11px] font-mono font-semibold text-neutral-500 dark:text-neutral-400 tabular-nums tracking-wider">
-            {progress}%
-          </span>
+          {/* Micro Data Row: Phase Status + Percentage */}
+          <div className="w-full flex items-center justify-between text-[10px] font-mono tracking-wider">
+            <span
+              id="gypsym-loader-phase"
+              className="text-neutral-500 dark:text-neutral-400 font-medium truncate max-w-[130px] text-left"
+            >
+              INITIALIZING CORE SYSTEMS
+            </span>
+            <span
+              id="gypsym-loader-pct"
+              className="text-[#98c22a] dark:text-[#b8f53c] font-bold tabular-nums"
+            >
+              {progress}%
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+

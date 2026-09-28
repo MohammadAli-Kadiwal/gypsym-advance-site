@@ -8,7 +8,7 @@ export default function BookPageStudio() {
   const router = useRouter();
 
   return (
-    <div className="max-w-7xl mx-auto py-2">
+    <div className="w-full pb-24">
       <BookStudio onBack={() => router.push('/pages')} />
     </div>
   );

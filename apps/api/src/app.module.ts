@@ -21,6 +21,8 @@ import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { RecaptchaModule } from './modules/recaptcha/recaptcha.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -67,6 +69,8 @@ import { BookingsModule } from './modules/bookings/bookings.module';
     PortfolioModule,
     RecaptchaModule,
     BookingsModule,
+    AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule implements NestModule {

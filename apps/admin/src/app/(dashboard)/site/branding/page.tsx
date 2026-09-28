@@ -15,7 +15,6 @@ import {
   Loader2,
   Globe,
   Image as ImageIcon,
-  RotateCcw,
   Lock,
   X,
 } from 'lucide-react';
@@ -26,8 +25,12 @@ import { ImageUploadField } from '@/components/ui/image-upload-field';
 function isValidHexOrHsl(val: string): boolean {
   if (!val) return false;
   const trimmed = val.trim();
+  // Standard #hex (3 or 6 digit)
   if (/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(trimmed)) return true;
-  if (/^hsl\(.+\)$/i.test(trimmed) || /^rgb\(.+\)$/i.test(trimmed)) return true;
+  // Full functional: hsl(...), rgb(...), oklch(...)
+  if (/^(hsl|rgb|oklch|hwb|lab|lch)\(.+\)$/i.test(trimmed)) return true;
+  // Raw HSL token — e.g. "84 100% 53%" (used in CSS custom properties by Tailwind/shadcn)
+  if (/^\d+(\.\d+)?\s+\d+(\.\d+)?%\s+\d+(\.\d+)?%$/.test(trimmed)) return true;
   return false;
 }
 
@@ -121,15 +124,6 @@ export default function BrandingStudioPage() {
     }
   };
 
-  const handleReset = () => {
-    if (confirm('Reset branding settings to enterprise defaults?')) {
-      setBranding(INITIAL_BRANDING);
-      localStorage.setItem('gypsym_branding_settings', JSON.stringify(INITIAL_BRANDING));
-      window.dispatchEvent(new Event('storage'));
-      notify.info('Branding reset to default configuration.');
-    }
-  };
-
   const lightBgPresets = [
     { label: 'Warm Alabaster (#f4f3ef)', hex: '#f4f3ef', recommended: true },
     { label: 'Pure White (#ffffff)', hex: '#ffffff' },
@@ -167,7 +161,7 @@ export default function BrandingStudioPage() {
   const activeBorderColor = previewTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto py-2">
+    <div className="space-y-6 w-full pb-24">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
         <div>
@@ -183,16 +177,6 @@ export default function BrandingStudioPage() {
         </div>
 
         <div className="flex items-center space-x-2.5 shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleReset}
-            className="rounded-xl h-10 px-3.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
-          >
-            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-            <span>Reset</span>
-          </Button>
-
           <Button
             onClick={() => handleSave()}
             disabled={saving}

@@ -40,7 +40,7 @@ const DEFAULT_CARDS: DirectContactCard[] = [
     description:
       'Book a 30-minute discovery session directly on our calendar. A live look at your store, no pitch deck.',
     linkText: 'gypsym.com/book →',
-    linkUrl: 'https://gypsym.com/book',
+    linkUrl: '/book',
   },
   {
     id: 'email-us',

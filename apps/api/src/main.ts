@@ -4,13 +4,20 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cors from 'cors';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 // NestJS Application Bootstrap - Reloaded
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    bodyParser: false,
+  });
+
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);

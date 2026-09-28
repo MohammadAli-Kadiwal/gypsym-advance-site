@@ -13,7 +13,6 @@ import {
   Trash2,
   Image as ImageIcon,
   Palette,
-  RotateCcw,
 } from 'lucide-react';
 import type { CapabilitiesSection, CapabilitiesPayload, TechItem } from './types';
 
@@ -183,19 +182,6 @@ export function CapabilitiesSettings({ section, onChange }: CapabilitiesSettings
                 placeholder="e.g. #064e42 or linear-gradient(...)"
                 className="h-9 text-xs font-mono"
               />
-              {p.backgroundColor && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => update({ backgroundColor: '' })}
-                  className="h-9 px-2.5 text-xs text-slate-600 rounded-xl shrink-0"
-                  title="Reset to default gradient"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                  Reset
-                </Button>
-              )}
             </div>
             <p className="text-[11px] text-slate-500">
               Enter any valid hex code (e.g. <code className="text-slate-700 font-mono">#0f172a</code>) or CSS gradient. Leave empty to use the default deep emerald gradient.

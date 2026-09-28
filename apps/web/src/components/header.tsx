@@ -1,15 +1,17 @@
 import * as React from 'react';
-import { getHeaderData, getServices } from '@/lib/api';
+import { getHeaderData, getServices, getPublishedPages } from '@/lib/api';
 import { HeaderView } from './header-view';
 
 /**
  * Dynamic CMS Header (Server Component).
- * Strictly dynamic: fetches navigation tree, branding, header config, and active services.
+ * Fetches navigation tree, branding, header config, active services,
+ * and published CMS pages to auto-populate the site header.
  */
 export async function Header() {
-  const [headerData, services] = await Promise.all([
+  const [headerData, services, cmsPages] = await Promise.all([
     getHeaderData(),
     getServices().catch(() => []),
+    getPublishedPages().catch(() => []),
   ]);
 
   return (
@@ -18,7 +20,7 @@ export async function Header() {
       brand={headerData.branding}
       config={headerData.config}
       services={services}
+      cmsPages={cmsPages}
     />
   );
 }
-

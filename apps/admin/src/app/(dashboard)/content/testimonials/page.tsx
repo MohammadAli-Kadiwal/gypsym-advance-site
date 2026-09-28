@@ -413,7 +413,7 @@ export default function TestimonialsManagementPage() {
 
   if (!mounted) {
     return (
-      <div className="max-w-7xl mx-auto py-8 space-y-4">
+      <div className="w-full py-8 space-y-4">
         <div className="h-8 w-64 bg-slate-200/60 rounded-xl animate-pulse" />
         <div className="h-64 bg-white rounded-2xl border border-slate-200 animate-pulse" />
       </div>
@@ -421,7 +421,7 @@ export default function TestimonialsManagementPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-4 space-y-6 animate-in fade-in-50 duration-200">
+    <div className="w-full space-y-6 pb-24 animate-in fade-in-50 duration-200">
       {/* ── Page Header ────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
         <div className="flex items-center space-x-4">

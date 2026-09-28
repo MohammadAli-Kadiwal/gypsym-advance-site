@@ -833,18 +833,22 @@ export const INITIAL_NAVIGATION = {
 
 // Custom Hook to manage any CMS collection with local persistence
 export function useCmsCollection<T extends BaseRecord>(collectionKey: string) {
-  const [data, setData] = React.useState<T[]>(() => {
-    if (typeof window === 'undefined') return (INITIAL_CMS_DATA[collectionKey] || []) as T[];
-    const stored = localStorage.getItem(`gypsym_cms_${collectionKey}`);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // fallback
+  const [data, setData] = React.useState<T[]>(() => (INITIAL_CMS_DATA[collectionKey] || []) as T[]);
+
+  // Safely sync from localStorage on client after mount without hydration mismatch
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`gypsym_cms_${collectionKey}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setData(parsed);
+        }
       }
+    } catch {
+      // ignore parse errors
     }
-    return (INITIAL_CMS_DATA[collectionKey] || []) as T[];
-  });
+  }, [collectionKey]);
 
   const saveToStorage = React.useCallback(
     (newItems: T[]) => {

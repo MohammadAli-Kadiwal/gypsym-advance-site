@@ -10,7 +10,7 @@ export default function CustomPageStudio() {
   const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
 
   return (
-    <div className="max-w-7xl mx-auto py-2">
+    <div className="w-full pb-24">
       <UniversalPageStudio pageId={id} onBack={() => router.push('/pages')} />
     </div>
   );

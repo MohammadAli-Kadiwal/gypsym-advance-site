@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   ChevronRight,
   FileText,
@@ -16,6 +17,7 @@ import {
   Settings2,
   Search,
   CheckCircle2,
+  Globe,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +63,24 @@ const LAYOUT_OPTIONS = [
 
 const STATUS_OPTIONS = ['PUBLISHED', 'DRAFT', 'ARCHIVED'] as const;
 
+const COUNTRY_SLUGS = new Set([
+  'united-states', 'us',
+  'uk', 'united-kingdom',
+  'saudi-arabia', 'sa',
+  'united-arab-emirates', 'uae',
+  'australia', 'au',
+  'oman', 'om',
+]);
+
+function isCountryPage(slug?: string): boolean {
+  if (!slug) return false;
+  return COUNTRY_SLUGS.has(slug.toLowerCase());
+}
+
 function getPageIcon(slug?: string) {
+  if (isCountryPage(slug)) {
+    return <Globe className="h-4 w-4" />;
+  }
   switch (slug) {
     case 'home':
       return <LayoutGrid className="h-4 w-4" />;
@@ -118,6 +137,17 @@ export function PagesTable({
   const [createLayoutType, setCreateLayoutType] = React.useState('DEFAULT');
   const [createStatus, setCreateStatus] = React.useState('PUBLISHED');
   const [creating, setCreating] = React.useState(false);
+
+  // ── Auto-open create dialog from URL param ────────────────────────────────
+  const searchParams = useSearchParams();
+  const routerInner = useRouter();
+  React.useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setCreateOpen(true);
+      // Remove the param from the URL without a page reload
+      routerInner.replace('/pages');
+    }
+  }, [searchParams, routerInner]);
 
   // Filtered pages
   const filteredPages = React.useMemo(() => {
@@ -319,6 +349,12 @@ export function PagesTable({
                               Root /
                             </span>
                           )}
+                          {isCountryPage(page.slug) && (
+                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 whitespace-nowrap leading-tight flex items-center gap-1">
+                              <Globe className="w-2.5 h-2.5" />
+                              Country Landing
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 mt-0.5">
                           <span>{route}</span>
@@ -461,6 +497,17 @@ export function PagesTable({
                             variant="ghost"
                             size="sm"
                             className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : isCountryPage(page.slug) ? (
+                        <Link href={`/pages/countries/${page.slug}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl"
                           >
                             <span>Studio</span>
                             <ChevronRight className="h-3.5 w-3.5 ml-1" />

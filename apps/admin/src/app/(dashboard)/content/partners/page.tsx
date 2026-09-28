@@ -877,7 +877,7 @@ export default function PartnersPage() {
   // ── SSR Guard ──────────────────────────────────────────────────────────────
   if (!mounted) {
     return (
-      <div className="max-w-7xl mx-auto py-6 space-y-4">
+      <div className="w-full py-6 space-y-4">
         <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
         <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
       </div>
@@ -887,7 +887,7 @@ export default function PartnersPage() {
   const homepageCount = partners.filter((p) => p.showOnHomepage && p.status === 'PUBLISHED').length;
 
   return (
-    <div className="max-w-7xl mx-auto py-2 space-y-6">
+    <div className="w-full space-y-6 pb-24">
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
         <div>

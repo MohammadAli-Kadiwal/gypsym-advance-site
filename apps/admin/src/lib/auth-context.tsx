@@ -1,17 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { fetchApi, getAuthToken } from './api-client';
 
 export type RoleType = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'VIEWER';
-
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  role: RoleType;
-  avatarUrl?: string;
-  permissions: string[];
-}
 
 export const ROLE_PERMISSIONS: Record<RoleType, string[]> = {
   SUPER_ADMIN: ['*'],
@@ -52,33 +45,40 @@ export const ROLE_PERMISSIONS: Record<RoleType, string[]> = {
   ],
 };
 
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: RoleType;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+  permissions: string[];
+}
+
 interface AuthContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
-  login: (email: string, role?: RoleType) => void;
-  logout: () => void;
-  switchRole: (role: RoleType) => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_USER: AdminUser = {
-  id: 'usr_super_01',
-  name: 'MohammadAli Kadiwal',
-  email: 'chief.architect@gypsym.com',
-  role: 'SUPER_ADMIN',
-  permissions: ['*'],
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<AdminUser | null>(DEFAULT_USER);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [user, setUser] = React.useState<AdminUser | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [theme, setTheme] = React.useState<'dark' | 'light'>('light');
 
+  // Load saved theme preference
   React.useEffect(() => {
-    // Check saved theme
     const savedTheme = localStorage.getItem('gypsym_admin_theme') as 'dark' | 'light' | null;
     if (savedTheme) {
       setTheme(savedTheme);
@@ -97,43 +97,126 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const login = React.useCallback((email: string, role: RoleType = 'SUPER_ADMIN') => {
-    const localPart = email.split('@')[0] || 'admin';
-    const newUser: AdminUser = {
-      id: `usr_${Date.now()}`,
-      name: localPart.replace('.', ' ').toUpperCase(),
-      email,
-      role,
-      permissions: ROLE_PERMISSIONS[role],
+  // Validate active session token with backend on initial load
+  React.useEffect(() => {
+    let isMounted = true;
+
+    async function checkSession() {
+      const token = getAuthToken();
+
+      if (!token) {
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Fast optimistic load from local storage to prevent flicker
+      const cachedUserStr = localStorage.getItem('gypsym_admin_user');
+      if (cachedUserStr) {
+        try {
+          const parsed = JSON.parse(cachedUserStr);
+          if (isMounted && parsed?.email) {
+            setUser(parsed);
+          }
+        } catch {
+          // ignore cache parse error
+        }
+      }
+
+      try {
+        const response = await fetchApi<{ success?: boolean; data?: AdminUser }>('/auth/me');
+        const activeUser = (response as any).data || response;
+
+        if (isMounted && activeUser && (activeUser as AdminUser).email) {
+          setUser(activeUser as AdminUser);
+          localStorage.setItem('gypsym_admin_user', JSON.stringify(activeUser));
+        }
+      } catch (err: any) {
+        // ONLY clear cookie and redirect if the server explicitly responded with 401 Unauthorized (token invalid/expired)
+        // Never clear credentials on network glitches, offline mode, or temporary server restarts (status 0, 502, 503)
+        if (isMounted && err?.status === 401) {
+          document.cookie = 'gypsym_admin_token=; path=/; max-age=0';
+          localStorage.removeItem('gypsym_admin_token');
+          localStorage.removeItem('gypsym_admin_user');
+          setUser(null);
+
+          if (pathname !== '/login') {
+            router.push('/login');
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
     };
-    setUser(newUser);
-  }, []);
+  }, [pathname, router]);
 
-  const logout = React.useCallback(() => {
-    setUser(null);
-  }, []);
+  // Authenticate against NestJS /auth/login endpoint
+  const login = React.useCallback(
+    async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const res = await fetchApi<any>('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
 
-  const switchRole = React.useCallback((role: RoleType) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        role,
-        permissions: ROLE_PERMISSIONS[role],
-      };
-    });
-  }, []);
+        const token = res.token;
+        const loggedUser: AdminUser = res.user;
 
+        if (!token || !loggedUser) {
+          return { success: false, error: 'Authentication failed. No access token returned.' };
+        }
+
+        // Set persistent 7-day cookie
+        document.cookie = `gypsym_admin_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+        localStorage.setItem('gypsym_admin_token', token);
+        localStorage.setItem('gypsym_admin_user', JSON.stringify(loggedUser));
+
+        setUser(loggedUser);
+        return { success: true };
+      } catch (err: any) {
+        return {
+          success: false,
+          error: err?.message || 'Invalid enterprise credentials or network error.',
+        };
+      }
+    },
+    []
+  );
+
+  // Sign out and revoke session
+  const logout = React.useCallback(async () => {
+    try {
+      await fetchApi('/auth/logout', { method: 'POST' }).catch(() => null);
+    } finally {
+      document.cookie = 'gypsym_admin_token=; path=/; max-age=0';
+      localStorage.removeItem('gypsym_admin_token');
+      localStorage.removeItem('gypsym_admin_user');
+      setUser(null);
+      router.push('/login');
+    }
+  }, [router]);
+
+  // Dynamic role & permissions authorization check
   const hasPermission = React.useCallback(
     (requiredPermission: string): boolean => {
       if (!user) return false;
       if (user.role === 'SUPER_ADMIN') return true;
-      if (user.permissions.includes('*')) return true;
-      if (user.permissions.includes(requiredPermission)) return true;
+      if (user.permissions?.includes('*')) return true;
+      if (user.permissions?.includes(requiredPermission)) return true;
 
-      // Check wildcards like "content:*"
+      // Wildcard check like "content:*"
       const [domain] = requiredPermission.split(':');
-      if (user.permissions.includes(`${domain}:*`)) return true;
+      if (domain && user.permissions?.includes(`${domain}:*`)) return true;
 
       return false;
     },
@@ -145,11 +228,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         theme,
         toggleTheme,
         login,
         logout,
-        switchRole,
         hasPermission,
       }}
     >

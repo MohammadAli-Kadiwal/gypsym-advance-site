@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const totalEntities = pages.length + blogs.length + services.length + media.length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto py-2">
+    <div className="w-full space-y-6 pb-24">
       {/* 1. Welcome Banner (Clean & Focused) */}
       <div className="relative overflow-hidden rounded-2xl border border-purple-100/80 bg-gradient-to-r from-purple-50/80 via-indigo-50/50 to-blue-50/60 p-6 sm:p-8 shadow-xs">
         <div className="space-y-2 relative z-10">
@@ -57,7 +57,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-4">
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div suppressHydrationWarning className="text-3xl font-extrabold text-slate-900 tracking-tight">
               {pages.length}
             </div>
             <div className="mt-3 flex items-center space-x-2">
@@ -285,7 +285,7 @@ export default function DashboardPage() {
 
               {/* Center Content */}
               <div className="absolute flex flex-col items-center text-center">
-                <span className="text-2xl font-extrabold text-slate-900">
+                <span suppressHydrationWarning className="text-2xl font-extrabold text-slate-900">
                   {totalEntities}
                 </span>
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
                 <span className="text-slate-600 font-medium">Pages</span>
               </div>
-              <span className="font-bold text-slate-900">{pages.length}</span>
+              <span suppressHydrationWarning className="font-bold text-slate-900">{pages.length}</span>
             </div>
 
             <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50">
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 <span className="text-slate-600 font-medium">Articles</span>
               </div>
-              <span className="font-bold text-slate-900">{blogs.length}</span>
+              <span suppressHydrationWarning className="font-bold text-slate-900">{blogs.length}</span>
             </div>
 
             <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50">
@@ -318,7 +318,7 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
                 <span className="text-slate-600 font-medium">Services</span>
               </div>
-              <span className="font-bold text-slate-900">{services.length}</span>
+              <span suppressHydrationWarning className="font-bold text-slate-900">{services.length}</span>
             </div>
 
             <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50">
@@ -326,7 +326,7 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
                 <span className="text-slate-600 font-medium">Media</span>
               </div>
-              <span className="font-bold text-slate-900">{media.length > 0 ? media.length : '420'}</span>
+              <span suppressHydrationWarning className="font-bold text-slate-900">{media.length > 0 ? media.length : '420'}</span>
             </div>
           </div>
         </div>

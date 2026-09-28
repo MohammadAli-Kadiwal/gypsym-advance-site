@@ -7,6 +7,9 @@ export interface CreateBookingDto {
   fullName: string;
   email: string;
   phone?: string;
+  companyName?: string;
+  websiteUrl?: string;
+  serviceInterest?: string;
   storeUrl?: string;
   notes?: string;
   date: string; // YYYY-MM-DD
@@ -54,11 +57,36 @@ const HOST_SLOT_HOURS = [
   { hour: 18, minute: 30 },
 ];
 
+import { EmailService } from '../email/email.service';
+
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  // In-memory rate limiting map: ip -> timestamps[] (Max 5 booking requests per 15 minutes)
+  private readonly rateLimitMap = new Map<string, number[]>();
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
+
+  private checkRateLimit(ip?: string): void {
+    if (!ip || ip === 'unknown') return;
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000;
+    const maxRequests = 5;
+
+    const timestamps = (this.rateLimitMap.get(ip) || []).filter((t) => now - t < windowMs);
+
+    if (timestamps.length >= maxRequests) {
+      this.logger.warn(`Booking rate limit exceeded for IP: ${ip}`);
+      throw new BadRequestException('Too many booking requests. Please wait a few minutes before trying again.');
+    }
+
+    timestamps.push(now);
+    this.rateLimitMap.set(ip, timestamps);
+  }
 
   /**
    * Helper: Convert Host (IST) slot on given date to UTC Date
@@ -172,7 +200,9 @@ export class BookingsService {
   /**
    * Public: Create a new discovery call booking
    */
-  async createBooking(dto: CreateBookingDto) {
+  async createBooking(dto: CreateBookingDto, ip?: string) {
+    this.checkRateLimit(ip);
+
     if (!dto.fullName?.trim()) {
       throw new BadRequestException('Full name is required.');
     }
@@ -271,6 +301,25 @@ export class BookingsService {
     });
 
     this.logger.log(`Created booking ${booking.bookingNumber} for ${booking.email}`);
+
+    // Asynchronously dispatch confirmation emails via configured HTML templates
+    this.emailService
+      .sendBookingConfirmation({
+        fullName: booking.fullName,
+        email: booking.email,
+        bookingNumber: booking.bookingNumber,
+        scheduledAt: booking.utcStartTime,
+        durationMinutes: booking.durationMinutes,
+        phone: booking.phone,
+        companyName: dto.companyName || null,
+        websiteUrl: dto.websiteUrl || null,
+        serviceInterest: dto.serviceInterest || null,
+        notes: booking.notes,
+        meetingUrl: booking.meetingLink,
+      })
+      .catch((err) => {
+        this.logger.warn(`Failed to dispatch booking emails: ${err?.message || err}`);
+      });
 
     return booking;
   }

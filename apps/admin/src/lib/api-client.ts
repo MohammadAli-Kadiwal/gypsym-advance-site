@@ -58,8 +58,21 @@ export function normalizeErrorMessage(err: unknown, fallbackMessage: string = 'A
   return fallbackMessage;
 }
 
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )gypsym_admin_token=([^;]+)'));
+  if (match && match[2]) return match[2];
+  return localStorage.getItem('gypsym_admin_token');
+}
+
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+  const token = getAuthToken();
+  const authHeaders: Record<string, string> = {};
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   let res: Response;
   try {
@@ -67,6 +80,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...options?.headers,
       },
       cache: 'no-store',

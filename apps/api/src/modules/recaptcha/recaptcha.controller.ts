@@ -1,6 +1,7 @@
-import { Controller, Get, Put, Post, Body, Req } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { RecaptchaService, UpdateRecaptchaDto } from './recaptcha.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('settings/recaptcha')
 export class RecaptchaController {
@@ -18,6 +19,7 @@ export class RecaptchaController {
    * Admin: Get full configuration (secret key masked).
    */
   @Get()
+  @UseGuards(AuthGuard)
   async getAdminConfig() {
     return this.recaptchaService.getAdminConfig();
   }
@@ -26,6 +28,7 @@ export class RecaptchaController {
    * Admin: Update reCAPTCHA configuration.
    */
   @Put()
+  @UseGuards(AuthGuard)
   async updateConfig(@Body() dto: UpdateRecaptchaDto, @Req() req: Request) {
     const actorId = (req as any).user?.id || (req as any).user?.sub;
     return this.recaptchaService.saveConfig(dto, actorId);
@@ -35,6 +38,7 @@ export class RecaptchaController {
    * Admin: Test verification token.
    */
   @Post('test')
+  @UseGuards(AuthGuard)
   async testVerify(@Body('token') token: string, @Req() req: Request) {
     const forwarded = req.headers ? req.headers['x-forwarded-for'] : undefined;
     const ip = typeof forwarded === 'string' ? (forwarded.split(',')[0]?.trim() || 'unknown') : (req.ip || 'unknown');

@@ -114,7 +114,7 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
         const whatWeChangeRaw = res.sections?.find(
           (s) =>
             s.sectionIdentifier === 'what-we-actually-change' ||
-            s.componentType === 'FEATURE_GRID'
+            s.sectionIdentifier === 'what-we-change'
         );
         const portfolioRaw = res.sections?.find(
           (s) =>
@@ -656,7 +656,7 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
                 sectionIdentifier: 'homepage-cta',
                 contentPayload: ctaSection.contentPayload,
                 isActive: ctaSection.isActive,
-                displayOrder: 10,
+                displayOrder: 12,
               }),
             });
             if (created?.id) {
@@ -724,7 +724,7 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
 
   if (!mounted) {
     return (
-      <div className="max-w-7xl mx-auto py-6 space-y-4">
+      <div className="w-full py-6 space-y-4">
         <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
         <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
       </div>

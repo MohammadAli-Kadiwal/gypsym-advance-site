@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { INITIAL_SITE_SETTINGS } from '@/lib/store';
-import { Save, Check, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
+import { Save, Check, ShieldCheck, ArrowRight, Code, ShieldAlert } from 'lucide-react';
 
 export default function SiteSettingsPage() {
   const [settings, setSettings] = React.useState(INITIAL_SITE_SETTINGS);
@@ -19,56 +19,76 @@ export default function SiteSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full pb-24">
       <div className="border-b border-border/40 pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Global Enterprise Site Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
-          Corporate entity identification, primary contacts, regulatory jurisdictions, and timezones.
+          Corporate entity identification, primary contacts, regulatory jurisdictions, analytics scripts, and security defense.
         </p>
       </div>
 
-      {/* Quick Security & Messaging Settings Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Integration & Security Quick Hub Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
-          href="/site/settings/recaptcha"
+          href="/site/settings/scripts"
           className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-105 transition-transform">
-              <ShieldCheck className="h-5 w-5" />
+              <Code className="h-5 w-5" />
             </div>
             <div>
               <div className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                reCAPTCHA v3 & Bot Protection
+                Analytics & Custom Scripts
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">
-                Invisible risk analysis for public forms
+                Google Analytics, Meta Pixel, GTM & &lt;head&gt; / &lt;body&gt; scripts
               </div>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all shrink-0" />
         </Link>
 
         <Link
-          href="/site/settings/email"
-          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-between"
+          href="/site/settings/security"
+          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-rose-400 hover:shadow-md transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
-              <Mail className="h-5 w-5" />
+            <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-105 transition-transform">
+              <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                Email / SMTP Configuration
+              <div className="text-xs font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
+                Security & Login Protection
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">
-                Outbound mail servers and auto-responders
+                Brute-force IP lockouts (5 wrong attempts) & 7-day session lifetime
               </div>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-rose-600 group-hover:translate-x-1 transition-all shrink-0" />
+        </Link>
+
+        <Link
+          href="/site/settings/recaptcha"
+          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-emerald-400 hover:shadow-md transition-all flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                reCAPTCHA v3 Protection
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">
+                Invisible risk analysis for public contact forms and lead acquisition
+              </div>
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
         </Link>
       </div>
 

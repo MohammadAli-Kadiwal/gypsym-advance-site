@@ -20,17 +20,27 @@ import {
   Mail,
   CalendarCheck,
   ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
+  FileCode,
+  PanelBottom,
+  Search,
+  Bell,
+  Share2,
+  Code,
+  ShieldAlert,
+  Globe,
 } from 'lucide-react';
-
+import { useAuth, RoleType } from '@/lib/auth-context';
+import { useSidebar } from '@/lib/sidebar-context';
+import { useBranding, isValidImageUrl } from '@/lib/branding-context';
+import { useSystemNotifications } from '@/lib/system-notifications-context';
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  requiredPermission?: string;
+  allowedRoles?: RoleType[];
 }
 
 interface NavSection {
@@ -40,9 +50,17 @@ interface NavSection {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = React.useState(false);
-
-
+  const { collapsed } = useSidebar();
+  const { user, hasPermission } = useAuth();
+  const branding = useBranding();
+  const { unreadCount, unreadInquiriesCount, unreadBookingsCount } = useSystemNotifications();
+  const [logoError, setLogoError] = React.useState(false);
+  const resolvedLogo =
+    (isValidImageUrl(branding.logoLight) && branding.logoLight) ||
+    (isValidImageUrl(branding.favicon) && branding.favicon) ||
+    (isValidImageUrl(branding.logoDark) && branding.logoDark) ||
+    null;
+  const logoUrl = resolvedLogo && !logoError ? resolvedLogo : null;
 
   const navigationSections: NavSection[] = [
     {
@@ -62,6 +80,11 @@ export function Sidebar() {
           label: 'Pages',
           href: '/pages',
           icon: FileText,
+        },
+        {
+          label: 'Country Pages',
+          href: '/pages/countries',
+          icon: Globe,
         },
         {
           label: 'Blog Posts',
@@ -102,11 +125,13 @@ export function Sidebar() {
           label: 'Inquiries',
           href: '/content/submissions',
           icon: Inbox,
+          badge: unreadInquiriesCount > 0 ? String(unreadInquiriesCount) : undefined,
         },
         {
           label: 'Bookings',
           href: '/bookings',
           icon: CalendarCheck,
+          badge: unreadBookingsCount > 0 ? String(unreadBookingsCount) : undefined,
         },
       ],
     },
@@ -124,6 +149,26 @@ export function Sidebar() {
           icon: Sliders,
         },
         {
+          label: 'Social Profiles',
+          href: '/site/socials',
+          icon: Share2,
+        },
+        {
+          label: 'Footer Settings',
+          href: '/settings/footer',
+          icon: PanelBottom,
+        },
+        {
+          label: 'SEO & Metadata',
+          href: '/site/seo',
+          icon: Search,
+        },
+        {
+          label: 'Analytics & Scripts',
+          href: '/site/settings/scripts',
+          icon: Code,
+        },
+        {
           label: 'Settings',
           href: '/site/settings',
           icon: Settings,
@@ -132,11 +177,25 @@ export function Sidebar() {
           label: 'Email / SMTP',
           href: '/site/settings/email',
           icon: Mail,
+          allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+        },
+        {
+          label: 'Email Templates',
+          href: '/site/settings/email-templates',
+          icon: FileCode,
+          allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
         },
         {
           label: 'reCAPTCHA Protection',
           href: '/site/settings/recaptcha',
           icon: ShieldCheck,
+          allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+        },
+        {
+          label: 'Security & Lockout',
+          href: '/site/settings/security',
+          icon: ShieldAlert,
+          allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
         },
       ],
     },
@@ -144,13 +203,35 @@ export function Sidebar() {
       title: 'SYSTEM',
       items: [
         {
+          label: 'Notification Center',
+          href: '/system/notifications',
+          icon: Bell,
+          badge: unreadCount > 0 ? String(unreadCount) : undefined,
+        },
+        {
           label: 'Users & Roles',
           href: '/system/users',
           icon: Users,
+          allowedRoles: ['SUPER_ADMIN'],
         },
       ],
     },
   ];
+
+  const isItemVisible = (item: NavItem) => {
+    if (!user) return true;
+    if (user.role === 'SUPER_ADMIN') return true;
+    if (item.allowedRoles && !item.allowedRoles.includes(user.role)) return false;
+    if (item.requiredPermission && !hasPermission(item.requiredPermission)) return false;
+    return true;
+  };
+
+  const visibleSections = navigationSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(isItemVisible),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <aside
@@ -159,16 +240,27 @@ export function Sidebar() {
       }`}
     >
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-[#eaedf3]">
+      <div className="flex h-16 items-center px-4 border-b border-[#eaedf3]">
         <Link href="/" className="flex items-center space-x-3 overflow-hidden group">
-          <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
-            <span className="tracking-tighter">GT</span>
-          </div>
+          {/* Logo or Monogram */}
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={branding.companyName}
+              className={`object-contain shrink-0 ${collapsed ? 'h-8 w-8' : 'h-8 max-w-[120px]'}`}
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+              <span className="tracking-tighter">GT</span>
+            </div>
+          )}
 
-          {!collapsed && (
+          {!collapsed && !logoUrl && (
             <div className="flex flex-col truncate">
               <span className="font-bold text-sm tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors truncate">
-                Gypsym Technology
+                {branding.companyName}
               </span>
               <span className="text-[10px] text-slate-400 font-medium tracking-wide">
                 Enterprise Suite
@@ -176,19 +268,11 @@ export function Sidebar() {
             </div>
           )}
         </Link>
-
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
       </div>
 
       {/* Categorized Nav List */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 scrollbar-thin">
-        {navigationSections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.title} className="space-y-1">
             {!collapsed && (
               <div className="px-3 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
@@ -199,10 +283,16 @@ export function Sidebar() {
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  item.href === '/'
-                    ? pathname === '/'
-                    : pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                const isActive = (() => {
+                  if (item.href === '/') return pathname === '/';
+                  if (item.href === '/pages') {
+                    return pathname === '/pages' || (pathname.startsWith('/pages/') && !pathname.startsWith('/pages/countries'));
+                  }
+                  if (item.href === '/site/settings') {
+                    return pathname === '/site/settings';
+                  }
+                  return pathname === item.href || (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+                })();
 
                 return (
                   <Link
@@ -241,39 +331,6 @@ export function Sidebar() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Bottom Organization / User Status Card (Matching Reference) */}
-      <div className="p-3 border-t border-[#eaedf3]">
-        {!collapsed ? (
-          <div className="flex items-center justify-between p-2 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-slate-100 transition-colors">
-            <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="h-8 w-8 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
-                AS
-              </div>
-              <div className="flex flex-col truncate">
-                <span className="text-xs font-bold text-slate-800 truncate">
-                  Gypsym Enterprise
-                </span>
-                <div className="flex items-center space-x-1">
-                  <span className="inline-block px-1.5 py-0.2 rounded bg-blue-50 text-blue-600 font-semibold text-[9px] border border-blue-100">
-                    Active Portal
-                  </span>
-                </div>
-              </div>
-            </div>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <div
-              title="Gypsym Enterprise (Active Portal)"
-              className="h-8 w-8 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center cursor-pointer"
-            >
-              AS
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

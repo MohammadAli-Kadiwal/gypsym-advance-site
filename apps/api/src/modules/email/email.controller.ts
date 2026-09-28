@@ -1,7 +1,9 @@
-import { Controller, Get, Put, Post, Body } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards } from '@nestjs/common';
 import { EmailService, SmtpConfigDto, PublicSmtpConfig } from './email.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('settings/smtp')
+@UseGuards(AuthGuard)
 export class EmailController {
   constructor(private readonly emailService: EmailService) {}
 

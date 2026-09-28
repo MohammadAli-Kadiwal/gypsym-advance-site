@@ -8,10 +8,12 @@ import {
   Param,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { InquiriesService, SubmitInquiryDto, InquiryQueryDto } from './inquiries.service';
 import { InquiryStatus } from '@gypsym/database';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('inquiries')
 export class InquiriesController {
@@ -31,6 +33,7 @@ export class InquiriesController {
    * Admin: List inquiries with filters and search
    */
   @Get()
+  @UseGuards(AuthGuard)
   async getInquiries(@Query() query: InquiryQueryDto): Promise<any> {
     return this.inquiriesService.getInquiries(query);
   }
@@ -39,6 +42,7 @@ export class InquiriesController {
    * Admin: Get inquiry detail by ID
    */
   @Get(':id')
+  @UseGuards(AuthGuard)
   async getInquiryById(@Param('id') id: string): Promise<any> {
     return this.inquiriesService.getInquiryById(id);
   }
@@ -47,6 +51,7 @@ export class InquiriesController {
    * Admin: Update inquiry status
    */
   @Patch(':id/status')
+  @UseGuards(AuthGuard)
   async updateStatus(
     @Param('id') id: string,
     @Body('status') status: InquiryStatus
@@ -58,6 +63,7 @@ export class InquiriesController {
    * Admin: Delete inquiry
    */
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async deleteInquiry(@Param('id') id: string): Promise<any> {
     return this.inquiriesService.deleteInquiry(id);
   }

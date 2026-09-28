@@ -90,8 +90,8 @@ const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   showSearchBar: false,
   cta: {
     enabled: true,
-    label: 'Get In Touch',
-    url: '/contact',
+    label: 'Book Call',
+    url: '/book',
     variant: 'primary',
     icon: 'ArrowUpRight',
   },
@@ -284,7 +284,7 @@ export default function NavigationBuilderPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full pb-24">
       {/* Standard Header (No Breadcrumbs) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#eaedf3]">
         <div>

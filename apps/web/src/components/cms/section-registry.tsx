@@ -53,6 +53,8 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   CLIENTS: ClientsTrustedBySection,
   TRUSTED_BY: ClientsTrustedBySection,
   CLIENTS_TRUSTED_BY: ClientsTrustedBySection,
+  CLIENTS_PARTNERS: ClientsTrustedBySection,
+  CLIENTS_AND_PARTNERS: ClientsTrustedBySection,
   PARTNERS: PartnersSection,
   HOMEPAGE_PARTNERS: PartnersSection,
   OUR_PARTNERS: PartnersSection,
@@ -131,7 +133,9 @@ export function getSectionComponent(
   if (
     sectionIdentifier === 'clients-trusted-by' ||
     sectionIdentifier === 'trusted-by' ||
-    sectionIdentifier === 'clients'
+    sectionIdentifier === 'clients' ||
+    sectionIdentifier === 'clients-partners' ||
+    sectionIdentifier === 'clients-and-partners'
   ) {
     return ClientsTrustedBySection;
   }

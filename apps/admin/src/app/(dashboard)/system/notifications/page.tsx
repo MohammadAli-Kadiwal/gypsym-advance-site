@@ -1,97 +1,662 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useCmsCollection } from '@/lib/store';
-import { Bell, CheckCircle2, ShieldCheck, Mail } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  useSystemNotifications,
+  SystemNotificationItem,
+} from '@/lib/system-notifications-context';
+import {
+  Bell,
+  CheckCheck,
+  CheckCircle2,
+  ShieldCheck,
+  Mail,
+  CalendarCheck,
+  Search,
+  RefreshCw,
+  ExternalLink,
+  Trash2,
+  Eye,
+  X,
+  Phone,
+  Building2,
+  Send,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function NotificationsAdminPage() {
-  const { data: notifications, updateItem } = useCmsCollection<any>('notifications');
+  const router = useRouter();
+  const {
+    notifications,
+    unreadCount,
+    unreadInquiriesCount,
+    unreadBookingsCount,
+    unreadSystemCount,
+    isLoading,
+    markAsRead,
+    markAsUnread,
+    markAllAsRead,
+    deleteNotification,
+    refresh,
+  } = useSystemNotifications();
 
-  const handleMarkAllRead = () => {
-    notifications.forEach((n) => {
-      if (!n.isRead) updateItem(n.id, { isRead: true });
-    });
+  const [activeTab, setActiveTab] = React.useState<string>('all');
+  const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [isRefreshing, setIsRefreshing] = React.useState<boolean>(false);
+  const [inspectItem, setInspectItem] = React.useState<SystemNotificationItem | null>(null);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
+  // Filtered notifications
+  const filteredNotifications = React.useMemo(() => {
+    return notifications.filter((notif) => {
+      // Tab filter
+      if (activeTab === 'unread' && notif.isRead) return false;
+      if (activeTab === 'inquiries' && notif.category !== 'INQUIRY') return false;
+      if (activeTab === 'bookings' && notif.category !== 'BOOKING') return false;
+      if (
+        activeTab === 'system' &&
+        notif.category !== 'SYSTEM' &&
+        notif.category !== 'SECURITY'
+      )
+        return false;
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchTitle = notif.title.toLowerCase().includes(query);
+        const matchMessage = notif.message.toLowerCase().includes(query);
+        const matchSender = notif.senderName?.toLowerCase().includes(query) ?? false;
+        const matchEmail = notif.senderEmail?.toLowerCase().includes(query) ?? false;
+        const matchCompany = notif.companyName?.toLowerCase().includes(query) ?? false;
+        return matchTitle || matchMessage || matchSender || matchEmail || matchCompany;
+      }
+
+      return true;
+    });
+  }, [notifications, activeTab, searchQuery]);
+
+  const inquiriesCount = React.useMemo(
+    () => notifications.filter((n) => n.category === 'INQUIRY').length,
+    [notifications]
+  );
+
+  const bookingsCount = React.useMemo(
+    () => notifications.filter((n) => n.category === 'BOOKING').length,
+    [notifications]
+  );
+
+  const systemCount = React.useMemo(
+    () =>
+      notifications.filter(
+        (n) => n.category === 'SYSTEM' || n.category === 'SECURITY'
+      ).length,
+    [notifications]
+  );
+
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/40">
+    <div className="space-y-6 w-full max-w-6xl mx-auto pb-24">
+      {/* Top Banner / Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            System Notification Center
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Operational alerts, briefing lead inquiries, and compliance scan signals.
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              System Notification Center
+            </h1>
+            {unreadCount > 0 ? (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white animate-pulse">
+                {unreadCount} unread
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                All caught up
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time inbound inquiries, discovery bookings, and operational security signals.
           </p>
         </div>
 
-        <Button onClick={handleMarkAllRead} variant="outline" size="sm">
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-          <span>Mark All Read</span>
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isRefreshing}
+            className="h-9 px-3 text-xs text-slate-600 hover:text-slate-900 border-slate-200 shadow-2xs"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+
+          {unreadCount > 0 && (
+            <Button
+              onClick={markAllAsRead}
+              size="sm"
+              className="h-9 px-3.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-2xs font-semibold"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+              <span>Mark All Read</span>
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {notifications.map((notif: any) => (
-          <Card
-            key={notif.id}
-            className={`p-4 transition-colors flex items-start space-x-3 ${
-              notif.isRead ? 'bg-card/40 border-border/40' : 'bg-card border-primary/40 shadow-sm'
-            }`}
-          >
-            <div
-              className={`rounded-full p-2 mt-0.5 shrink-0 ${
-                notif.category === 'SECURITY'
-                  ? 'bg-emerald-500/10 text-emerald-400'
-                  : notif.category === 'LEAD'
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted/40 text-muted-foreground'
+      {/* KPI Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Total Unread */}
+        <Card
+          onClick={() => setActiveTab('unread')}
+          className={`cursor-pointer transition-all border p-4 ${
+            activeTab === 'unread'
+              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
+              : 'border-slate-200/80 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Unread Signals</span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <Bell className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{unreadCount}</span>
+            <span className="text-[11px] text-slate-400">awaiting review</span>
+          </div>
+        </Card>
+
+        {/* Inbound Inquiries */}
+        <Card
+          onClick={() => setActiveTab('inquiries')}
+          className={`cursor-pointer transition-all border p-4 ${
+            activeTab === 'inquiries'
+              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
+              : 'border-slate-200/80 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Client Inquiries</span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <Mail className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{inquiriesCount}</span>
+            {unreadInquiriesCount > 0 && (
+              <span className="text-[11px] font-bold text-blue-600">
+                {unreadInquiriesCount} new
+              </span>
+            )}
+          </div>
+        </Card>
+
+        {/* Discovery Bookings */}
+        <Card
+          onClick={() => setActiveTab('bookings')}
+          className={`cursor-pointer transition-all border p-4 ${
+            activeTab === 'bookings'
+              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
+              : 'border-slate-200/80 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Discovery Calls</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+              <CalendarCheck className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{bookingsCount}</span>
+            {unreadBookingsCount > 0 && (
+              <span className="text-[11px] font-bold text-emerald-600">
+                {unreadBookingsCount} new
+              </span>
+            )}
+          </div>
+        </Card>
+
+        {/* System & Security */}
+        <Card
+          onClick={() => setActiveTab('system')}
+          className={`cursor-pointer transition-all border p-4 ${
+            activeTab === 'system'
+              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
+              : 'border-slate-200/80 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Security & SEO</span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{systemCount}</span>
+            {unreadSystemCount > 0 && (
+              <span className="text-[11px] font-bold text-amber-600">
+                {unreadSystemCount} new
+              </span>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Tabs and Search Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {[
+            { id: 'all', label: 'All', count: notifications.length },
+            { id: 'unread', label: 'Unread', count: unreadCount, highlight: unreadCount > 0 },
+            { id: 'inquiries', label: 'Inquiries', count: inquiriesCount },
+            { id: 'bookings', label: 'Bookings', count: bookingsCount },
+            { id: 'system', label: 'System', count: systemCount },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              {notif.category === 'SECURITY' ? (
-                <ShieldCheck className="h-4 w-4" />
-              ) : notif.category === 'LEAD' ? (
-                <Mail className="h-4 w-4" />
-              ) : (
-                <Bell className="h-4 w-4" />
-              )}
-            </div>
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  activeTab === tab.id
+                    ? 'bg-slate-800 text-slate-200'
+                    : tab.highlight
+                    ? 'bg-blue-100 text-blue-700 font-bold'
+                    : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
 
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <h4 className="text-sm font-semibold text-foreground">{notif.title}</h4>
-                  <Badge variant="outline" className="text-[9px] font-mono">
-                    {notif.category}
-                  </Badge>
-                  {!notif.isRead && <span className="h-2 w-2 rounded-full bg-primary" />}
+        {/* Live Search */}
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search messages, names..."
+            className="pl-8 h-9 text-xs rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Notifications List */}
+      <div className="space-y-3">
+        {isLoading ? (
+          <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+            <RefreshCw className="h-6 w-6 mx-auto animate-spin text-blue-600 mb-2" />
+            <p className="text-xs font-semibold text-slate-600">Syncing live messages & notifications...</p>
+          </div>
+        ) : filteredNotifications.length > 0 ? (
+          filteredNotifications.map((notif) => {
+            const isUnread = !notif.isRead;
+            return (
+              <Card
+                key={notif.id}
+                className={`p-4 transition-all rounded-2xl border relative overflow-hidden ${
+                  isUnread
+                    ? 'bg-blue-50/20 border-blue-200/90 shadow-2xs'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                {isUnread && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-2xl" />
+                )}
+
+                <div className="flex items-start gap-3.5 pl-1">
+                  {/* Category Icon */}
+                  <div
+                    className={`rounded-2xl p-2.5 shrink-0 ${
+                      notif.category === 'SECURITY'
+                        ? 'bg-amber-50 text-amber-600 border border-amber-200/60'
+                        : notif.category === 'INQUIRY'
+                        ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
+                        : notif.category === 'BOOKING'
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                        : 'bg-violet-50 text-violet-600 border border-violet-200/60'
+                    }`}
+                  >
+                    {notif.category === 'SECURITY' ? (
+                      <ShieldCheck className="h-4 w-4" />
+                    ) : notif.category === 'INQUIRY' ? (
+                      <Mail className="h-4 w-4" />
+                    ) : notif.category === 'BOOKING' ? (
+                      <CalendarCheck className="h-4 w-4" />
+                    ) : (
+                      <Bell className="h-4 w-4" />
+                    )}
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4
+                          onClick={() => setInspectItem(notif)}
+                          className={`text-sm cursor-pointer hover:underline ${
+                            isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'
+                          }`}
+                        >
+                          {notif.title}
+                        </h4>
+
+                        <span
+                          className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
+                            notif.category === 'SECURITY'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : notif.category === 'INQUIRY'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : notif.category === 'BOOKING'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-violet-50 text-violet-700 border-violet-200'
+                          }`}
+                        >
+                          {notif.category}
+                        </span>
+
+                        {isUnread && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-100/60 px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                            New
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="font-mono text-[11px] text-slate-400 shrink-0">
+                        {notif.timestamp}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                      {notif.message}
+                    </p>
+
+                    {/* Sender Details Pills */}
+                    {(notif.senderName || notif.senderEmail || notif.companyName) && (
+                      <div className="flex items-center gap-2 pt-1 flex-wrap text-[11px] text-slate-500">
+                        {notif.senderEmail && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px]">
+                            <Mail className="h-3 w-3 text-slate-400" />
+                            {notif.senderEmail}
+                          </span>
+                        )}
+                        {notif.companyName && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px]">
+                            <Building2 className="h-3 w-3 text-slate-400" />
+                            {notif.companyName}
+                          </span>
+                        )}
+                        {notif.senderPhone && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px]">
+                            <Phone className="h-3 w-3 text-slate-400" />
+                            {notif.senderPhone}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-2">
+                      <div className="flex items-center gap-2">
+                        {isUnread ? (
+                          <button
+                            onClick={() => markAsRead(notif.id)}
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors cursor-pointer"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>Mark as read</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => markAsUnread(notif.id)}
+                            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer"
+                          >
+                            <span>Mark as unread</span>
+                          </button>
+                        )}
+
+                        <span className="text-slate-200">•</span>
+
+                        <button
+                          onClick={() => setInspectItem(notif)}
+                          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 font-medium transition-colors cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>View Details</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {notif.link && (
+                          <Link
+                            href={notif.link}
+                            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-blue-600 font-medium transition-colors"
+                          >
+                            <span>Open in Studio</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        )}
+
+                        <button
+                          onClick={() => deleteNotification(notif.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Dismiss notification"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  {notif.timestamp}
+              </Card>
+            );
+          })
+        ) : (
+          <div className="p-16 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+            <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <Bell className="h-6 w-6 stroke-[1.5]" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900">No notifications found</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              {searchQuery
+                ? `No notifications match your search "${searchQuery}".`
+                : activeTab === 'unread'
+                ? 'All messages and system notifications have been acknowledged.'
+                : 'No notifications in this category.'}
+            </p>
+            {(searchQuery || activeTab !== 'all') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setActiveTab('all');
+                }}
+                className="text-xs mt-2"
+              >
+                Reset filters
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Inspect Detail Modal */}
+      {inspectItem && (
+        <Dialog open={!!inspectItem} onOpenChange={(open) => !open && setInspectItem(null)}>
+          <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <DialogHeader className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                    inspectItem.category === 'SECURITY'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : inspectItem.category === 'INQUIRY'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : inspectItem.category === 'BOOKING'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-violet-50 text-violet-700 border-violet-200'
+                  }`}
+                >
+                  {inspectItem.category}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {inspectItem.timestamp}
                 </span>
               </div>
+              <DialogTitle className="text-base font-bold text-slate-900">
+                {inspectItem.title}
+              </DialogTitle>
+            </DialogHeader>
 
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {notif.message}
-              </p>
+            <div className="space-y-4 py-2 text-xs">
+              {/* Message Payload */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 leading-relaxed font-normal">
+                {inspectItem.message}
+              </div>
 
-              {!notif.isRead && (
-                <div className="pt-2">
-                  <button
-                    onClick={() => updateItem(notif.id, { isRead: true })}
-                    className="text-[11px] text-primary hover:underline font-mono"
-                  >
-                    Mark as acknowledged
-                  </button>
+              {/* Client Information */}
+              {(inspectItem.senderName || inspectItem.senderEmail) && (
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Contact Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {inspectItem.senderName && (
+                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">Full Name</span>
+                        <span className="font-semibold text-slate-900">{inspectItem.senderName}</span>
+                      </div>
+                    )}
+                    {inspectItem.senderEmail && (
+                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">Email</span>
+                        <span className="font-mono text-slate-900 break-all">{inspectItem.senderEmail}</span>
+                      </div>
+                    )}
+                    {inspectItem.companyName && (
+                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">Company</span>
+                        <span className="font-semibold text-slate-900">{inspectItem.companyName}</span>
+                      </div>
+                    )}
+                    {inspectItem.senderPhone && (
+                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">Phone</span>
+                        <span className="font-mono text-slate-900">{inspectItem.senderPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Extra Metadata if present */}
+              {inspectItem.rawDetails && (
+                <div className="space-y-1.5 border-t border-slate-100 pt-3">
+                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Operational Metadata
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-slate-600">
+                    {inspectItem.rawDetails.budgetRange && (
+                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                        Budget: {inspectItem.rawDetails.budgetRange}
+                      </span>
+                    )}
+                    {inspectItem.rawDetails.timeline && (
+                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                        Timeline: {inspectItem.rawDetails.timeline}
+                      </span>
+                    )}
+                    {inspectItem.rawDetails.storeUrl && (
+                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                        Store: {inspectItem.rawDetails.storeUrl}
+                      </span>
+                    )}
+                    {inspectItem.rawDetails.slotTime && (
+                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                        Time: {inspectItem.rawDetails.date} @ {inspectItem.rawDetails.slotTime} ({inspectItem.rawDetails.timezone})
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-          </Card>
-        ))}
-      </div>
+
+            <DialogFooter className="flex items-center justify-between sm:justify-between border-t border-slate-100 pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInspectItem(null)}
+                className="text-xs text-slate-500"
+              >
+                Close
+              </Button>
+
+              <div className="flex items-center gap-2">
+                {inspectItem.senderEmail && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      window.location.href = `mailto:${inspectItem.senderEmail}?subject=Regarding your Gypsym inquiry`;
+                    }}
+                    className="text-xs bg-slate-900 text-white gap-1.5"
+                  >
+                    <Send className="h-3 w-3" />
+                    <span>Email Client</span>
+                  </Button>
+                )}
+
+                {inspectItem.link && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setInspectItem(null);
+                      router.push(inspectItem.link!);
+                    }}
+                    className="text-xs bg-blue-600 text-white gap-1.5"
+                  >
+                    <span>Open in Studio</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

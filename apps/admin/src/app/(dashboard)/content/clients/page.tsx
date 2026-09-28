@@ -369,6 +369,7 @@ export default function ClientsPage() {
   const [saving, setSaving] = React.useState(false);
 
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState<ClientRecord | null>(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
@@ -419,6 +420,12 @@ export default function ClientsPage() {
     }
   }
 
+  // ── Close Edit ─────────────────────────────────────────────────────────────
+  function handleCloseEdit() {
+    setEditOpen(false);
+    setEditTarget(null);
+  }
+
   // ── Update ─────────────────────────────────────────────────────────────────
   async function handleUpdate(form: ClientFormState) {
     if (!editTarget) return;
@@ -439,7 +446,7 @@ export default function ClientsPage() {
             : c
         )
       );
-      setEditTarget(null);
+      handleCloseEdit();
       notify.success(`Client "${updated.name}" updated.`);
     } catch {
       notify.error('Could not update client. Please try again.');
@@ -569,7 +576,7 @@ export default function ClientsPage() {
 
   if (!mounted) {
     return (
-      <div className="max-w-7xl mx-auto py-6 space-y-4">
+      <div className="w-full py-6 space-y-4">
         <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
         <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
       </div>
@@ -590,12 +597,11 @@ export default function ClientsPage() {
         emptyStateTitle="No clients yet."
         emptyStateDescription="Add your first client to start populating the marquee strip."
         onAdd={() => {
-          setEditTarget(null);
           setCreateOpen(true);
         }}
         onEdit={(item) => {
           setEditTarget(item);
-          setCreateOpen(true);
+          setEditOpen(true);
         }}
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
@@ -604,7 +610,7 @@ export default function ClientsPage() {
 
       {/* ── Dialogs ────────────────────────────────────────────────────────── */}
       <ClientDialog
-        open={createOpen && !editTarget}
+        open={createOpen}
         mode="create"
         saving={saving}
         onClose={() => setCreateOpen(false)}
@@ -612,7 +618,7 @@ export default function ClientsPage() {
       />
 
       <ClientDialog
-        open={!!editTarget}
+        open={editOpen}
         mode="edit"
         initial={
           editTarget
@@ -624,7 +630,7 @@ export default function ClientsPage() {
             : EMPTY_FORM
         }
         saving={saving}
-        onClose={() => setEditTarget(null)}
+        onClose={handleCloseEdit}
         onSubmit={handleUpdate}
       />
     </>

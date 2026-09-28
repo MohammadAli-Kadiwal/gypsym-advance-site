@@ -292,7 +292,7 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-6xl">
+    <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
         pageTitle={pageTitle || 'Custom'}
         pageRoute={page?.slug ? `/${page.slug}` : '/'}

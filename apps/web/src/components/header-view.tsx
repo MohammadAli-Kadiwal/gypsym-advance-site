@@ -16,7 +16,7 @@ import {
   BrandSettingsDto,
   HeaderConfigDto,
 } from '@/lib/cms-types';
-import { ServiceItemDto } from '@/lib/api';
+import { ServiceItemDto, CmsPageSummary } from '@/lib/api';
 import { ThemeToggle } from './theme-toggle';
 import { MegaMenu } from './cms/mega-menu';
 
@@ -25,9 +25,11 @@ interface HeaderViewProps {
   brand: BrandSettingsDto | null;
   config: HeaderConfigDto | null;
   services?: ServiceItemDto[];
+  /** Published CMS pages auto-injected into the nav if not already present */
+  cmsPages?: CmsPageSummary[];
 }
 
-export function HeaderView({ navigation, brand, config, services }: HeaderViewProps) {
+export function HeaderView({ navigation, brand, config, services, cmsPages }: HeaderViewProps) {
   const pathname = usePathname();
   const [headerVisible, setHeaderVisible] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -97,8 +99,57 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
   const rawNavItems = navigation?.items || [];
 
   // Dynamically ensure the Services mega menu always has the actual published services
+  // AND auto-inject published CMS pages that aren't already in the nav
   const navItems = React.useMemo(() => {
-    if (!services || services.length === 0) return rawNavItems;
+    // Slugs that map to the homepage root (no nav needed)
+    const STATIC_PAGE_SLUGS = new Set(['home', '']);
+    let items = rawNavItems;
+
+    // Auto-inject published CMS pages not already represented in the nav
+    if (cmsPages && cmsPages.length > 0) {
+      const existingUrls = new Set(items.map((i) => i.url));
+      const pageItemsToAdd = cmsPages
+        .filter((p) => {
+          const pageUrl = p.slug === 'home' ? '/' : `/${p.slug}`;
+          return !STATIC_PAGE_SLUGS.has(p.slug) && !existingUrls.has(pageUrl);
+        })
+        .map((p, idx) => ({
+          id: `cms-page-${p.id}`,
+          navigationId: 'cms-auto',
+          label: p.title,
+          url: p.slug === 'home' ? '/' : `/${p.slug}`,
+          isExternal: false,
+          displayOrder: 1000 + idx,
+          isActive: true,
+          megaMenuConfig: null,
+        }));
+      items = [...items, ...pageItemsToAdd];
+    }
+
+    // Ensure /blog is present in the main navigation
+    const hasBlog = items.some((i) => i.url === '/blog' || i.label.toLowerCase() === 'blog');
+    if (!hasBlog) {
+      const contactIdx = items.findIndex(
+        (i) => i.url === '/contact' || i.label.toLowerCase() === 'contact'
+      );
+      const blogItem = {
+        id: 'nav-blog',
+        navigationId: 'nav-auto',
+        label: 'Blog',
+        url: '/blog',
+        isExternal: false,
+        displayOrder: 850,
+        isActive: true,
+        megaMenuConfig: null,
+      };
+      if (contactIdx !== -1) {
+        items = [...items.slice(0, contactIdx), blogItem, ...items.slice(contactIdx)];
+      } else {
+        items = [...items, blogItem];
+      }
+    }
+
+    if (!services || services.length === 0) return items;
 
     const SERVICE_ICONS: Record<string, string> = {
       'e-commerce-solutions': 'ShoppingCart',
@@ -110,7 +161,7 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
       'store-setup': 'Rocket',
     };
 
-    return rawNavItems.map((item) => {
+    return items.map((item) => {
       if (item.url === '/services' || item.label.toLowerCase() === 'services') {
         const actualItems = services.map((s) => ({
           title: s.title,
@@ -139,12 +190,13 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
       }
       return item;
     });
-  }, [rawNavItems, services]);
+  }, [rawNavItems, services, cmsPages]);
 
   const cta = config?.cta;
 
   const isValidLogoUrl = (url?: string | null): boolean => {
     if (!url) return false;
+    if (url === '/logo-light.svg' || url === '/logo-dark.svg') return false;
     return (
       url.startsWith('http://') ||
       url.startsWith('https://') ||
@@ -153,15 +205,16 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
     );
   };
 
-  const getResolvedLogo = (light?: string | null, dark?: string | null): string | null => {
+  const getResolvedLogo = (light?: string | null, dark?: string | null, favicon?: string | null): string | null => {
     if (isValidLogoUrl(light)) return light!;
     if (isValidLogoUrl(dark)) return dark!;
+    if (isValidLogoUrl(favicon)) return favicon!;
     return null;
   };
 
   // Dynamic live branding with backend + local storage synchronization
   const [liveLogo, setLiveLogo] = React.useState<string | null>(() => {
-    return getResolvedLogo(brand?.logoLight, brand?.logoDark);
+    return getResolvedLogo(brand?.logoLight, brand?.logoDark, brand?.favicon);
   });
   const [liveBrandName, setLiveBrandName] = React.useState<string>(() => {
     return brand?.companyName || '';
@@ -169,7 +222,7 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
   const [imgError, setImgError] = React.useState(false);
 
   React.useEffect(() => {
-    const valid = getResolvedLogo(brand?.logoLight, brand?.logoDark);
+    const valid = getResolvedLogo(brand?.logoLight, brand?.logoDark, brand?.favicon);
     setLiveLogo(valid);
     setImgError(false);
     if (brand?.companyName) setLiveBrandName(brand.companyName);
@@ -181,7 +234,7 @@ export function HeaderView({ navigation, brand, config, services }: HeaderViewPr
         const stored = localStorage.getItem('gypsym_branding_settings');
         if (stored) {
           const parsed = JSON.parse(stored);
-          const valid = getResolvedLogo(parsed.logoLightUrl, parsed.logoDarkUrl);
+          const valid = getResolvedLogo(parsed.logoLightUrl, parsed.logoDarkUrl, parsed.faviconUrl);
           if (valid !== null) {
             setLiveLogo(valid);
             setImgError(false);

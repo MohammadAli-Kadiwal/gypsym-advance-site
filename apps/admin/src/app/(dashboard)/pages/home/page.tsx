@@ -8,7 +8,7 @@ export default function HomePageStudio() {
   const router = useRouter();
 
   return (
-    <div className="max-w-7xl mx-auto py-2">
+    <div className="w-full pb-24">
       <HomeSectionsStudio onBack={() => router.push('/pages')} />
     </div>
   );

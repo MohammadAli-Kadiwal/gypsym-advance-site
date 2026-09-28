@@ -7,8 +7,10 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('portfolio')
 export class PortfolioController {
@@ -29,11 +31,13 @@ export class PortfolioController {
   // ─── Admin Listing Endpoints ─────────────────────────────────────────────────
 
   @Get('admin/categories')
+  @UseGuards(AuthGuard)
   async getAllCategoriesForAdmin() {
     return this.portfolioService.getAllCategoriesForAdmin();
   }
 
   @Get('admin/projects')
+  @UseGuards(AuthGuard)
   async getAllProjectsForAdmin() {
     return this.portfolioService.getAllProjectsForAdmin();
   }
@@ -41,22 +45,26 @@ export class PortfolioController {
   // ─── Category Admin CRUD ─────────────────────────────────────────────────────
 
   @Post('categories')
+  @UseGuards(AuthGuard)
   async createCategory(@Body() body: any) {
     return this.portfolioService.createCategory(body);
   }
 
   @Put('categories/reorder')
+  @UseGuards(AuthGuard)
   async reorderCategories(@Body() body: { items: Array<{ id: string; displayOrder: number }> }) {
     await this.portfolioService.reorderCategories(body.items);
     return { success: true };
   }
 
   @Put('categories/:id')
+  @UseGuards(AuthGuard)
   async updateCategory(@Param('id') id: string, @Body() body: any) {
     return this.portfolioService.updateCategory(id, body);
   }
 
   @Delete('categories/:id')
+  @UseGuards(AuthGuard)
   async deleteCategory(@Param('id') id: string) {
     await this.portfolioService.deleteCategory(id);
     return { success: true };
@@ -65,6 +73,7 @@ export class PortfolioController {
   // ─── Project Detail & CRUD ───────────────────────────────────────────────────
 
   @Put('reorder')
+  @UseGuards(AuthGuard)
   async reorderProjects(@Body() body: { items: Array<{ id: string; displayOrder: number }> }) {
     await this.portfolioService.reorderProjects(body.items);
     return { success: true };
@@ -76,16 +85,19 @@ export class PortfolioController {
   }
 
   @Post()
+  @UseGuards(AuthGuard)
   async createProject(@Body() body: any) {
     return this.portfolioService.createProject(body);
   }
 
   @Put(':id')
+  @UseGuards(AuthGuard)
   async updateProject(@Param('id') id: string, @Body() body: any) {
     return this.portfolioService.updateProject(id, body);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async deleteProject(@Param('id') id: string) {
     await this.portfolioService.deleteProject(id);
     return { success: true };

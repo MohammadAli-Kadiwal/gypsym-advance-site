@@ -12,9 +12,13 @@ export interface SmtpConfigDto {
   fromName?: string;
   fromEmail?: string;
   replyTo?: string;
+  adminNotificationRecipients?: string[];
   notificationsEnabled?: boolean;
   notificationRecipients?: string[];
   notificationSubject?: string;
+  bookingNotificationsEnabled?: boolean;
+  bookingNotificationRecipients?: string[];
+  bookingNotificationSubject?: string;
   sendAutoReply?: boolean;
   autoReplySubject?: string;
   autoReplyBody?: string;
@@ -30,13 +34,19 @@ export interface PublicSmtpConfig {
   fromEmail: string;
   replyTo: string;
   isConfigured: boolean;
+  adminNotificationRecipients: string[];
   notificationsEnabled: boolean;
   notificationRecipients: string[];
   notificationSubject: string;
+  bookingNotificationsEnabled: boolean;
+  bookingNotificationRecipients: string[];
+  bookingNotificationSubject: string;
   sendAutoReply: boolean;
   autoReplySubject: string;
   autoReplyBody: string;
 }
+
+import { EmailTemplatesService } from './email-templates.service';
 
 @Injectable()
 export class EmailService {
@@ -45,7 +55,37 @@ export class EmailService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly templatesService: EmailTemplatesService,
   ) {}
+
+  /**
+   * Generic mail dispatch using configured SMTP transport.
+   */
+  async sendGenericEmail(options: {
+    to: string | string[];
+    subject: string;
+    html: string;
+    text?: string;
+    replyTo?: string;
+  }): Promise<{ success: boolean; messageId?: string }> {
+    const config = await this.getResolvedSmtpConfig();
+    if (!config.isConfigured) {
+      this.logger.warn(`SMTP is not configured. Suppressing email to: ${Array.isArray(options.to) ? options.to.join(', ') : options.to}`);
+      return { success: false };
+    }
+
+    const { transporter, from } = await this.createTransporter();
+    const info = await transporter.sendMail({
+      from,
+      to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+      replyTo: options.replyTo || config.replyTo,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    });
+
+    return { success: true, messageId: info.messageId };
+  }
 
   /**
    * Resolve active SMTP credentials and configuration.
@@ -65,9 +105,13 @@ export class EmailService {
     fromEmail: string;
     replyTo: string;
     isConfigured: boolean;
+    adminNotificationRecipients: string[];
     notificationsEnabled: boolean;
     notificationRecipients: string[];
     notificationSubject: string;
+    bookingNotificationsEnabled: boolean;
+    bookingNotificationRecipients: string[];
+    bookingNotificationSubject: string;
     sendAutoReply: boolean;
     autoReplySubject: string;
     autoReplyBody: string;
@@ -100,13 +144,31 @@ export class EmailService {
 
     const isConfigured = Boolean(host && host !== 'localhost' && fromEmail);
 
-    const notificationsEnabled = dbVal.notificationsEnabled !== false;
-    const notificationRecipients: string[] = Array.isArray(dbVal.notificationRecipients)
-      ? dbVal.notificationRecipients
-      : typeof dbVal.notificationRecipients === 'string'
-      ? dbVal.notificationRecipients.split(',').map((s: string) => s.trim()).filter(Boolean)
+    // Master Admin Notification Recipients (multiple admin notification list)
+    const adminNotificationRecipients: string[] = Array.isArray(dbVal.adminNotificationRecipients) && dbVal.adminNotificationRecipients.length > 0
+      ? dbVal.adminNotificationRecipients.map((s: string) => String(s).trim()).filter(Boolean)
+      : typeof dbVal.adminNotificationRecipients === 'string' && dbVal.adminNotificationRecipients.trim()
+      ? dbVal.adminNotificationRecipients.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : Array.isArray(dbVal.notificationRecipients) && dbVal.notificationRecipients.length > 0
+      ? dbVal.notificationRecipients.map((s: string) => String(s).trim()).filter(Boolean)
       : [fromEmail];
+
+    const notificationsEnabled = dbVal.notificationsEnabled !== false;
+    const notificationRecipients: string[] = Array.isArray(dbVal.notificationRecipients) && dbVal.notificationRecipients.length > 0
+      ? dbVal.notificationRecipients.map((s: string) => String(s).trim()).filter(Boolean)
+      : typeof dbVal.notificationRecipients === 'string' && dbVal.notificationRecipients.trim()
+      ? dbVal.notificationRecipients.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : adminNotificationRecipients;
     const notificationSubject = dbVal.notificationSubject || 'New Enterprise Contact Inquiry Received';
+
+    const bookingNotificationsEnabled = dbVal.bookingNotificationsEnabled !== false;
+    const bookingNotificationRecipients: string[] = Array.isArray(dbVal.bookingNotificationRecipients) && dbVal.bookingNotificationRecipients.length > 0
+      ? dbVal.bookingNotificationRecipients.map((s: string) => String(s).trim()).filter(Boolean)
+      : typeof dbVal.bookingNotificationRecipients === 'string' && dbVal.bookingNotificationRecipients.trim()
+      ? dbVal.bookingNotificationRecipients.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : adminNotificationRecipients;
+    const bookingNotificationSubject = dbVal.bookingNotificationSubject || 'New Discovery Call Scheduled';
+
     const sendAutoReply = Boolean(dbVal.sendAutoReply);
     const autoReplySubject = dbVal.autoReplySubject || 'Thank you for contacting Gypsym Technology';
     const autoReplyBody =
@@ -126,9 +188,13 @@ export class EmailService {
       fromEmail,
       replyTo,
       isConfigured,
+      adminNotificationRecipients,
       notificationsEnabled,
       notificationRecipients,
       notificationSubject,
+      bookingNotificationsEnabled,
+      bookingNotificationRecipients,
+      bookingNotificationSubject,
       sendAutoReply,
       autoReplySubject,
       autoReplyBody,
@@ -152,9 +218,13 @@ export class EmailService {
       fromEmail: resolved.fromEmail,
       replyTo: resolved.replyTo,
       isConfigured: resolved.isConfigured,
+      adminNotificationRecipients: resolved.adminNotificationRecipients,
       notificationsEnabled: resolved.notificationsEnabled,
       notificationRecipients: resolved.notificationRecipients,
       notificationSubject: resolved.notificationSubject,
+      bookingNotificationsEnabled: resolved.bookingNotificationsEnabled,
+      bookingNotificationRecipients: resolved.bookingNotificationRecipients,
+      bookingNotificationSubject: resolved.bookingNotificationSubject,
       sendAutoReply: resolved.sendAutoReply,
       autoReplySubject: resolved.autoReplySubject,
       autoReplyBody: resolved.autoReplyBody,
@@ -173,6 +243,10 @@ export class EmailService {
       password = dto.password.trim();
     }
 
+    const adminNotificationRecipients = dto.adminNotificationRecipients && dto.adminNotificationRecipients.length > 0
+      ? dto.adminNotificationRecipients.map((s) => s.trim()).filter(Boolean)
+      : dto.notificationRecipients || [dto.fromEmail || 'advisory@gypsym.com'];
+
     const payload = {
       host: dto.host?.trim() || '',
       port: dto.port || 587,
@@ -182,9 +256,13 @@ export class EmailService {
       fromName: dto.fromName?.trim() || 'Gypsym Technology',
       fromEmail: dto.fromEmail?.trim() || 'hello@gypsym.com',
       replyTo: dto.replyTo?.trim() || dto.fromEmail?.trim() || 'hello@gypsym.com',
+      adminNotificationRecipients,
       notificationsEnabled: dto.notificationsEnabled !== false,
-      notificationRecipients: dto.notificationRecipients || [dto.fromEmail || 'admin@gypsym.com'],
+      notificationRecipients: dto.notificationRecipients || adminNotificationRecipients,
       notificationSubject: dto.notificationSubject || 'New Enterprise Contact Inquiry Received',
+      bookingNotificationsEnabled: dto.bookingNotificationsEnabled !== false,
+      bookingNotificationRecipients: dto.bookingNotificationRecipients || adminNotificationRecipients,
+      bookingNotificationSubject: dto.bookingNotificationSubject || 'New Discovery Call Scheduled',
       sendAutoReply: Boolean(dto.sendAutoReply),
       autoReplySubject: dto.autoReplySubject || 'Thank you for contacting Gypsym Technology',
       autoReplyBody: dto.autoReplyBody || 'Thank you for reaching out. We will review your inquiry shortly.',
@@ -302,7 +380,7 @@ export class EmailService {
   }
 
   /**
-   * Send Inbound Contact Notification to Admin.
+   * Send Inbound Contact Notification to Admin using dynamic inquiry_admin_alert template.
    */
   async sendInquiryNotification(
     submission: {
@@ -326,13 +404,13 @@ export class EmailService {
       const recipients =
         overrideRecipients && overrideRecipients.length > 0
           ? overrideRecipients
-          : config.notificationRecipients;
+          : config.notificationRecipients && config.notificationRecipients.length > 0
+          ? config.notificationRecipients
+          : config.adminNotificationRecipients;
 
       if (!recipients || recipients.length === 0) {
         return;
       }
-
-      const { transporter, from } = await this.createTransporter();
 
       const rawData = submission.submittedData || {};
       const fieldsListHtml = Object.entries(rawData)
@@ -351,30 +429,48 @@ export class EmailService {
         })
         .join('');
 
-      await transporter.sendMail({
-        from,
-        to: recipients.join(', '),
-        replyTo: submission.businessEmail,
-        subject: `${config.notificationSubject} - ${submission.fullName}`,
-        html: `
+      let subject = `${config.notificationSubject} - ${submission.fullName}`;
+      let html = '';
+
+      try {
+        const tpl = await this.templatesService.getTemplate('inquiry_admin_alert');
+        if (tpl && tpl.isActive) {
+          const rendered = this.templatesService.render(tpl, {
+            fullName: submission.fullName,
+            businessEmail: submission.businessEmail,
+            phone: submission.phone || 'Not provided',
+            companyName: submission.companyName || 'Not specified',
+            serviceName: submission.serviceName || 'General Inquiry',
+            projectDescription: submission.projectDescription || 'No details provided.',
+            submittedFieldsTable: fieldsListHtml ? `<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">${fieldsListHtml}</table>` : '',
+            adminDashboardUrl: process.env.ADMIN_URL || 'http://localhost:3001/content/submissions',
+            receivedAt: new Date(submission.createdAt).toUTCString(),
+          });
+          subject = rendered.subject;
+          html = rendered.html;
+        }
+      } catch (tplErr) {
+        this.logger.debug(`Using fallback template for inquiry notification: ${tplErr}`);
+      }
+
+      if (!html) {
+        html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <div style="margin-bottom: 16px;">
-              <span style="display: inline-block; padding: 4px 12px; background: rgba(217, 40, 124, 0.1); color: #d9287c; font-size: 11px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">
-                Inbound Lead
-              </span>
-            </div>
             <h2 style="color: #0f172a; margin: 0 0 8px; font-size: 20px; font-weight: 700;">New Inquiry: ${submission.fullName}</h2>
-            <p style="color: #64748b; font-size: 13px; margin: 0 0 20px;">
-              Submitted on ${new Date(submission.createdAt).toUTCString()}
-            </p>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
-              ${fieldsListHtml}
-            </table>
+            <p style="color: #64748b; font-size: 13px; margin: 0 0 20px;">Submitted on ${new Date(submission.createdAt).toUTCString()}</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">${fieldsListHtml}</table>
             <div style="padding: 12px 16px; background: #f8fafc; border-radius: 8px; font-size: 12px; color: #64748b;">
               Reply directly to this email to contact <strong>${submission.fullName}</strong> (${submission.businessEmail}).
             </div>
           </div>
-        `,
+        `;
+      }
+
+      await this.sendGenericEmail({
+        to: recipients,
+        replyTo: submission.businessEmail,
+        subject,
+        html,
       });
 
       this.logger.log(`Inquiry notification sent to ${recipients.join(', ')}`);
@@ -384,7 +480,7 @@ export class EmailService {
   }
 
   /**
-   * Send automated reply to user if enabled and user provided an email.
+   * Send automated reply to lead using dynamic inquiry_auto_reply template.
    */
   async sendAutoReply(
     userEmail: string,
@@ -397,44 +493,257 @@ export class EmailService {
       const config = await this.getResolvedSmtpConfig();
       if (!config.sendAutoReply || !config.isConfigured) return;
 
-      const { transporter, from } = await this.createTransporter();
+      let subject = config.autoReplySubject || 'Thank you for contacting Gypsym Technology';
+      let html = '';
 
-      // Simple template interpolation: {{fullName}}, {{email}}, etc.
-      let bodyText = config.autoReplyBody;
-      for (const [k, v] of Object.entries({ fullName: userName, email: userEmail, ...submittedFields })) {
-        if (typeof v === 'string' || typeof v === 'number') {
-          bodyText = bodyText.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+      try {
+        const tpl = await this.templatesService.getTemplate('inquiry_auto_reply');
+        if (tpl && tpl.isActive) {
+          const rendered = this.templatesService.render(tpl, {
+            fullName: userName,
+            businessEmail: userEmail,
+            companyName: submittedFields.companyName || 'Your Company',
+            serviceName: submittedFields.serviceName || submittedFields.service || 'Solutions Architecture',
+            projectDescription: submittedFields.projectDescription || submittedFields.message || 'Consultation request',
+            bookingCalendarUrl: process.env.WEB_URL ? `${process.env.WEB_URL}/booking/calendar` : 'http://localhost:3000/booking/calendar',
+          });
+          subject = rendered.subject;
+          html = rendered.html;
         }
+      } catch (tplErr) {
+        this.logger.debug(`Using fallback template for auto-reply: ${tplErr}`);
       }
 
-      await transporter.sendMail({
-        from,
+      if (!html) {
+        let bodyText = config.autoReplyBody;
+        for (const [k, v] of Object.entries({ fullName: userName, email: userEmail, ...submittedFields })) {
+          if (typeof v === 'string' || typeof v === 'number') {
+            bodyText = bodyText.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+          }
+        }
+        html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+            <h2 style="color: #0f172a; margin: 0 0 12px; font-size: 20px; font-weight: 700;">${subject}</h2>
+            <div style="color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-line; margin-bottom: 24px;">${bodyText}</div>
+          </div>
+        `;
+      }
+
+      await this.sendGenericEmail({
         to: userEmail,
         replyTo: config.replyTo,
-        subject: config.autoReplySubject,
-        text: bodyText,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <div style="margin-bottom: 16px;">
-              <span style="display: inline-block; padding: 4px 12px; background: rgba(217, 40, 124, 0.1); color: #d9287c; font-size: 11px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">
-                ${config.fromName}
-              </span>
-            </div>
-            <h2 style="color: #0f172a; margin: 0 0 12px; font-size: 20px; font-weight: 700;">${config.autoReplySubject}</h2>
-            <div style="color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-line; margin-bottom: 24px;">
-              ${bodyText}
-            </div>
-            <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-              This is an automated confirmation sent from ${config.fromName}.
-            </p>
-          </div>
-        `,
+        subject,
+        html,
       });
 
       this.logger.log(`Auto-reply sent to ${userEmail}`);
     } catch (err: any) {
       this.logger.warn(`Failed to dispatch auto-reply email: ${err?.message || err}`);
+    }
+  }
+
+  /**
+   * Send booking confirmation to client and alert to internal team.
+   */
+  async sendBookingConfirmation(booking: {
+    fullName: string;
+    email: string;
+    bookingNumber: string;
+    scheduledAt: Date;
+    durationMinutes: number;
+    phone?: string | null;
+    companyName?: string | null;
+    websiteUrl?: string | null;
+    serviceInterest?: string | null;
+    notes?: string | null;
+    meetingUrl?: string | null;
+  }): Promise<void> {
+    try {
+      const config = await this.getResolvedSmtpConfig();
+      if (!config.isConfigured) return;
+
+      const dateStr = new Date(booking.scheduledAt).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const timeStr = new Date(booking.scheduledAt).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const meetingLink = booking.meetingUrl || 'https://meet.google.com/gypsym-advisory-session';
+      const rescheduleLink = process.env.WEB_URL ? `${process.env.WEB_URL}/booking/calendar` : 'http://localhost:3000/booking/calendar';
+      const adminDashboardUrl = process.env.ADMIN_URL || 'http://localhost:3001/content/submissions';
+
+      // 1. Send confirmation to client
+      try {
+        const clientTpl = await this.templatesService.getTemplate('booking_confirmed');
+        if (clientTpl && clientTpl.isActive) {
+          const rendered = this.templatesService.render(clientTpl, {
+            fullName: booking.fullName,
+            businessEmail: booking.email,
+            companyName: booking.companyName || 'Your Organization',
+            date: dateStr,
+            time: timeStr,
+            duration: `${booking.durationMinutes}m Strategy Session`,
+            bookingNumber: booking.bookingNumber,
+            serviceInterest: booking.serviceInterest || 'Enterprise Architecture',
+            meetingLink,
+            rescheduleLink,
+          });
+
+          await this.sendGenericEmail({
+            to: booking.email,
+            subject: rendered.subject,
+            html: rendered.html,
+          });
+          this.logger.log(`Booking confirmation sent to client ${booking.email}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to send client booking confirmation: ${err?.message}`);
+      }
+
+      // 2. Send internal alert to team (multi-account recipients supported)
+      try {
+        const recipients =
+          config.bookingNotificationRecipients && config.bookingNotificationRecipients.length > 0
+            ? config.bookingNotificationRecipients
+            : config.adminNotificationRecipients;
+
+        if (config.bookingNotificationsEnabled && recipients && recipients.length > 0) {
+          let subject = `${config.bookingNotificationSubject || 'New Discovery Call Scheduled'} - ${booking.fullName}`;
+          let html = '';
+
+          try {
+            const adminTpl = await this.templatesService.getTemplate('booking_admin_alert');
+            if (adminTpl && adminTpl.isActive) {
+              const rendered = this.templatesService.render(adminTpl, {
+                fullName: booking.fullName,
+                businessEmail: booking.email,
+                companyName: booking.companyName || 'Not specified',
+                phone: booking.phone || 'Not provided',
+                websiteUrl: booking.websiteUrl || 'Not provided',
+                serviceInterest: booking.serviceInterest || 'General Strategy',
+                date: dateStr,
+                time: timeStr,
+                bookingNumber: booking.bookingNumber,
+                projectScope: booking.notes || 'No preliminary notes provided.',
+                adminDashboardUrl,
+              });
+              subject = rendered.subject;
+              html = rendered.html;
+            }
+          } catch (tplErr) {
+            this.logger.debug(`Using fallback template for booking alert: ${tplErr}`);
+          }
+
+          if (!html) {
+            html = `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+                <div style="margin-bottom: 16px;">
+                  <span style="display: inline-block; padding: 4px 12px; background: rgba(59, 130, 246, 0.1); color: #2563eb; font-size: 11px; font-weight: 700; border-radius: 9999px; text-transform: uppercase;">
+                    Client Booking Alert
+                  </span>
+                </div>
+                <h2 style="color: #0f172a; margin: 0 0 8px; font-size: 20px; font-weight: 700;">New Discovery Call Scheduled</h2>
+                <p style="color: #64748b; font-size: 13px; margin: 0 0 16px;">Booking Number: <strong>${booking.bookingNumber}</strong></p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+                  <tr><td style="padding: 8px 0; color: #64748b;">Client Name:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${booking.fullName}</td></tr>
+                  <tr><td style="padding: 8px 0; color: #64748b;">Client Email:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${booking.email}</td></tr>
+                  <tr><td style="padding: 8px 0; color: #64748b;">Phone:</td><td style="padding: 8px 0; color: #0f172a;">${booking.phone || 'N/A'}</td></tr>
+                  <tr><td style="padding: 8px 0; color: #64748b;">Company:</td><td style="padding: 8px 0; color: #0f172a;">${booking.companyName || 'N/A'}</td></tr>
+                  <tr><td style="padding: 8px 0; color: #64748b;">Scheduled Time:</td><td style="padding: 8px 0; font-weight: 600; color: #2563eb;">${dateStr} at ${timeStr}</td></tr>
+                  <tr><td style="padding: 8px 0; color: #64748b;">Notes:</td><td style="padding: 8px 0; color: #0f172a;">${booking.notes || 'None'}</td></tr>
+                </table>
+              </div>
+            `;
+          }
+
+          await this.sendGenericEmail({
+            to: recipients,
+            replyTo: booking.email,
+            subject,
+            html,
+          });
+          this.logger.log(`Booking admin alert sent to ${recipients.join(', ')}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to send admin booking alert: ${err?.message}`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Error in sendBookingConfirmation: ${err?.message}`);
+    }
+  }
+
+  /**
+   * Send System or Security alert to all configured Admin Notification Recipients.
+   */
+  async sendAdminSystemAlert(alert: {
+    title: string;
+    level?: 'info' | 'warning' | 'critical';
+    message: string;
+    actionUrl?: string;
+    actionLabel?: string;
+    sourceDetails?: string;
+  }): Promise<void> {
+    try {
+      const config = await this.getResolvedSmtpConfig();
+      if (!config.isConfigured || !config.adminNotificationRecipients.length) return;
+
+      const level = alert.level || 'info';
+      const levelColors: Record<string, string> = {
+        info: '#2563eb',
+        warning: '#d97706',
+        critical: '#dc2626',
+      };
+      const badgeColor = levelColors[level] || '#2563eb';
+
+      let subject = `[${level.toUpperCase()}] ${alert.title} - Gypsym Enterprise`;
+      let html = '';
+
+      try {
+        const tpl = await this.templatesService.getTemplate('admin_system_alert');
+        if (tpl && tpl.isActive) {
+          const rendered = this.templatesService.render(tpl, {
+            alertTitle: alert.title,
+            alertLevel: level.toUpperCase(),
+            alertMessage: alert.message,
+            sourceDetails: alert.sourceDetails || 'Gypsym Technology Cloud Platform',
+            actionUrl: alert.actionUrl || process.env.ADMIN_URL || 'http://localhost:3001',
+            actionLabel: alert.actionLabel || 'Access Workstation Console',
+            timestamp: new Date().toUTCString(),
+          });
+          subject = rendered.subject;
+          html = rendered.html;
+        }
+      } catch {
+        // Fallback below
+      }
+
+      if (!html) {
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <div style="display: inline-block; padding: 4px 10px; background: ${badgeColor}15; color: ${badgeColor}; font-size: 11px; font-weight: 700; border-radius: 9999px; text-transform: uppercase;">
+              ${level}
+            </div>
+            <h2 style="color: #0f172a; margin: 12px 0 8px;">${alert.title}</h2>
+            <p style="color: #475569; font-size: 14px; line-height: 1.6;">${alert.message}</p>
+            ${alert.actionUrl ? `<p style="margin-top: 20px;"><a href="${alert.actionUrl}" style="background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">${alert.actionLabel || 'View Details'}</a></p>` : ''}
+          </div>
+        `;
+      }
+
+      await this.sendGenericEmail({
+        to: config.adminNotificationRecipients,
+        subject,
+        html,
+      });
+
+      this.logger.log(`Admin system alert sent to ${config.adminNotificationRecipients.join(', ')}`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to dispatch admin system alert: ${err?.message || err}`);
     }
   }
 }

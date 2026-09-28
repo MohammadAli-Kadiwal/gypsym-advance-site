@@ -393,4 +393,132 @@ export interface ClientTestimonialsPayload {
   bottomTrustBar?: BottomTrustBarDto;
 }
 
+// ── Enterprise Dynamic Footer Types ─────────────────────────
+
+export interface FooterRegionLinkDto {
+  id: string;
+  label: string;
+  url: string;
+  isExternal?: boolean;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface FooterRegionDto {
+  id: string;
+  name: string;
+  code: string;
+  label: string;
+  displayOrder: number;
+  isActive: boolean;
+  links: FooterRegionLinkDto[];
+}
+
+export interface FooterBadgeDto {
+  id: string;
+  title: string;
+  imageUrl?: string;
+  url?: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface FooterLegalLinkDto {
+  id: string;
+  label: string;
+  url: string;
+  isExternal?: boolean;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface FooterLayoutConfigDto {
+  containerWidth: 'standard' | 'wide' | 'full';
+  borderRadius: 'medium' | 'large' | 'extra-large';
+  sectionSpacing: 'compact' | 'standard' | 'spacious';
+}
+
+export interface FooterAppearanceConfigDto {
+  themeMode: string;
+  surfaceColor?: string;
+  borderColor?: string;
+  glowEffect?: boolean;
+}
+
+export interface FooterBrandConfigDto {
+  description?: string;
+  logoVariant?: string;
+  customLogoUrl?: string;
+}
+
+export interface FooterContactConfigDto {
+  enabled: boolean;
+  showEmail: boolean;
+  showPhone: boolean;
+  showAddress: boolean;
+  emailOverride?: string;
+  phoneOverride?: string;
+  addressOverride?: string;
+  badgeText?: string;
+}
+
+export interface FooterLargeBrandMarkConfigDto {
+  enabled: boolean;
+  type: 'wordmark_text' | 'logo_svg';
+  textOverride?: string;
+  size: 'compact' | 'medium' | 'large';
+  opacity: number;
+  alignment: 'left' | 'center' | 'right';
+}
+
+export interface FooterCtaConfigDto {
+  enabled: boolean;
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+  buttonUrl?: string;
+}
+
+export interface FooterKeywordItemDto {
+  id: string;
+  label: string;
+  url?: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface FooterKeywordsConfigDto {
+  enabled: boolean;
+  title?: string;
+  searchable?: boolean;
+  items: FooterKeywordItemDto[];
+}
+
+export interface FooterConfigDto {
+  enabled: boolean;
+  layout?: FooterLayoutConfigDto;
+  appearance?: FooterAppearanceConfigDto;
+  brand?: FooterBrandConfigDto;
+  contact?: FooterContactConfigDto;
+  regions?: FooterRegionDto[];
+  largeBrandMark?: FooterLargeBrandMarkConfigDto;
+  badges?: FooterBadgeDto[];
+  legalLinks?: FooterLegalLinkDto[];
+  copyright?: {
+    template: string;
+  };
+  cta?: FooterCtaConfigDto;
+  keywords?: FooterKeywordsConfigDto;
+}
+
+export interface FooterDataDto {
+  branding: BrandSettingsDto | null;
+  navigation: NavigationDto | null;
+  config: FooterConfigDto | null;
+  contact: Record<string, any> | null;
+  entity: Record<string, any> | null;
+}
+
+
 

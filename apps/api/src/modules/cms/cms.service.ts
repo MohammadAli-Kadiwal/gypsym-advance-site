@@ -1,9 +1,40 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
-export class CmsService {
+export class CmsService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    await this.seedFooterIfMissing();
+  }
+
+  async seedFooterIfMissing() {
+    try {
+      let footerSetting = await this.prisma.siteSetting.findUnique({ where: { key: 'footer_config' } });
+      if (!footerSetting) {
+        await this.seedInitialFooterConfig();
+      } else {
+        const val = footerSetting.value as any;
+        if (!val?.keywords || !Array.isArray(val.keywords?.items) || val.keywords.items.length < 14) {
+          const updated = {
+            ...(val || {}),
+            keywords: this.getDefaultKeywords(),
+          };
+          await this.prisma.siteSetting.update({
+            where: { key: 'footer_config' },
+            data: { value: updated },
+          });
+        }
+      }
+      const nav = await this.getNavigationByKey('footer').catch(() => null);
+      if (!nav || !nav.items || nav.items.length === 0 || !nav.items.some((i: any) => i.children && i.children.length > 0)) {
+        await this.seedInitialFooterNavigation();
+      }
+    } catch (err) {
+      console.warn('Auto-seed footer skipped:', err);
+    }
+  }
 
   // 1. Services
   async getServices() {
@@ -1379,38 +1410,71 @@ export class CmsService {
     };
   }
 
-  // 4. Blog Posts
-  async getBlogPosts(): Promise<any[]> {
+  // 4. Blog Posts & Editorial
+  async getBlogCategories(): Promise<any[]> {
+    const categories = await this.prisma.blogCategory.findMany({
+      include: {
+        _count: {
+          select: {
+            posts: {
+              where: { deletedAt: null, status: 'PUBLISHED' },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return categories.map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      description: c.description,
+      postCount: c._count.posts,
+    }));
+  }
+
+  async getBlogPosts(query?: { category?: string; search?: string; limit?: number }): Promise<any[]> {
+    const where: any = {
+      deletedAt: null,
+      status: 'PUBLISHED',
+    };
+
+    if (query?.category && query.category !== 'all') {
+      where.OR = [
+        { category: { slug: query.category } },
+        { category: { name: { contains: query.category, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (query?.search && query.search.trim()) {
+      const term = query.search.trim();
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: term, mode: 'insensitive' } },
+            { excerpt: { contains: term, mode: 'insensitive' } },
+            { tags: { some: { tag: { name: { contains: term, mode: 'insensitive' } } } } },
+          ],
+        },
+      ];
+    }
+
     const posts = await this.prisma.blogPost.findMany({
-      where: { deletedAt: null },
+      where,
       include: {
         author: true,
         category: true,
+        featuredImage: true,
+        tags: {
+          include: { tag: true },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { publishedAt: 'desc' },
+      take: query?.limit ? Number(query.limit) : undefined,
     });
 
-    return posts.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      title: p.title,
-      excerpt: p.excerpt,
-      category: p.category?.name || 'Distributed Systems',
-      author: {
-        name: p.author ? `${p.author.firstName} ${p.author.lastName}` : 'MohammadAli Kadiwal',
-        role: 'Chief Technology Officer & Lead Architect',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      },
-      publishedAt: p.publishedAt ? p.publishedAt.toISOString().split('T')[0] : '2026-09-01',
-      readTime: `${p.readTimeMinutes || 8} min read`,
-      bodyContent: p.bodyContent,
-      content: [
-        p.excerpt,
-        'High-availability guarantees in modern financial and cloud infrastructures can no longer tolerate active-passive standby configurations.',
-        'By architecting active-active multi-cloud topologies across geographically distributed regions, failure recovery times collapse from minutes to microseconds.',
-        'Deterministic state synchronization requires distributed log replication with monotonic sequencing to avoid split-brain states under partitioned networks.',
-      ],
-    }));
+    return posts.map((p) => this.formatBlogPostSummary(p));
   }
 
   async getBlogPostBySlug(slug: string): Promise<any> {
@@ -1419,31 +1483,234 @@ export class CmsService {
       include: {
         author: true,
         category: true,
+        featuredImage: true,
+        tags: {
+          include: { tag: true },
+        },
       },
     });
     if (!p) throw new NotFoundException(`Blog post '${slug}' not found`);
 
+    // Increment view count asynchronously
+    this.prisma.blogPost
+      .update({
+        where: { id: p.id },
+        data: { viewCount: { increment: 1 } },
+      })
+      .catch(() => {});
+
+    // Fetch up to 3 related posts in the same category or latest
+    const relatedRaw = await this.prisma.blogPost.findMany({
+      where: {
+        deletedAt: null,
+        status: 'PUBLISHED',
+        id: { not: p.id },
+        ...(p.categoryId ? { categoryId: p.categoryId } : {}),
+      },
+      include: {
+        category: true,
+        featuredImage: true,
+        author: true,
+        tags: { include: { tag: true } },
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: 3,
+    });
+
+    const related = relatedRaw.map((r) => this.formatBlogPostSummary(r));
+
+    return {
+      ...this.formatBlogPostSummary(p),
+      bodyContent: p.bodyContent,
+      related,
+    };
+  }
+
+  private formatBlogPostSummary(p: any) {
     return {
       id: p.id,
       slug: p.slug,
       title: p.title,
       excerpt: p.excerpt,
-      category: p.category?.name || 'Distributed Systems',
+      status: p.status,
+      category: p.category
+        ? {
+            id: p.category.id,
+            name: p.category.name,
+            slug: p.category.slug,
+          }
+        : { id: '', name: 'General', slug: 'general' },
       author: {
-        name: p.author ? `${p.author.firstName} ${p.author.lastName}` : 'MohammadAli Kadiwal',
+        name: p.author ? `${p.author.firstName} ${p.author.lastName}`.trim() : 'MohammadAli Kadiwal',
         role: 'Chief Technology Officer & Lead Architect',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
       },
-      publishedAt: p.publishedAt ? p.publishedAt.toISOString().split('T')[0] : '2026-09-01',
+      featuredImage: p.featuredImage
+        ? {
+            url: p.featuredImage.storageKey,
+            alt: p.featuredImage.altText || p.title,
+          }
+        : null,
+      coverImage:
+        p.featuredImage?.storageKey ||
+        'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80',
+      readTimeMinutes: p.readTimeMinutes || 8,
       readTime: `${p.readTimeMinutes || 8} min read`,
-      bodyContent: p.bodyContent,
-      content: [
-        p.excerpt,
-        'High-availability guarantees in modern financial and cloud infrastructures can no longer tolerate active-passive standby configurations.',
-        'By architecting active-active multi-cloud topologies across geographically distributed regions, failure recovery times collapse from minutes to microseconds.',
-        'Deterministic state synchronization requires distributed log replication with monotonic sequencing to avoid split-brain states under partitioned networks.',
-      ],
+      publishedAt: p.publishedAt ? p.publishedAt.toISOString() : p.createdAt.toISOString(),
+      publishedDate: p.publishedAt ? p.publishedAt.toISOString().split('T')[0] : p.createdAt.toISOString().split('T')[0],
+      viewCount: Number(p.viewCount || 0),
+      tags: p.tags?.map((t: any) => t.tag?.name).filter(Boolean) || [],
     };
+  }
+
+  // Admin CMS endpoints
+  async getCmsBlogPosts(query?: { search?: string; status?: string }): Promise<any[]> {
+    const where: any = { deletedAt: null };
+    if (query?.status && query.status !== 'ALL') {
+      where.status = query.status;
+    }
+    if (query?.search && query.search.trim()) {
+      const term = query.search.trim();
+      where.OR = [
+        { title: { contains: term, mode: 'insensitive' } },
+        { slug: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const posts = await this.prisma.blogPost.findMany({
+      where,
+      include: {
+        author: true,
+        category: true,
+        featuredImage: true,
+        tags: { include: { tag: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return posts.map((p) => this.formatBlogPostSummary(p));
+  }
+
+  async createBlogPost(dto: any, authorId?: string): Promise<any> {
+    const defaultAuthor = await this.prisma.user.findFirst();
+    const resolvedAuthorId = authorId || dto.authorId || defaultAuthor?.id;
+
+    // Resolve or find category
+    let categoryId = dto.categoryId;
+    if (!categoryId && dto.category) {
+      const cat = await this.prisma.blogCategory.findFirst({
+        where: { OR: [{ slug: dto.category }, { name: dto.category }] },
+      });
+      if (cat) categoryId = cat.id;
+    }
+    if (!categoryId) {
+      const firstCat = await this.prisma.blogCategory.findFirst();
+      categoryId = firstCat?.id;
+    }
+
+    // Resolve cover image
+    let featuredImageId = dto.featuredImageId;
+    if (dto.coverImage && !featuredImageId) {
+      const media = await this.prisma.media.upsert({
+        where: { storageKey: dto.coverImage },
+        update: { altText: dto.title },
+        create: {
+          originalFilename: `${dto.slug || 'blog'}-cover.jpg`,
+          storageKey: dto.coverImage,
+          mimeType: 'image/jpeg',
+          fileSizeBytes: BigInt(200000),
+          altText: dto.title,
+        },
+      });
+      featuredImageId = media.id;
+    }
+
+    const slug = (dto.slug || dto.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).trim();
+
+    const post = await this.prisma.blogPost.create({
+      data: {
+        title: dto.title,
+        slug,
+        excerpt: dto.excerpt || '',
+        bodyContent: dto.bodyContent || {
+          sections: [{ heading: 'Introduction', paragraphs: [dto.content || dto.excerpt || ''] }],
+        },
+        readTimeMinutes: Number(dto.readTimeMinutes) || 8,
+        status: dto.status || 'PUBLISHED',
+        publishedAt: dto.status === 'PUBLISHED' ? new Date() : null,
+        authorId: resolvedAuthorId,
+        categoryId,
+        featuredImageId,
+      },
+      include: {
+        author: true,
+        category: true,
+        featuredImage: true,
+        tags: { include: { tag: true } },
+      },
+    });
+
+    return this.formatBlogPostSummary(post);
+  }
+
+  async updateBlogPost(id: string, dto: any): Promise<any> {
+    const existing = await this.prisma.blogPost.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Blog post with ID ${id} not found`);
+
+    let featuredImageId = dto.featuredImageId;
+    if (dto.coverImage && (!featuredImageId || dto.coverImage !== existing.featuredImageId)) {
+      const media = await this.prisma.media.upsert({
+        where: { storageKey: dto.coverImage },
+        update: { altText: dto.title || existing.title },
+        create: {
+          originalFilename: `${existing.slug}-cover.jpg`,
+          storageKey: dto.coverImage,
+          mimeType: 'image/jpeg',
+          fileSizeBytes: BigInt(200000),
+          altText: dto.title || existing.title,
+        },
+      });
+      featuredImageId = media.id;
+    }
+
+    let categoryId = dto.categoryId;
+    if (!categoryId && dto.category) {
+      const cat = await this.prisma.blogCategory.findFirst({
+        where: { OR: [{ slug: dto.category }, { name: dto.category }] },
+      });
+      if (cat) categoryId = cat.id;
+    }
+
+    const updated = await this.prisma.blogPost.update({
+      where: { id },
+      data: {
+        ...(dto.title ? { title: dto.title } : {}),
+        ...(dto.slug ? { slug: dto.slug } : {}),
+        ...(dto.excerpt !== undefined ? { excerpt: dto.excerpt } : {}),
+        ...(dto.bodyContent !== undefined ? { bodyContent: dto.bodyContent } : {}),
+        ...(dto.readTimeMinutes ? { readTimeMinutes: Number(dto.readTimeMinutes) } : {}),
+        ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.status === 'PUBLISHED' && !existing.publishedAt ? { publishedAt: new Date() } : {}),
+        ...(categoryId ? { categoryId } : {}),
+        ...(featuredImageId ? { featuredImageId } : {}),
+      },
+      include: {
+        author: true,
+        category: true,
+        featuredImage: true,
+        tags: { include: { tag: true } },
+      },
+    });
+
+    return this.formatBlogPostSummary(updated);
+  }
+
+  async deleteBlogPost(id: string): Promise<{ success: boolean }> {
+    await this.prisma.blogPost.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    return { success: true };
   }
 
   // 5. Jobs / Careers
@@ -1585,7 +1852,7 @@ export class CmsService {
           ...(faviconId !== undefined ? { faviconId } : {}),
           ...(body.colors ? { colors: body.colors } : {}),
           ...(body.typography ? { typography: body.typography } : {}),
-          ...(body.socialLinks ? { socialLinks: body.socialLinks } : {}),
+          ...(body.socialLinks !== undefined ? { socialLinks: body.socialLinks } : {}),
         },
       });
     } else {
@@ -1606,6 +1873,42 @@ export class CmsService {
     return this.getBrandSettings();
   }
 
+  // 7.1 Dedicated Social Profiles Management
+  async getSocialLinks(): Promise<any[]> {
+    const brand = await this.prisma.brandSetting.findFirst({
+      where: { isActive: true },
+      orderBy: { version: 'desc' },
+      select: { socialLinks: true },
+    });
+    return Array.isArray(brand?.socialLinks) ? (brand.socialLinks as any[]) : [];
+  }
+
+  async updateSocialLinks(socialLinks: any[]): Promise<any[]> {
+    const active = await this.prisma.brandSetting.findFirst({
+      where: { isActive: true },
+      orderBy: { version: 'desc' },
+    });
+    if (active) {
+      await this.prisma.brandSetting.update({
+        where: { id: active.id },
+        data: {
+          socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
+        },
+      });
+    } else {
+      await this.prisma.brandSetting.create({
+        data: {
+          companyName: 'Gypsym Technology',
+          colors: {},
+          typography: {},
+          socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
+          isActive: true,
+        },
+      });
+    }
+    return this.getSocialLinks();
+  }
+
   // 8. Site Settings
   async getSiteSettings(): Promise<Record<string, any>> {
     const settings = await this.prisma.siteSetting.findMany({
@@ -1619,9 +1922,90 @@ export class CmsService {
     return result;
   }
 
+  async getSeoSettings(): Promise<any> {
+    const setting = await this.prisma.siteSetting.findUnique({
+      where: { key: 'seo:defaults' },
+    });
+
+    const defaults = {
+      metaTitleTemplate: '%s | Gypsym Technology',
+      defaultTitle: 'Gypsym Technology | Engineering the Global Enterprise',
+      defaultDescription:
+        'Gypsym Technology partners with Fortune 100 leaders to architect zero-downtime cloud cores, sovereign AI ecosystems, and high-frequency distributed ledgers.',
+      defaultKeywords: [
+        'enterprise cloud architecture',
+        'distributed systems',
+        'sovereign AI',
+        'zero trust cybersecurity',
+        'core banking modernization',
+      ],
+      canonicalBaseUrl: 'https://gypsym.com',
+      ogDefaultImage: 'https://gypsym.com/og-default.png',
+      twitterCard: 'summary_large_image',
+      twitterHandle: '@gypsymtech',
+      robotsIndex: true,
+      robotsFollow: true,
+      googleVerification: '',
+      bingVerification: '',
+      yandexVerification: '',
+      baiduVerification: '',
+    };
+
+    if (!setting) {
+      return defaults;
+    }
+
+    return {
+      ...defaults,
+      ...(typeof setting.value === 'object' && setting.value !== null ? setting.value : {}),
+    };
+  }
+
+  async updateSeoSettings(data: any): Promise<any> {
+    return this.updateSiteSetting('seo:defaults', data, 'seo', true);
+  }
+
+  // 8.1 Custom Scripts & Analytics (Google Analytics, GTM, Meta Pixel, Custom Head/Body Code)
+  async getScriptSettings(): Promise<any> {
+    const setting = await this.prisma.siteSetting.findUnique({
+      where: { key: 'scripts:configuration' },
+    });
+
+    const defaults = {
+      googleAnalytics: {
+        enabled: true,
+        measurementId: 'G-74X9KLV28P',
+      },
+      googleTagManager: {
+        enabled: false,
+        containerId: '',
+      },
+      facebookPixel: {
+        enabled: false,
+        pixelId: '',
+      },
+      headerScripts: '',
+      footerScripts: '',
+    };
+
+    if (!setting) {
+      return defaults;
+    }
+
+    return {
+      ...defaults,
+      ...(typeof setting.value === 'object' && setting.value !== null ? setting.value : {}),
+    };
+  }
+
+  async updateScriptSettings(data: any): Promise<any> {
+    return this.updateSiteSetting('scripts:configuration', data, 'integrations', true);
+  }
+
+
   // 9. Dynamic Pages & Sections
   async getAllPages(): Promise<any[]> {
-    const pages = await this.prisma.page.findMany({
+    let pages = await this.prisma.page.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: 'asc' },
       include: {
@@ -1635,6 +2019,63 @@ export class CmsService {
         },
       },
     });
+
+    // Ensure core legal and compliance pages are present in database
+    const coreLegalPages = [
+      {
+        slug: 'privacy',
+        title: 'Privacy Policy',
+        description: 'Enterprise data protection, GDPR compliance, and global data sovereignty commitments.',
+      },
+      {
+        slug: 'terms',
+        title: 'Terms of Service',
+        description: 'Master service terms, enterprise architecture SLAs, and commercial engagement covenants.',
+      },
+      {
+        slug: 'trust/certifications',
+        title: 'Security & Certifications',
+        description: 'Independent ISO 27001 audits, SOC 2 Type II attestation, and zero-trust security controls.',
+      },
+      {
+        slug: 'cookies',
+        title: 'Cookie Declaration',
+        description: 'Tracking governance, telemetry consent disclosures, and browser cookie preferences.',
+      },
+    ];
+
+    for (const item of coreLegalPages) {
+      if (!pages.some((p) => p.slug === item.slug)) {
+        try {
+          const created = await this.prisma.page.create({
+            data: {
+              title: item.title,
+              slug: item.slug,
+              description: item.description,
+              layoutType: 'DEFAULT',
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+            },
+            include: {
+              sections: true,
+              seoMetadata: {
+                include: { ogImage: { select: { variants: true } } },
+              },
+            },
+          });
+          pages.push(created);
+        } catch {}
+      }
+    }
+
+    // Deduplicate pages by slug to ensure clean management list
+    const uniqueBySlug = new Map<string, any>();
+    for (const p of pages) {
+      if (!uniqueBySlug.has(p.slug)) {
+        uniqueBySlug.set(p.slug, p);
+      }
+    }
+    pages = Array.from(uniqueBySlug.values());
 
     return pages.map((page) => ({
       id: page.id,
@@ -1656,8 +2097,13 @@ export class CmsService {
             canonicalUrl: page.seoMetadata.canonicalUrl,
             ogTitle: page.seoMetadata.ogTitle,
             ogDescription: page.seoMetadata.ogDescription,
-            ogImageUrl: page.seoMetadata.ogImage ? this.logoUrlFromMedia(page.seoMetadata.ogImage) : null,
+            ogImageUrl: page.seoMetadata.ogImage
+              ? this.logoUrlFromMedia(page.seoMetadata.ogImage)
+              : ((page.seoMetadata.structuredData as any)?.ogImageUrl || null),
             noIndex: !page.seoMetadata.robotsIndex,
+            robotsIndex: page.seoMetadata.robotsIndex,
+            robotsFollow: page.seoMetadata.robotsFollow,
+            twitterCard: page.seoMetadata.twitterCard,
           }
         : null,
     }));
@@ -1746,17 +2192,42 @@ export class CmsService {
 
     if (body.seoMetadata) {
       const seo = body.seoMetadata;
+      const robotsIndex =
+        seo.robotsIndex !== undefined
+          ? Boolean(seo.robotsIndex)
+          : seo.noIndex !== undefined
+          ? !seo.noIndex
+          : undefined;
+      const robotsFollow =
+        seo.robotsFollow !== undefined
+          ? Boolean(seo.robotsFollow)
+          : seo.noIndex !== undefined
+          ? !seo.noIndex
+          : undefined;
+
+      const existingStructured =
+        page.seoMetadata && typeof page.seoMetadata.structuredData === 'object' && page.seoMetadata.structuredData !== null
+          ? (page.seoMetadata.structuredData as Record<string, any>)
+          : {};
+
+      const updatedStructured = {
+        ...existingStructured,
+        ...(seo.ogImageUrl !== undefined ? { ogImageUrl: seo.ogImageUrl } : {}),
+      };
+
       if (page.seoMetadata) {
         await this.prisma.seoMetadata.update({
           where: { id: page.seoMetadata.id },
           data: {
             metaTitle: seo.metaTitle ?? page.seoMetadata.metaTitle,
             metaDescription: seo.metaDescription ?? page.seoMetadata.metaDescription,
-            canonicalUrl: seo.canonicalUrl ?? page.seoMetadata.canonicalUrl,
+            canonicalUrl: seo.canonicalUrl !== undefined ? seo.canonicalUrl : page.seoMetadata.canonicalUrl,
             ogTitle: seo.ogTitle ?? page.seoMetadata.ogTitle,
             ogDescription: seo.ogDescription ?? page.seoMetadata.ogDescription,
-            robotsIndex: seo.noIndex !== undefined ? !seo.noIndex : page.seoMetadata.robotsIndex,
-            robotsFollow: seo.noIndex !== undefined ? !seo.noIndex : page.seoMetadata.robotsFollow,
+            robotsIndex: robotsIndex !== undefined ? robotsIndex : page.seoMetadata.robotsIndex,
+            robotsFollow: robotsFollow !== undefined ? robotsFollow : page.seoMetadata.robotsFollow,
+            twitterCard: seo.twitterCard ?? page.seoMetadata.twitterCard,
+            structuredData: updatedStructured,
           },
         });
       } else {
@@ -1768,8 +2239,10 @@ export class CmsService {
             canonicalUrl: seo.canonicalUrl || null,
             ogTitle: seo.ogTitle || page.title,
             ogDescription: seo.ogDescription || page.description || '',
-            robotsIndex: seo.noIndex ? false : true,
-            robotsFollow: seo.noIndex ? false : true,
+            robotsIndex: robotsIndex !== undefined ? robotsIndex : true,
+            robotsFollow: robotsFollow !== undefined ? robotsFollow : true,
+            twitterCard: seo.twitterCard || 'summary_large_image',
+            structuredData: updatedStructured,
           },
         });
       }
@@ -1796,7 +2269,16 @@ export class CmsService {
   }
 
   async getPageBySlug(slug: string): Promise<any> {
-    const targetSlug = slug === 'our-work' ? 'portfolio' : slug;
+    const slugAliases: Record<string, string> = {
+      'our-work': 'portfolio',
+      'us': 'united-states',
+      'united-kingdom': 'uk',
+      'uae': 'united-arab-emirates',
+      'sa': 'saudi-arabia',
+      'au': 'australia',
+      'om': 'oman',
+    };
+    const targetSlug = slugAliases[slug.toLowerCase()] || slug;
     const page = await this.prisma.page.findFirst({
       where: {
         slug: targetSlug,
@@ -1858,7 +2340,14 @@ export class CmsService {
       }
 
       // 2. Dedicated Clients / Trusted By section (LOGO_CLOUD)
-      if (cType === 'LOGO_CLOUD' && (sId === 'clients-trusted-by' || sId === 'trusted-by')) {
+      if (
+        cType === 'LOGO_CLOUD' &&
+        (sId === 'clients-trusted-by' ||
+          sId === 'trusted-by' ||
+          sId === 'clients-partners' ||
+          sId === 'clients-and-partners' ||
+          sId === 'clients')
+      ) {
         const payload = (section.contentPayload as Record<string, any>) || {};
 
         // Show all active live clients by default from Clients module
@@ -2020,18 +2509,370 @@ export class CmsService {
     };
   }
 
+  // 11b. Consolidated Dynamic Footer
+  async getFooterData(): Promise<any> {
+    let [branding, navigation, footerSetting, contactSetting, entitySetting] = await Promise.all([
+      this.getBrandSettings().catch(() => null),
+      this.getNavigationByKey('footer').catch(() => null),
+      this.prisma.siteSetting
+        .findUnique({ where: { key: 'footer_config' } })
+        .then((s) => s?.value || null),
+      this.prisma.siteSetting
+        .findUnique({ where: { key: 'general:contact' } })
+        .then((s) => s?.value || null),
+      this.prisma.siteSetting
+        .findUnique({ where: { key: 'general:entity' } })
+        .then((s) => s?.value || null),
+    ]);
+
+    if (!footerSetting) {
+      footerSetting = await this.seedInitialFooterConfig();
+    } else {
+      const fsVal = footerSetting as any;
+      if (!fsVal?.keywords || !Array.isArray(fsVal.keywords?.items) || fsVal.keywords.items.length < 14) {
+        fsVal.keywords = this.getDefaultKeywords();
+        await this.prisma.siteSetting.update({
+          where: { key: 'footer_config' },
+          data: { value: fsVal },
+        });
+        footerSetting = fsVal;
+      }
+    }
+
+    if (!navigation || !navigation.items || navigation.items.length === 0 || !navigation.items.some((i: any) => i.children && i.children.length > 0)) {
+      navigation = await this.seedInitialFooterNavigation();
+    }
+
+    return {
+      branding,
+      navigation,
+      config: footerSetting,
+      contact: contactSetting,
+      entity: entitySetting,
+    };
+  }
+
+  async getAdminFooterData(): Promise<any> {
+    const [footerData, pages] = await Promise.all([
+      this.getFooterData(),
+      this.getAllPages().catch(() => []),
+    ]);
+
+    return {
+      ...footerData,
+      pages: (pages || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        url: p.slug === 'home' || p.slug === '/' ? '/' : `/${p.slug}`,
+      })),
+    };
+  }
+
+  async updateFooterData(payload: { config?: any; navigation?: any; contact?: any }): Promise<any> {
+    if (payload.config) {
+      await this.prisma.siteSetting.upsert({
+        where: { key: 'footer_config' },
+        create: {
+          key: 'footer_config',
+          category: 'system',
+          value: payload.config,
+          isPublic: true,
+        },
+        update: {
+          value: payload.config,
+        },
+      });
+    }
+
+    if (payload.navigation?.items && Array.isArray(payload.navigation.items)) {
+      await this.updateNavigation('footer', payload.navigation.items);
+    }
+
+    if (payload.contact) {
+      await this.prisma.siteSetting.upsert({
+        where: { key: 'general:contact' },
+        create: {
+          key: 'general:contact',
+          category: 'system',
+          value: payload.contact,
+          isPublic: true,
+        },
+        update: {
+          value: payload.contact,
+        },
+      });
+    }
+
+    return this.getFooterData();
+  }
+
+  private async seedInitialFooterConfig(): Promise<any> {
+    const initialConfig = {
+      enabled: true,
+      layout: {
+        containerWidth: 'wide',
+        borderRadius: 'extra-large',
+        sectionSpacing: 'spacious',
+      },
+      appearance: {
+        themeMode: 'inherit',
+        surfaceColor: '#07090e',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        glowEffect: true,
+      },
+      brand: {
+        description: 'Engineering the next era of high-frequency commerce, resilient cloud systems, and sovereign AI for visionary global brands.',
+        logoVariant: 'default',
+        customLogoUrl: '',
+      },
+      contact: {
+        enabled: true,
+        showEmail: true,
+        showPhone: true,
+        showAddress: true,
+        emailOverride: '',
+        phoneOverride: '',
+        addressOverride: '',
+        badgeText: 'Global Engineering Office',
+      },
+      regions: [
+        {
+          id: 'region-us',
+          name: 'United States',
+          code: 'US',
+          label: 'North America',
+          displayOrder: 1,
+          isActive: true,
+          links: [
+            { id: 'l-us-1', label: 'Enterprise Architects & Tech Leads', url: '/services', isExternal: false, isActive: true, displayOrder: 1 },
+            { id: 'l-us-2', label: 'Cloud Migration & Core Engineering', url: '/solutions', isExternal: false, isActive: true, displayOrder: 2 },
+            { id: 'l-us-3', label: 'Delaware Corporate Advisory', url: '/about', isExternal: false, isActive: true, displayOrder: 3 },
+            { id: 'l-us-4', label: 'High-Volume Storefront Audits', url: '/portfolio', isExternal: false, isActive: true, displayOrder: 4 },
+          ],
+        },
+        {
+          id: 'region-uk',
+          name: 'United Kingdom',
+          code: 'GB',
+          label: 'Europe & EMEA',
+          displayOrder: 2,
+          isActive: true,
+          links: [
+            { id: 'l-uk-1', label: 'Fintech & Storefront Engineering', url: '/services', isExternal: false, isActive: true, displayOrder: 1 },
+            { id: 'l-uk-2', label: 'Cross-Border VAT & EU Compliance', url: '/trust/certifications', isExternal: false, isActive: true, displayOrder: 2 },
+            { id: 'l-uk-3', label: 'Dedicated Senior Engineering Squad', url: '/book', isExternal: false, isActive: true, displayOrder: 3 },
+          ],
+        },
+        {
+          id: 'region-au',
+          name: 'Australia',
+          code: 'AU',
+          label: 'Asia-Pacific',
+          displayOrder: 3,
+          isActive: true,
+          links: [
+            { id: 'l-au-1', label: 'Sovereign Cloud & AI Architecture', url: '/solutions', isExternal: false, isActive: true, displayOrder: 1 },
+            { id: 'l-au-2', label: 'Sydney Delivery & Client Advisory', url: '/contact', isExternal: false, isActive: true, displayOrder: 2 },
+            { id: 'l-au-3', label: 'Sub-Second Mobile Acceleration', url: '/services', isExternal: false, isActive: true, displayOrder: 3 },
+          ],
+        },
+        {
+          id: 'region-de',
+          name: 'Germany',
+          code: 'DE',
+          label: 'Central Europe',
+          displayOrder: 4,
+          isActive: true,
+          links: [
+            { id: 'l-de-1', label: 'Industrial & D2C Commerce Systems', url: '/portfolio', isExternal: false, isActive: true, displayOrder: 1 },
+            { id: 'l-de-2', label: 'GDPR & Data Sovereignty Audits', url: '/trust/certifications', isExternal: false, isActive: true, displayOrder: 2 },
+            { id: 'l-de-3', label: 'Automated Catalog Synchronization', url: '/solutions', isExternal: false, isActive: true, displayOrder: 3 },
+          ],
+        },
+      ],
+      largeBrandMark: {
+        enabled: true,
+        type: 'wordmark_text',
+        textOverride: '',
+        size: 'large',
+        opacity: 0.12,
+        alignment: 'center',
+      },
+      badges: [
+        {
+          id: 'badge-shopify',
+          title: 'Shopify Plus Partner',
+          imageUrl: '',
+          url: 'https://shopify.com',
+          displayOrder: 1,
+          isActive: true,
+        },
+        {
+          id: 'badge-iso',
+          title: 'ISO 27001 Certified Standard',
+          imageUrl: '',
+          url: '/trust/certifications',
+          displayOrder: 2,
+          isActive: true,
+        },
+        {
+          id: 'badge-soc2',
+          title: 'SOC 2 Type II Audited',
+          imageUrl: '',
+          url: '/trust/certifications',
+          displayOrder: 3,
+          isActive: true,
+        },
+      ],
+      legalLinks: [
+        { id: 'leg-1', label: 'Privacy Policy', url: '/privacy', isExternal: false, displayOrder: 1, isActive: true },
+        { id: 'leg-2', label: 'Terms of Service', url: '/terms', isExternal: false, displayOrder: 2, isActive: true },
+        { id: 'leg-3', label: 'Security & Certifications', url: '/trust/certifications', isExternal: false, displayOrder: 3, isActive: true },
+        { id: 'leg-4', label: 'Cookie Declaration', url: '/cookies', isExternal: false, displayOrder: 4, isActive: true },
+        { id: 'leg-5', label: 'Sitemap', url: '/sitemap.xml', isExternal: false, displayOrder: 5, isActive: true },
+      ],
+      copyright: {
+        template: '© {year} {brand}. All rights reserved.',
+      },
+      cta: {
+        enabled: false,
+        eyebrow: 'PARTNER WITH US',
+        title: 'Ready to build the next-generation enterprise?',
+        description: 'Schedule a dedicated architecture session with our principal engineers.',
+        buttonLabel: "Let's Talk",
+        buttonUrl: '/book',
+      },
+      keywords: this.getDefaultKeywords(),
+    };
+
+    const setting = await this.prisma.siteSetting.upsert({
+      where: { key: 'footer_config' },
+      create: {
+        key: 'footer_config',
+        category: 'system',
+        value: initialConfig,
+        isPublic: true,
+      },
+      update: {
+        value: initialConfig,
+      },
+    });
+
+    return setting.value;
+  }
+
+  private getDefaultKeywords() {
+    return {
+      enabled: true,
+      title: 'Trending Capabilities & Searchable Directory',
+      searchable: true,
+      items: [
+        { id: 'kw-1', label: 'Shopify Plus Flagship Development', url: '/services', displayOrder: 1, isActive: true },
+        { id: 'kw-2', label: 'Headless Commerce & Hydrogen', url: '/services', displayOrder: 2, isActive: true },
+        { id: 'kw-3', label: 'Checkout Extensibility', url: '/services', displayOrder: 3, isActive: true },
+        { id: 'kw-4', label: 'ERP & NetSuite Integration', url: '/solutions', displayOrder: 4, isActive: true },
+        { id: 'kw-5', label: 'Next.js High-Performance Frontend', url: '/services', displayOrder: 5, isActive: true },
+        { id: 'kw-6', label: 'Sub-Second Core Web Vitals', url: '/services', displayOrder: 6, isActive: true },
+        { id: 'kw-7', label: 'Zero-Downtime Data Migration', url: '/services', displayOrder: 7, isActive: true },
+        { id: 'kw-8', label: 'Custom Shopify App Engineering', url: '/services', displayOrder: 8, isActive: true },
+        { id: 'kw-9', label: 'B2B Wholesale & Multi-Currency', url: '/solutions', displayOrder: 9, isActive: true },
+        { id: 'kw-10', label: 'Conversion Rate Optimization (CRO)', url: '/solutions', displayOrder: 10, isActive: true },
+        { id: 'kw-11', label: 'Algolia & AI Enterprise Search', url: '/solutions', displayOrder: 11, isActive: true },
+        { id: 'kw-12', label: 'Omnichannel Retail Architecture', url: '/solutions', displayOrder: 12, isActive: true },
+        { id: 'kw-13', label: 'Klaviyo & Retention Pipelines', url: '/services', displayOrder: 13, isActive: true },
+        { id: 'kw-14', label: 'POS Terminal Synchronization', url: '/solutions', displayOrder: 14, isActive: true },
+        { id: 'kw-15', label: 'ISO 27001 & SOC 2 Compliance', url: '/trust/certifications', displayOrder: 15, isActive: true },
+        { id: 'kw-16', label: 'Liquid OS 2.0 Architecture', url: '/services', displayOrder: 16, isActive: true },
+        { id: 'kw-17', label: 'Sanity CMS & Headless Content', url: '/services', displayOrder: 17, isActive: true },
+        { id: 'kw-18', label: 'Global Edge CDN Delivery', url: '/solutions', displayOrder: 18, isActive: true },
+      ],
+    };
+  }
+
+  private async seedInitialFooterNavigation(): Promise<any> {
+    let nav = await this.prisma.navigation.findUnique({ where: { key: 'footer' } });
+    if (!nav) {
+      nav = await this.prisma.navigation.create({
+        data: {
+          key: 'footer',
+          title: 'Global Footer Directory',
+          isActive: true,
+        },
+      });
+    }
+
+    const items = [
+      {
+        label: 'Pages & Exploration',
+        url: '/services',
+        displayOrder: 1,
+        children: [
+          { label: 'Home Storefront', url: '/', displayOrder: 1, isExternal: false },
+          { label: 'Selected Works', url: '/portfolio', displayOrder: 2, isExternal: false },
+          { label: 'Core Services', url: '/services', displayOrder: 3, isExternal: false },
+          { label: 'Engineering Publications', url: '/blog', displayOrder: 4, isExternal: false },
+          { label: 'Schedule Consultation', url: '/book', displayOrder: 5, isExternal: false },
+        ],
+      },
+      {
+        label: 'Services & Practice',
+        url: '/services',
+        displayOrder: 2,
+        children: [
+          { label: 'Shopify Plus Flagship Development', url: '/services', displayOrder: 1, isExternal: false },
+          { label: 'Headless Liquid & Hydrogen', url: '/services', displayOrder: 2, isExternal: false },
+          { label: 'ERP & Zero-Downtime Data Migration', url: '/services', displayOrder: 3, isExternal: false },
+          { label: 'Checkout Extensibility & Apps', url: '/services', displayOrder: 4, isExternal: false },
+          { label: 'Sub-Second Performance & CWV', url: '/services', displayOrder: 5, isExternal: false },
+        ],
+      },
+      {
+        label: 'Enterprise Solutions',
+        url: '/solutions',
+        displayOrder: 3,
+        children: [
+          { label: 'B2B Wholesale Portals', url: '/solutions', displayOrder: 1, isExternal: false },
+          { label: 'Multi-Currency Global Checkout', url: '/solutions', displayOrder: 2, isExternal: false },
+          { label: 'Conversion Rate Architecture', url: '/solutions', displayOrder: 3, isExternal: false },
+          { label: 'Catalog Automation & Sync', url: '/solutions', displayOrder: 4, isExternal: false },
+        ],
+      },
+      {
+        label: 'Company & Advisory',
+        url: '/about',
+        displayOrder: 4,
+        children: [
+          { label: 'About Gypsym', url: '/about', displayOrder: 1, isExternal: false },
+          { label: 'Security & Certifications', url: '/trust/certifications', displayOrder: 2, isExternal: false },
+          { label: 'Enterprise Contact', url: '/contact', displayOrder: 3, isExternal: false },
+          { label: 'Client Advisory Briefing', url: '/book', displayOrder: 4, isExternal: false },
+        ],
+      },
+    ];
+
+    await this.updateNavigation('footer', items);
+    return this.getNavigationByKey('footer');
+  }
+
   // 12. CMS Updates (Admin Endpoints)
-  async updateSiteSetting(key: string, value: any): Promise<any> {
+  async updateSiteSetting(
+    key: string,
+    value: any,
+    category: string = 'system',
+    isPublic: boolean = true
+  ): Promise<any> {
     return this.prisma.siteSetting.upsert({
       where: { key },
       create: {
         key,
-        category: 'system',
+        category,
         value,
-        isPublic: true,
+        isPublic,
       },
       update: {
         value,
+        isPublic,
       },
     });
   }
