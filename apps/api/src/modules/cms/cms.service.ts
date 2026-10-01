@@ -1477,7 +1477,8 @@ export class CmsService implements OnModuleInit {
       take: query?.limit ? Number(query.limit) : undefined,
     });
 
-    return posts.map((p) => this.formatBlogPostSummary(p));
+    const authorSetting = await this.getAuthorSettings().catch(() => null);
+    return posts.map((p) => this.formatBlogPostSummary(p, authorSetting));
   }
 
   async getBlogPostBySlug(slug: string): Promise<any> {
@@ -1520,16 +1521,23 @@ export class CmsService implements OnModuleInit {
       take: 3,
     });
 
-    const related = relatedRaw.map((r) => this.formatBlogPostSummary(r));
+    const authorSetting = await this.getAuthorSettings().catch(() => null);
+    const related = relatedRaw.map((r) => this.formatBlogPostSummary(r, authorSetting));
 
     return {
-      ...this.formatBlogPostSummary(p),
+      ...this.formatBlogPostSummary(p, authorSetting),
       bodyContent: p.bodyContent,
       related,
     };
   }
 
-  private formatBlogPostSummary(p: any) {
+  private formatBlogPostSummary(p: any, authorSetting?: any) {
+    const authorName = authorSetting?.name || (p.author ? `${p.author.firstName} ${p.author.lastName}`.trim() : 'MohammadAli Kadiwal');
+    const authorRole = authorSetting?.role || 'Chief Technology Officer & Lead Architect';
+    const authorAvatar = authorSetting?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+    const authorBio = authorSetting?.bio || 'Leading high-concurrency cloud architectures and distributed microservices.';
+    const authorSocials = authorSetting?.socials || {};
+
     return {
       id: p.id,
       slug: p.slug,
@@ -1544,9 +1552,11 @@ export class CmsService implements OnModuleInit {
           }
         : { id: '', name: 'General', slug: 'general' },
       author: {
-        name: p.author ? `${p.author.firstName} ${p.author.lastName}`.trim() : 'MohammadAli Kadiwal',
-        role: 'Chief Technology Officer & Lead Architect',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        name: authorName,
+        role: authorRole,
+        avatar: authorAvatar,
+        bio: authorBio,
+        socials: authorSocials,
       },
       featuredImage: p.featuredImage
         ? {
@@ -1591,7 +1601,8 @@ export class CmsService implements OnModuleInit {
       orderBy: { updatedAt: 'desc' },
     });
 
-    return posts.map((p) => this.formatBlogPostSummary(p));
+    const authorSetting = await this.getAuthorSettings().catch(() => null);
+    return posts.map((p) => this.formatBlogPostSummary(p, authorSetting));
   }
 
   async createBlogPost(dto: any, authorId?: string): Promise<any> {
@@ -1714,6 +1725,73 @@ export class CmsService implements OnModuleInit {
       data: { deletedAt: new Date() },
     });
     return { success: true };
+  }
+
+  async bulkUpdateBlogPostStatus(ids: string[], status: any): Promise<{ count: number }> {
+    const updateData: any = { status };
+    if (status === 'PUBLISHED') {
+      updateData.publishedAt = new Date();
+    }
+    const result = await this.prisma.blogPost.updateMany({
+      where: { id: { in: ids }, deletedAt: null },
+      data: updateData,
+    });
+    return { count: result.count };
+  }
+
+  async bulkDeleteBlogPosts(ids: string[]): Promise<{ count: number }> {
+    const result = await this.prisma.blogPost.updateMany({
+      where: { id: { in: ids } },
+      data: { deletedAt: new Date() },
+    });
+    return { count: result.count };
+  }
+
+  // ─── Author Profile Settings ────────────────────────────────────────────────
+  async getAuthorSettings(): Promise<any> {
+    const setting = await this.prisma.siteSetting.findUnique({
+      where: { key: 'editorial:author' },
+    });
+    if (setting?.value) {
+      return setting.value;
+    }
+    return {
+      name: 'MohammadAli Kadiwal',
+      role: 'Chief Technology Officer & Lead Architect',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      bio: 'Leading high-concurrency cloud architectures, Next.js commerce ecosystems, and distributed microservices with over a decade of hands-on production engineering.',
+      extendedBio: 'MohammadAli Kadiwal is the Chief Technology Officer and Lead Solutions Architect at Gypsym Technology. Specializing in cloud infrastructure, headless e-commerce, and high-performance engineering, he oversees technical strategy and system architectures across enterprise client deployments globally.',
+      email: 'author@gypsym.com',
+      phone: '+1 (555) 019-2834',
+      location: 'Dubai, UAE & San Francisco, CA',
+      website: 'https://gypsym.com',
+      socials: {
+        linkedin: 'https://linkedin.com/company/gypsym',
+        twitter: 'https://twitter.com/gypsym',
+        github: 'https://github.com/gypsym',
+        website: 'https://gypsym.com',
+      },
+      expertise: ['Cloud Architecture', 'Next.js & React', 'Distributed Systems', 'Headless Commerce', 'Cybersecurity', 'AI & GEO Integration'],
+      credentials: ['AWS Certified Solutions Architect - Professional', 'Google Cloud Certified Professional Cloud Architect', 'Kubernetes CKA', 'Shopify Plus Partner'],
+    };
+  }
+
+  async updateAuthorSettings(dto: any, userId?: string): Promise<any> {
+    const setting = await this.prisma.siteSetting.upsert({
+      where: { key: 'editorial:author' },
+      create: {
+        key: 'editorial:author',
+        category: 'editorial',
+        isPublic: true,
+        value: dto,
+        updatedBy: userId || null,
+      },
+      update: {
+        value: dto,
+        updatedBy: userId || null,
+      },
+    });
+    return setting.value;
   }
 
   // 5. Jobs / Careers
@@ -1871,6 +1949,25 @@ export class CmsService implements OnModuleInit {
           isActive: true,
         },
       });
+    }
+
+    if (body.faviconUrl) {
+      try {
+        const seoGlobal = await this.prisma.siteSetting.findUnique({ where: { key: 'seo:global' } });
+        if (seoGlobal && typeof seoGlobal.value === 'object') {
+          await this.prisma.siteSetting.update({
+            where: { key: 'seo:global' },
+            data: {
+              value: {
+                ...(seoGlobal.value as Record<string, any>),
+                favicon: body.faviconUrl,
+              },
+            },
+          });
+        }
+      } catch {
+        // Non-critical sync failure
+      }
     }
 
     return this.getBrandSettings();

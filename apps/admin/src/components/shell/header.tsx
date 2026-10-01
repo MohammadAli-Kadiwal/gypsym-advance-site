@@ -95,6 +95,7 @@ export function Header() {
     if (pathname.startsWith('/pages/countries')) return 'Country Pages';
     if (pathname.startsWith('/pages')) return 'Pages';
     if (pathname.startsWith('/editorial/blog')) return 'Blog Posts';
+    if (pathname.startsWith('/editorial/author')) return 'Author Profile Settings';
     if (pathname.startsWith('/content/services')) return 'Services';
     if (pathname.startsWith('/content/clients')) return 'Clients';
     if (pathname.startsWith('/content/partners')) return 'Partners';

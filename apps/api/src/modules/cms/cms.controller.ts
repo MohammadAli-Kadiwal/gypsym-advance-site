@@ -110,6 +110,18 @@ export class CmsController {
     return this.cmsService.createBlogPost(body);
   }
 
+  @Put('cms/blog/bulk-status')
+  @UseGuards(AuthGuard)
+  async bulkUpdateBlogPostStatus(@Body() body: { ids: string[]; status: any }) {
+    return this.cmsService.bulkUpdateBlogPostStatus(body.ids, body.status);
+  }
+
+  @Post('cms/blog/bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteBlogPosts(@Body() body: { ids: string[] }) {
+    return this.cmsService.bulkDeleteBlogPosts(body.ids);
+  }
+
   @Put('cms/blog/:id')
   @UseGuards(AuthGuard)
   async updateBlogPost(@Param('id') id: string, @Body() body: any): Promise<any> {
@@ -120,6 +132,23 @@ export class CmsController {
   @UseGuards(AuthGuard)
   async deleteBlogPost(@Param('id') id: string): Promise<any> {
     return this.cmsService.deleteBlogPost(id);
+  }
+
+  @Get('author-settings')
+  async getPublicAuthorSettings(): Promise<any> {
+    return this.cmsService.getAuthorSettings();
+  }
+
+  @Get('cms/author-settings')
+  @UseGuards(AuthGuard)
+  async getCmsAuthorSettings(): Promise<any> {
+    return this.cmsService.getAuthorSettings();
+  }
+
+  @Put('cms/author-settings')
+  @UseGuards(AuthGuard)
+  async updateCmsAuthorSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateAuthorSettings(body);
   }
 
   @Get('jobs')

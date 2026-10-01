@@ -194,6 +194,7 @@ export function DynamicBrandStyleTag({ tokens }: { tokens?: Partial<BrandTokens>
               darkBgColor: parsed.darkBgColor,
               lightBgHsl: parsed.lightBgColor ? hexToHsl(parsed.lightBgColor) || undefined : undefined,
               darkBgHsl: parsed.darkBgColor ? hexToHsl(parsed.darkBgColor) || undefined : undefined,
+              faviconUrl: parsed.faviconUrl || tokens?.faviconUrl,
             })
           );
         }
@@ -206,6 +207,21 @@ export function DynamicBrandStyleTag({ tokens }: { tokens?: Partial<BrandTokens>
     window.addEventListener('storage', updateFromStorage);
     return () => window.removeEventListener('storage', updateFromStorage);
   }, [tokens]);
+
+  React.useEffect(() => {
+    if (liveTokens.faviconUrl && typeof window !== 'undefined') {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = liveTokens.faviconUrl;
+      if (liveTokens.faviconUrl.includes('svg') || liveTokens.faviconUrl.startsWith('data:image/svg')) {
+        link.type = 'image/svg+xml';
+      }
+    }
+  }, [liveTokens.faviconUrl]);
 
   const css = `
     :root {

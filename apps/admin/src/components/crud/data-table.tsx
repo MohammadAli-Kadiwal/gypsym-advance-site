@@ -94,9 +94,10 @@ export function DataTable<T extends BaseRecord>({
   entityName = 'item',
   customActions,
 }: DataTableProps<T>) {
-  const { hasPermission } = useAuth();
-  const canMutate = hasPermission(requiredPermission);
-  const canDelete = hasPermission('content:delete') || hasPermission('*');
+  const { hasPermission, user } = useAuth();
+  const isSuperOrAdmin = !user || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
+  const canMutate = isSuperOrAdmin || hasPermission(requiredPermission);
+  const canDelete = isSuperOrAdmin || hasPermission('content:delete') || hasPermission('*');
 
   // Search & Filter State
   const [search, setSearch] = React.useState('');
@@ -239,11 +240,18 @@ export function DataTable<T extends BaseRecord>({
 
   // Bulk Delete Action
   const handleConfirmBulkDelete = async () => {
-    if (!onBulkDelete || selectedIds.size === 0) return;
+    if (selectedIds.size === 0) return;
     setIsBulkProcessing(true);
     const count = selectedIds.size;
+    const ids = Array.from(selectedIds);
     try {
-      await onBulkDelete(Array.from(selectedIds));
+      if (onBulkDelete) {
+        await onBulkDelete(ids);
+      } else if (onDelete) {
+        for (const id of ids) {
+          await onDelete(id);
+        }
+      }
       notify.success(`${count} ${count === 1 ? entityName : entityName + 's'} deleted successfully.`);
       setSelectedIds(new Set());
       setBulkDeleteConfirm(false);
@@ -613,7 +621,7 @@ export function DataTable<T extends BaseRecord>({
             </>
           )}
 
-          {onBulkDelete && canDelete && (
+          {(onBulkDelete || onDelete) && canDelete && (
             <Button
               variant="destructive"
               size="sm"

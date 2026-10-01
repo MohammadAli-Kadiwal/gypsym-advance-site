@@ -293,13 +293,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 className="w-16 h-16 rounded-full object-cover border-2 border-neutral-300 shrink-0"
               />
             )}
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-[#d9287c] uppercase tracking-wider">About the Author</div>
               <h3 className="text-lg font-bold text-neutral-900 dark:text-white mt-0.5">
                 {post.author?.name}
               </h3>
+              {post.author?.role && (
+                <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  {post.author.role}
+                </div>
+              )}
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1.5 leading-relaxed">
-                Leads systems architecture and global engineering practice at Gypsym Technology, advising enterprise retailers and financial institutions on active-active cloud topologies and sovereign AI.
+                {post.author?.extendedBio || post.author?.bio || 'Leads systems architecture and global engineering practice at Gypsym Technology, advising enterprise retailers and financial institutions on active-active cloud topologies and sovereign AI.'}
               </p>
             </div>
           </div>

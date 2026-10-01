@@ -357,6 +357,14 @@ export interface BlogPostItemDto {
     name: string;
     role: string;
     avatar?: string;
+    bio?: string;
+    extendedBio?: string;
+    socials?: {
+      linkedin?: string;
+      twitter?: string;
+      github?: string;
+      website?: string;
+    };
   };
   coverImage: string;
   readTimeMinutes: number;

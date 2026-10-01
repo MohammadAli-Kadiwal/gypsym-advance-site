@@ -129,6 +129,44 @@ export interface HreflangLocaleDto {
 export class SeoService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private resolveMediaUrl(media: any): string | null {
+    if (!media) return null;
+    if (media.variants && typeof media.variants === 'object') {
+      const v = media.variants as Record<string, string>;
+      const resolved = v.original || v.lg || v.md;
+      if (resolved && (resolved.startsWith('http') || resolved.startsWith('/') || resolved.startsWith('data:'))) {
+        return resolved;
+      }
+    }
+    if (typeof media.url === 'string' && (media.url.startsWith('http') || media.url.startsWith('/') || media.url.startsWith('data:'))) {
+      return media.url;
+    }
+    return null;
+  }
+
+  private async resolveUrlOrStorageKey(val?: string | null): Promise<string | null> {
+    if (!val) return null;
+    const trimmed = val.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('data:')) {
+      return trimmed;
+    }
+    // Check if it's a storageKey or ID in media table
+    const media = await this.prisma.media.findFirst({
+      where: {
+        OR: [
+          { storageKey: trimmed },
+          { id: trimmed },
+        ],
+      },
+    }).catch(() => null);
+
+    if (media) {
+      const resolved = this.resolveMediaUrl(media);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+
   // ────────────────────────────────────────────────────────────
   // 1. GLOBAL SEO SETTINGS
   // ────────────────────────────────────────────────────────────
@@ -149,8 +187,18 @@ export class SeoService {
       include: { logoLight: true, logoDark: true, favicon: true },
     }).catch(() => null);
 
-    const brandFavicon = (brand?.favicon as any)?.storageKey || (brand?.favicon as any)?.url || '/favicon.ico';
-    const brandLogo = (brand?.logoLight as any)?.storageKey || (brand?.logoLight as any)?.url || 'https://gypsym.com/logo.svg';
+    const brandFavicon = this.resolveMediaUrl(brand?.favicon) || (brand?.favicon as any)?.url || null;
+    const brandLogo = this.resolveMediaUrl(brand?.logoLight) || (brand?.logoLight as any)?.url || 'https://gypsym.com/logo.svg';
+
+    let resolvedFavicon = await this.resolveUrlOrStorageKey(val.favicon);
+    if (!resolvedFavicon || resolvedFavicon === '/favicon.ico') {
+      resolvedFavicon = brandFavicon || '/favicon.ico';
+    }
+
+    let resolvedLogo = await this.resolveUrlOrStorageKey(val.organizationLogo);
+    if (!resolvedLogo) {
+      resolvedLogo = brandLogo;
+    }
 
     return {
       siteName: val.siteName || brand?.companyName || 'Gypsym Technology',
@@ -171,10 +219,10 @@ export class SeoService {
       ],
       defaultOgImage: val.defaultOgImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
       defaultSocialImage: val.defaultSocialImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
-      favicon: val.favicon || brandFavicon,
+      favicon: resolvedFavicon || undefined,
       defaultAuthor: val.defaultAuthor || 'Gypsym Technology Engineering Team',
       organizationName: val.organizationName || brand?.companyName || 'Gypsym Technology',
-      organizationLogo: val.organizationLogo || brandLogo,
+      organizationLogo: resolvedLogo || undefined,
       organizationDescription: val.organizationDescription || 'High-performance e-commerce and digital systems engineering.',
       phone: val.phone || '+44 20 7946 0991',
       email: val.email || 'briefing@gypsym.com',

@@ -48,7 +48,16 @@ export async function generateMetadata(): Promise<Metadata> {
       creator: seo?.twitterHandle || undefined,
     },
     icons: {
-      icon: seo?.favicon || '/favicon.ico',
+      icon: [
+        {
+          url: seo?.favicon || '/favicon.ico',
+          type: (seo?.favicon?.includes('svg') || seo?.favicon?.startsWith('data:image/svg'))
+            ? 'image/svg+xml'
+            : 'image/x-icon',
+        },
+      ],
+      shortcut: seo?.favicon || '/favicon.ico',
+      apple: seo?.favicon || '/favicon.ico',
     },
     robots: seo?.robotsIndex === false ? { index: false, follow: false } : { index: true, follow: true },
     verification: {
@@ -114,9 +123,18 @@ export default async function RootLayout({
     },
   ];
 
+  const rawFavicon =
+    globalSeo?.favicon && (globalSeo.favicon.startsWith('data:') || globalSeo.favicon.startsWith('http') || globalSeo.favicon.startsWith('/'))
+      ? globalSeo.favicon
+      : headerData.branding?.favicon || '/favicon.ico';
+  const isSvg = rawFavicon.includes('svg') || rawFavicon.startsWith('data:image/svg');
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" type={isSvg ? 'image/svg+xml' : 'image/x-icon'} href={rawFavicon} />
+        <link rel="shortcut icon" href={rawFavicon} />
+        <link rel="apple-touch-icon" href={rawFavicon} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -131,7 +149,7 @@ export default async function RootLayout({
           id="gypsym-theme-init"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
-        <DynamicBrandStyleTag />
+        <DynamicBrandStyleTag tokens={{ faviconUrl: rawFavicon }} />
         <ScriptInjector settings={scriptSettings} />
       </head>
       <body className="min-h-screen flex flex-col justify-between bg-[#f4f3ef] text-neutral-900 antialiased selection:bg-lime-200">

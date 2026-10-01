@@ -2,11 +2,17 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
+import { BrandingProvider } from '@/lib/branding-context';
 
 export const metadata: Metadata = {
   title: 'Gypsym Technology Workstation | Enterprise CMS & IAM',
   description:
     'Mission-critical operational workstation for Gypsym Technology platform operators, architects, and editorial leads.',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -17,6 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -25,7 +34,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <BrandingProvider>{children}</BrandingProvider>
+        </AuthProvider>
       </body>
     </html>
   );

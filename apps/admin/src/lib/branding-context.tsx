@@ -41,6 +41,21 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {/* keep defaults */});
   }, []);
 
+  React.useEffect(() => {
+    if (branding.favicon && typeof window !== 'undefined') {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = branding.favicon;
+      if (branding.favicon.includes('svg')) {
+        link.type = 'image/svg+xml';
+      }
+    }
+  }, [branding.favicon]);
+
   return (
     <BrandingContext.Provider value={branding}>
       {children}

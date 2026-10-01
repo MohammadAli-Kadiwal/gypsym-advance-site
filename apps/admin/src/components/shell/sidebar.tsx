@@ -28,6 +28,7 @@ import {
   Code,
   ShieldAlert,
   Globe,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth, RoleType } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
@@ -90,6 +91,11 @@ export function Sidebar() {
           label: 'Blog Posts',
           href: '/editorial/blog',
           icon: BookOpen,
+        },
+        {
+          label: 'Author Profile',
+          href: '/editorial/author',
+          icon: UserCheck,
         },
         {
           label: 'Services',

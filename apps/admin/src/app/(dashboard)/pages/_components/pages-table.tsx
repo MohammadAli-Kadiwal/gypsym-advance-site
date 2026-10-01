@@ -18,6 +18,9 @@ import {
   Search,
   CheckCircle2,
   Globe,
+  FileCheck,
+  FileClock,
+  X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -137,6 +141,24 @@ export function PagesTable({
   const [createLayoutType, setCreateLayoutType] = React.useState('DEFAULT');
   const [createStatus, setCreateStatus] = React.useState('PUBLISHED');
   const [creating, setCreating] = React.useState(false);
+
+  // Bulk Selection State
+  const [selectedSlugs, setSelectedSlugs] = React.useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
+
+  const handleBulkPageStatus = async (status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED') => {
+    if (selectedSlugs.size === 0) return;
+    setIsBulkProcessing(true);
+    const slugs = Array.from(selectedSlugs);
+    try {
+      for (const slug of slugs) {
+        await onSavePageSettings(slug, { status: status as any });
+      }
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
 
   // ── Auto-open create dialog from URL param ────────────────────────────────
   const searchParams = useSearchParams();
@@ -315,6 +337,25 @@ export function PagesTable({
         <Table>
           <TableHeader className="bg-slate-50/60">
             <TableRow className="border-b border-slate-100">
+              <TableHead className="w-10 px-4 text-center">
+                <Checkbox
+                  checked={
+                    filteredPages.length > 0 &&
+                    filteredPages.every((p) => p.slug && selectedSlugs.has(p.slug))
+                  }
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      const validSlugs = filteredPages
+                        .map((p) => p.slug)
+                        .filter((s): s is string => Boolean(s));
+                      setSelectedSlugs(new Set(validSlugs));
+                    } else {
+                      setSelectedSlugs(new Set());
+                    }
+                  }}
+                  aria-label="Select all pages"
+                />
+              </TableHead>
               <TableHead className="w-[320px] text-xs font-bold text-slate-600">
                 Page Title &amp; Route
               </TableHead>
@@ -327,14 +368,31 @@ export function PagesTable({
           </TableHeader>
           <TableBody>
             {filteredPages.map((page) => {
+              const pageSlug = page.slug || page.id || '';
               const route = getPageRoute(page.slug);
               const sectionCount = page.sectionsCount ?? page.sections?.length ?? 0;
+              const isSelected = selectedSlugs.has(pageSlug);
 
               return (
                 <TableRow
-                  key={page.slug || page.id}
-                  className="hover:bg-blue-50/30 transition-colors group"
+                  key={pageSlug}
+                  className={`hover:bg-blue-50/30 transition-colors group ${
+                    isSelected ? 'bg-blue-50/40' : ''
+                  }`}
                 >
+                  <TableCell className="px-4 py-3.5 text-center">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(selectedSlugs);
+                        if (checked) next.add(pageSlug);
+                        else next.delete(pageSlug);
+                        setSelectedSlugs(next);
+                      }}
+                      aria-label={`Select page ${page.title}`}
+                    />
+                  </TableCell>
+
                   {/* Title & Route */}
                   <TableCell className="py-3.5">
                     <div className="flex items-center space-x-3">
@@ -858,6 +916,57 @@ export function PagesTable({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Bulk Action Dock */}
+      {selectedSlugs.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+            {selectedSlugs.size} {selectedSlugs.size === 1 ? 'page' : 'pages'} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            onClick={() => handleBulkPageStatus('PUBLISHED')}
+          >
+            <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+            <span>Publish</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkPageStatus('DRAFT')}
+          >
+            <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600" />
+            <span>Draft</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200"
+            onClick={() => handleBulkPageStatus('ARCHIVED')}
+          >
+            <span>Archive</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600 rounded-xl"
+            onClick={() => setSelectedSlugs(new Set())}
+            title="Clear selection"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

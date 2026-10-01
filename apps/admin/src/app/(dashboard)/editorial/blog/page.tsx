@@ -17,11 +17,18 @@ import {
   FileText,
   X,
   Sparkles,
+  FileCheck,
+  FileClock,
+  Archive,
+  User,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -78,6 +85,11 @@ export default function EditorialBlogAdminPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingPost, setEditingPost] = React.useState<BlogPostRecord | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
 
   // Form State
   const [formData, setFormData] = React.useState({
@@ -273,9 +285,58 @@ export default function EditorialBlogAdminPage() {
         method: 'DELETE',
       });
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(post.id);
+        return next;
+      });
       notify.success('The article was moved to archive/deleted.');
     } catch (err: any) {
       notify.error(err.message || 'Delete failed');
+    }
+  };
+
+  // Bulk status update
+  const handleBulkStatus = async (status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED') => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    try {
+      await fetchApi('/cms/blog/bulk-status', {
+        method: 'PUT',
+        body: JSON.stringify({ ids, status }),
+      });
+      setPosts((prev) =>
+        prev.map((p) => (selectedIds.has(p.id) ? { ...p, status } : p))
+      );
+      const label = status === 'PUBLISHED' ? 'published' : status === 'DRAFT' ? 'moved to draft' : 'archived';
+      notify.success(`${ids.length} ${ids.length === 1 ? 'article' : 'articles'} ${label} successfully.`);
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      notify.error(err.message || 'Bulk status update failed');
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    try {
+      await fetchApi('/cms/blog/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      });
+      setPosts((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+      notify.success(`${ids.length} ${ids.length === 1 ? 'article' : 'articles'} deleted.`);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+    } catch (err: any) {
+      notify.error(err.message || 'Bulk delete failed');
+    } finally {
+      setIsBulkProcessing(false);
     }
   };
 
@@ -335,6 +396,17 @@ export default function EditorialBlogAdminPage() {
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             Sync
           </Button>
+
+          <Link href="/editorial/author">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-300 text-slate-700 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 gap-2"
+            >
+              <User className="w-4 h-4 text-purple-600" />
+              Author Profile
+            </Button>
+          </Link>
 
           <Button
             onClick={handleOpenCreate}
@@ -479,7 +551,23 @@ export default function EditorialBlogAdminPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                  <th className="py-3.5 px-4 w-12 text-center">#</th>
+                  <th className="py-3.5 px-4 w-10 text-center">
+                    <Checkbox
+                      checked={
+                        filteredPosts.length > 0 &&
+                        filteredPosts.every((p) => selectedIds.has(p.id))
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedIds(new Set(filteredPosts.map((p) => p.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                      aria-label="Select all articles"
+                    />
+                  </th>
+                  <th className="py-3.5 px-2 w-10 text-center">#</th>
                   <th className="py-3.5 px-4 min-w-[320px]">Publication</th>
                   <th className="py-3.5 px-4 min-w-[160px]">Category</th>
                   <th className="py-3.5 px-4 min-w-[140px]">Author</th>
@@ -491,8 +579,25 @@ export default function EditorialBlogAdminPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {filteredPosts.map((post, index) => (
-                  <tr key={post.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="py-4 px-4 text-xs font-mono text-slate-400 text-center">
+                  <tr
+                    key={post.id}
+                    className={`hover:bg-slate-50/80 transition-colors group ${
+                      selectedIds.has(post.id) ? 'bg-blue-50/40' : ''
+                    }`}
+                  >
+                    <td className="py-4 px-4 text-center">
+                      <Checkbox
+                        checked={selectedIds.has(post.id)}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(selectedIds);
+                          if (checked) next.add(post.id);
+                          else next.delete(post.id);
+                          setSelectedIds(next);
+                        }}
+                        aria-label={`Select article ${post.title}`}
+                      />
+                    </td>
+                    <td className="py-4 px-2 text-xs font-mono text-slate-400 text-center">
                       {index + 1}
                     </td>
 
@@ -828,6 +933,80 @@ export default function EditorialBlogAdminPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Bulk Action Dock */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+            {selectedIds.size} {selectedIds.size === 1 ? 'article' : 'articles'} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            onClick={() => handleBulkStatus('PUBLISHED')}
+          >
+            <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+            <span>Publish</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            onClick={() => handleBulkStatus('DRAFT')}
+          >
+            <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600" />
+            <span>Draft</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200"
+            onClick={() => handleBulkStatus('ARCHIVED')}
+          >
+            <Archive className="h-3.5 w-3.5 mr-1 text-purple-600" />
+            <span>Archive</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBulkProcessing}
+            className="h-8 text-xs rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50"
+            onClick={() => setBulkDeleteConfirm(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <span>Delete</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600 rounded-xl"
+            onClick={() => setSelectedIds(new Set())}
+            title="Clear selection"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirm Dialog */}
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        onOpenChange={setBulkDeleteConfirm}
+        title={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? 'Article' : 'Articles'}`}
+        description="Are you sure you want to permanently delete these selected articles from the editorial system? This action cannot be undone."
+        confirmLabel={isBulkProcessing ? 'Deleting...' : 'Delete Selected Articles'}
+        variant="destructive"
+        onConfirm={handleBulkDelete}
+      />
     </div>
   );
 }
