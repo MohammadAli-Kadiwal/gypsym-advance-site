@@ -16,12 +16,14 @@ import {
   Loader2,
   Coins,
   Clock,
+  FileText,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { notify } from '@/lib/notifications';
@@ -30,53 +32,10 @@ import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admi
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../../_components/types';
-
-const CURRENCY_OPTIONS = [
-  { code: 'USD', symbol: '$', label: 'US Dollar' },
-  { code: 'EUR', symbol: '€', label: 'Euro' },
-  { code: 'GBP', symbol: '£', label: 'British Pound' },
-  { code: 'AED', symbol: 'د.إ', label: 'UAE Dirham' },
-  { code: 'SAR', symbol: '﷼', label: 'Saudi Riyal' },
-  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
-  { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
-  { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
-  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
-  { code: 'OMR', symbol: 'ر.ع.', label: 'Omani Rial' },
-  { code: 'QAR', symbol: 'ر.ق', label: 'Qatari Riyal' },
-  { code: 'KWD', symbol: 'د.ك', label: 'Kuwaiti Dinar' },
-  { code: 'BHD', symbol: '.د.ب', label: 'Bahraini Dinar' },
-  { code: 'CHF', symbol: 'CHF', label: 'Swiss Franc' },
-  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
-  { code: 'NZD', symbol: 'NZ$', label: 'New Zealand Dollar' },
-  { code: 'ZAR', symbol: 'R', label: 'South African Rand' },
-  { code: 'SEK', symbol: 'kr', label: 'Swedish Krona' },
-  { code: 'NOK', symbol: 'kr', label: 'Norwegian Krone' },
-  { code: 'DKK', symbol: 'kr', label: 'Danish Krone' },
-  { code: 'HKD', symbol: 'HK$', label: 'Hong Kong Dollar' },
-];
-
-const TIMEZONE_OPTIONS = [
-  { tz: 'America/New_York', offset: 'UTC-05:00', label: 'Eastern Time (US & Canada)' },
-  { tz: 'America/Chicago', offset: 'UTC-06:00', label: 'Central Time (US & Canada)' },
-  { tz: 'America/Denver', offset: 'UTC-07:00', label: 'Mountain Time (US & Canada)' },
-  { tz: 'America/Los_Angeles', offset: 'UTC-08:00', label: 'Pacific Time (US & Canada)' },
-  { tz: 'America/Toronto', offset: 'UTC-05:00', label: 'Eastern Time (Toronto, Montreal)' },
-  { tz: 'America/Vancouver', offset: 'UTC-08:00', label: 'Pacific Time (Vancouver)' },
-  { tz: 'Europe/London', offset: 'UTC+00:00', label: 'London, Dublin, Edinburgh' },
-  { tz: 'Europe/Paris', offset: 'UTC+01:00', label: 'Paris, Rome, Madrid, Amsterdam' },
-  { tz: 'Europe/Berlin', offset: 'UTC+01:00', label: 'Berlin, Frankfurt, Munich' },
-  { tz: 'Europe/Zurich', offset: 'UTC+01:00', label: 'Zurich, Geneva' },
-  { tz: 'Asia/Dubai', offset: 'UTC+04:00', label: 'Dubai, Abu Dhabi, Muscat' },
-  { tz: 'Asia/Riyadh', offset: 'UTC+03:00', label: 'Riyadh, Jeddah, Kuwait, Doha' },
-  { tz: 'Asia/Kolkata', offset: 'UTC+05:30', label: 'India (New Delhi, Mumbai, Bangalore)' },
-  { tz: 'Asia/Singapore', offset: 'UTC+08:00', label: 'Singapore, Kuala Lumpur' },
-  { tz: 'Asia/Tokyo', offset: 'UTC+09:00', label: 'Tokyo, Osaka' },
-  { tz: 'Australia/Sydney', offset: 'UTC+10:00', label: 'Sydney, Melbourne, Canberra' },
-  { tz: 'Australia/Perth', offset: 'UTC+08:00', label: 'Perth (Western Australia)' },
-  { tz: 'Pacific/Auckland', offset: 'UTC+12:00', label: 'Auckland, Wellington' },
-  { tz: 'Africa/Johannesburg', offset: 'UTC+02:00', label: 'Johannesburg, Cape Town' },
-  { tz: 'UTC', offset: 'UTC+00:00', label: 'UTC (Universal Coordinated Time)' },
-];
+import {
+  ALL_CURRENCIES,
+} from '../../_components/country-locales';
+import { TimezoneSearchSelect } from '../../_components/timezone-search-select';
 
 const EIGHT_SECTIONS_SPEC = [
   { id: 'hero-banner',              type: 'HERO',               label: '1. Hero Section',          desc: 'Localized headline, subtext, background image & CTA' },
@@ -103,6 +62,7 @@ export default function CountryStudioPage() {
   const [heroTitle, setHeroTitle] = React.useState('');
   const [heroTitleHighlight, setHeroTitleHighlight] = React.useState('');
   const [heroDescription, setHeroDescription] = React.useState('');
+  const [heroContent, setHeroContent] = React.useState('');
   const [heroCurrency, setHeroCurrency] = React.useState('USD');
   const [heroTimezone, setHeroTimezone] = React.useState('America/New_York');
   const [heroBgImage, setHeroBgImage] = React.useState('');
@@ -142,6 +102,7 @@ export default function CountryStudioPage() {
           setHeroTitle(headlineStr || data.title || '');
           setHeroTitleHighlight(p.titleHighlight || '');
           setHeroDescription(p.description?.content || data.description || '');
+          setHeroContent(p.content || p.country?.content || (data as any).content || '');
           setHeroCurrency(p.country?.currency || 'USD');
           setHeroTimezone(p.country?.timezone || 'America/New_York');
           setHeroBgImage(p.backgroundMedia?.desktopImageUrl || `/images/countries/${slug}.jpg`);
@@ -173,6 +134,7 @@ export default function CountryStudioPage() {
         body: JSON.stringify({
           title: pageTitle,
           description: heroDescription,
+          content: heroContent.trim() || undefined,
           status: pageStatus,
           seoMetadata: {
             metaTitle: metaTitle || pageTitle,
@@ -190,8 +152,10 @@ export default function CountryStudioPage() {
         const curPayload = (heroSection.contentPayload as Record<string, any>) || {};
         const updatedPayload = {
           ...curPayload,
+          content: heroContent.trim() || undefined,
           country: {
             ...curPayload.country,
+            content: heroContent.trim() || undefined,
             currency: heroCurrency,
             timezone: heroTimezone,
           },
@@ -317,15 +281,27 @@ export default function CountryStudioPage() {
         {/* Left Column: Studio Controls (7 Cols) */}
         <div className="lg:col-span-7 space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
-            <TabsList className="w-full grid grid-cols-3 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80">
-              <TabsTrigger value="hero" className="rounded-xl py-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600">
-                1. Hero Settings
+            <TabsList className="p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1.5 w-fit flex flex-wrap shadow-2xs">
+              <TabsTrigger
+                value="hero"
+                className="inline-flex items-center gap-2 rounded-xl py-2 px-4 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs text-slate-600 hover:text-slate-900 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <span>1. Hero Settings</span>
               </TabsTrigger>
-              <TabsTrigger value="sections" className="rounded-xl py-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600">
-                2. 8-Section Layout
+              <TabsTrigger
+                value="sections"
+                className="inline-flex items-center gap-2 rounded-xl py-2 px-4 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs text-slate-600 hover:text-slate-900 cursor-pointer"
+              >
+                <Layers className="w-3.5 h-3.5 text-slate-500" />
+                <span>2. 8-Section Layout</span>
               </TabsTrigger>
-              <TabsTrigger value="seo" className="rounded-xl py-2 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600">
-                3. SEO &amp; Meta
+              <TabsTrigger
+                value="seo"
+                className="inline-flex items-center gap-2 rounded-xl py-2 px-4 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs text-slate-600 hover:text-slate-900 cursor-pointer"
+              >
+                <Globe className="w-3.5 h-3.5 text-slate-500" />
+                <span>3. SEO &amp; Meta</span>
               </TabsTrigger>
             </TabsList>
 
@@ -370,9 +346,27 @@ export default function CountryStudioPage() {
                   <Textarea
                     value={heroDescription}
                     onChange={(e) => setHeroDescription(e.target.value)}
-                    rows={3}
+                    rows={2}
                     placeholder="Detailed localized value proposition and engineering capability..."
                     className="rounded-xl text-xs leading-relaxed resize-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Page Content / Market Narrative (Rich Text)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">
+                      Supports markdown, headings, lists, quotes &amp; preview
+                    </span>
+                  </div>
+                  <RichTextEditor
+                    value={heroContent}
+                    onChange={setHeroContent}
+                    placeholder="Full narrative content, regional focus, market background, case studies, or strategic commerce positioning..."
+                    minHeight="260px"
                   />
                 </div>
 
@@ -381,16 +375,16 @@ export default function CountryStudioPage() {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                       <Coins className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Market Currency</span>
+                      <span>Market Currency ({ALL_CURRENCIES.length} Available)</span>
                     </label>
                     <select
                       value={heroCurrency}
                       onChange={(e) => setHeroCurrency(e.target.value)}
                       className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      {CURRENCY_OPTIONS.map((c) => (
+                      {ALL_CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
-                          {c.code} ({c.symbol}) — {c.label}
+                          {c.label}
                         </option>
                       ))}
                     </select>
@@ -398,19 +392,12 @@ export default function CountryStudioPage() {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-sky-500" />
-                      <span>Business Timezone</span>
+                      <span>Business Timezone (Type &amp; Search)</span>
                     </label>
-                    <select
+                    <TimezoneSearchSelect
                       value={heroTimezone}
-                      onChange={(e) => setHeroTimezone(e.target.value)}
-                      className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      {TIMEZONE_OPTIONS.map((t) => (
-                        <option key={t.tz} value={t.tz}>
-                          {t.label} ({t.offset})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setHeroTimezone}
+                    />
                   </div>
                 </div>
 
