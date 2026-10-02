@@ -2674,9 +2674,36 @@ export class CmsService implements OnModuleInit {
     return this.getPageBySlug(page.slug);
   }
 
+  private resolveCandidateSlugs(slug: string): string[] {
+    const raw = (slug || '').trim();
+    const lower = raw.toLowerCase();
+    const slugAliases: Record<string, string> = {
+      'our-work': 'portfolio',
+      'portfolio': 'our-work',
+      'us': 'united-states',
+      'united-states': 'us',
+      'united-kingdom': 'uk',
+      'uk': 'united-kingdom',
+      'uae': 'united-arab-emirates',
+      'united-arab-emirates': 'uae',
+      'sa': 'saudi-arabia',
+      'saudi-arabia': 'sa',
+      'au': 'australia',
+      'australia': 'au',
+      'om': 'oman',
+      'oman': 'om',
+    };
+    const alias = slugAliases[lower];
+    return Array.from(new Set([raw, lower, alias].filter(Boolean) as string[]));
+  }
+
   async updatePage(slug: string, body: any): Promise<any> {
+    const candidateSlugs = this.resolveCandidateSlugs(slug);
     const page = await this.prisma.page.findFirst({
-      where: { slug, deletedAt: null },
+      where: {
+        slug: { in: candidateSlugs },
+        deletedAt: null,
+      },
       include: { seoMetadata: true },
     });
     if (!page) {
@@ -2772,8 +2799,12 @@ export class CmsService implements OnModuleInit {
       throw new Error(`The core system page '/${slug}' is protected and cannot be deleted.`);
     }
 
+    const candidateSlugs = this.resolveCandidateSlugs(slug);
     const page = await this.prisma.page.findFirst({
-      where: { slug },
+      where: {
+        slug: { in: candidateSlugs },
+        deletedAt: null,
+      },
     });
     if (!page) {
       throw new NotFoundException(`Page '${slug}' not found`);
@@ -2785,19 +2816,10 @@ export class CmsService implements OnModuleInit {
   }
 
   async getPageBySlug(slug: string): Promise<any> {
-    const slugAliases: Record<string, string> = {
-      'our-work': 'portfolio',
-      'us': 'united-states',
-      'united-kingdom': 'uk',
-      'uae': 'united-arab-emirates',
-      'sa': 'saudi-arabia',
-      'au': 'australia',
-      'om': 'oman',
-    };
-    const targetSlug = slugAliases[slug.toLowerCase()] || slug;
+    const candidateSlugs = this.resolveCandidateSlugs(slug);
     let page = await this.prisma.page.findFirst({
       where: {
-        slug: targetSlug,
+        slug: { in: candidateSlugs },
         deletedAt: null,
       },
       include: {
@@ -2809,7 +2831,7 @@ export class CmsService implements OnModuleInit {
       },
     });
 
-    if (!page && targetSlug === 'roi-calculator') {
+    if (!page && candidateSlugs.includes('roi-calculator')) {
       page = await this.prisma.page.create({
         data: {
           slug: 'roi-calculator',
@@ -2848,7 +2870,7 @@ export class CmsService implements OnModuleInit {
     ]);
 
     // Country pages: Hero(1) Verified Results(2) Portfolio(3) Delivery(4) Client Love(5) Clients & Partners(6) Direct Engagement(7) Enterprise Architecture CTA(8)
-    const isCountryPage = page.layoutType === 'LANDING' && targetSlug !== 'home';
+    const isCountryPage = page.layoutType === 'LANDING' && page.slug !== 'home';
 
     // Fetch all required home sections in one query
     let homeVerifiedResultsSection: any = null;
@@ -3576,8 +3598,12 @@ export class CmsService implements OnModuleInit {
   }
 
   async createSection(slug: string, payload: any): Promise<any> {
+    const candidateSlugs = this.resolveCandidateSlugs(slug);
     const page = await this.prisma.page.findFirst({
-      where: { slug, deletedAt: null },
+      where: {
+        slug: { in: candidateSlugs },
+        deletedAt: null,
+      },
     });
     if (!page) throw new NotFoundException(`Page '${slug}' not found`);
 

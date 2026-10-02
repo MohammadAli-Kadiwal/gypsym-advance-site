@@ -34,6 +34,7 @@ import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../../_components/types';
 import {
   ALL_CURRENCIES,
+  getCountryMeta,
 } from '../../_components/country-locales';
 import { TimezoneSearchSelect } from '../../_components/timezone-search-select';
 
@@ -91,26 +92,32 @@ export default function CountryStudioPage() {
         setMetaTitle(seo?.metaTitle || data.title || '');
         setMetaDesc(seo?.metaDescription || data.description || '');
 
-        // Extract Hero Section payload
-        const heroSection = data.sections?.find((s) => s.componentType === 'HERO');
-        if (heroSection) {
-          const p = (heroSection.contentPayload as Record<string, any>) || {};
-          let headlineStr = data.title || '';
-          if (Array.isArray(p.headline?.segments)) {
-            headlineStr = p.headline.segments.map((seg: any) => seg.value || seg.text || '').join('');
-          }
-          setHeroTitle(headlineStr || data.title || '');
-          setHeroTitleHighlight(p.titleHighlight || '');
-          setHeroDescription(p.description?.content || data.description || '');
-          setHeroContent(p.content || p.country?.content || (data as any).content || '');
-          setHeroCurrency(p.country?.currency || 'USD');
-          setHeroTimezone(p.country?.timezone || 'America/New_York');
-          setHeroBgImage(p.backgroundMedia?.desktopImageUrl || `/images/countries/${slug}.jpg`);
-          setHeroOverlayOpacity(p.backgroundMedia?.overlayOpacity ?? 0.38);
-          setHeroCtaLabel(p.primaryCta?.label || 'Schedule an Architectural Briefing');
-          setHeroCtaUrl(p.primaryCta?.url || '#contact-inquiry');
-          setHeroClientStripTitle(p.clientStrip?.title || 'Trusted by enterprise leaders ..');
+        // Extract Hero Section payload (ignore home-inherited sections)
+        const heroSection = data.sections?.find(
+          (s) => s.componentType === 'HERO' && !s.id.startsWith('home-inherited-')
+        );
+        const p = (heroSection?.contentPayload as Record<string, any>) || {};
+        const meta = getCountryMeta(data.slug || slug, data.title, p);
+
+        let headlineStr = '';
+        if (Array.isArray(p.headline?.segments) && p.headline.segments.length > 0) {
+          headlineStr = p.headline.segments.map((seg: any) => seg.value || seg.text || '').join('');
         }
+        setHeroTitle(headlineStr || data.title || `${meta.name} E-Commerce Architecture`);
+        setHeroTitleHighlight(p.titleHighlight || '');
+        setHeroDescription(
+          p.description?.content ||
+            data.description ||
+            `Enterprise Shopify Plus development & headless digital solutions tailored for high-growth merchants in ${meta.name}.`
+        );
+        setHeroContent(p.content || p.country?.content || (data as any).content || '');
+        setHeroCurrency(p.country?.currency || meta.currency || 'USD');
+        setHeroTimezone(p.country?.timezone || meta.timezone || 'America/New_York');
+        setHeroBgImage(p.backgroundMedia?.desktopImageUrl || `/images/countries/${data.slug || slug}.jpg`);
+        setHeroOverlayOpacity(p.backgroundMedia?.overlayOpacity ?? 0.38);
+        setHeroCtaLabel(p.primaryCta?.label || 'Schedule an Architectural Briefing');
+        setHeroCtaUrl(p.primaryCta?.url || '#contact-inquiry');
+        setHeroClientStripTitle(p.clientStrip?.title || 'Trusted by enterprise leaders');
       }
     } catch {
       notify.error(`Failed to load page data for /${slug}`);
@@ -125,81 +132,94 @@ export default function CountryStudioPage() {
 
   // Handle Save
   const handleSave = async () => {
-    if (!page) return;
     setSaving(true);
     try {
-      // 1. Update Page
-      await fetchApi(`/pages/${slug}`, {
+      const targetSlug = page?.slug || slug;
+
+      // 1. Update Page & SEO Metadata
+      const updatedPage = await fetchApi<PageData>(`/pages/${targetSlug}`, {
         method: 'PUT',
         body: JSON.stringify({
-          title: pageTitle,
+          title: pageTitle || slug,
           description: heroDescription,
-          content: heroContent.trim() || undefined,
           status: pageStatus,
           seoMetadata: {
-            metaTitle: metaTitle || pageTitle,
+            metaTitle: metaTitle || pageTitle || slug,
             metaDescription: metaDesc || heroDescription,
-            canonicalUrl: `https://gypsym.com/${slug}`,
+            canonicalUrl: `https://gypsym.com/${targetSlug}`,
             robotsIndex: true,
             robotsFollow: true,
           },
         }),
       });
 
-      // 2. Update Hero Section
-      const heroSection = page.sections?.find((s) => s.componentType === 'HERO');
-      if (heroSection && heroSection.id) {
-        const curPayload = (heroSection.contentPayload as Record<string, any>) || {};
-        const updatedPayload = {
-          ...curPayload,
+      // 2. Update or Create Hero Section
+      const existingHero = (updatedPage?.sections || page?.sections)?.find(
+        (s) => s.componentType === 'HERO' && !s.id.startsWith('home-inherited-')
+      );
+      const curPayload = (existingHero?.contentPayload as Record<string, any>) || {};
+      const updatedPayload = {
+        ...curPayload,
+        content: heroContent.trim() || undefined,
+        country: {
+          ...curPayload.country,
           content: heroContent.trim() || undefined,
-          country: {
-            ...curPayload.country,
-            content: heroContent.trim() || undefined,
-            currency: heroCurrency,
-            timezone: heroTimezone,
-          },
-          headline: {
-            ...curPayload.headline,
-            segments: [
-              { value: heroTitle, type: 'text' },
-            ],
-          },
-          titleHighlight: heroTitleHighlight,
-          description: {
-            ...curPayload.description,
-            content: heroDescription,
-            enabled: true,
-          },
-          primaryCta: {
-            ...curPayload.primaryCta,
-            label: heroCtaLabel,
-            url: heroCtaUrl,
-            enabled: true,
-          },
-          backgroundMedia: {
-            ...curPayload.backgroundMedia,
-            desktopImageUrl: heroBgImage,
-            mobileImageUrl: heroBgImage,
-            overlayOpacity: heroOverlayOpacity,
-            overlayColor: '#000000',
-          },
-          clientStrip: {
-            ...curPayload.clientStrip,
-            title: heroClientStripTitle,
-            enabled: true,
-          },
-        };
+          currency: heroCurrency,
+          timezone: heroTimezone,
+        },
+        headline: {
+          ...curPayload.headline,
+          segments: [
+            { value: heroTitle || pageTitle || targetSlug, type: 'text' },
+          ],
+        },
+        titleHighlight: heroTitleHighlight,
+        description: {
+          ...curPayload.description,
+          content: heroDescription,
+          enabled: true,
+        },
+        primaryCta: {
+          ...curPayload.primaryCta,
+          label: heroCtaLabel,
+          url: heroCtaUrl,
+          enabled: true,
+        },
+        backgroundMedia: {
+          ...curPayload.backgroundMedia,
+          desktopImageUrl: heroBgImage,
+          mobileImageUrl: heroBgImage,
+          overlayOpacity: heroOverlayOpacity,
+          overlayColor: '#000000',
+        },
+        clientStrip: {
+          ...curPayload.clientStrip,
+          title: heroClientStripTitle,
+          enabled: true,
+        },
+      };
 
-        await fetchApi(`/sections/${heroSection.id}`, {
+      if (existingHero && existingHero.id) {
+        await fetchApi(`/sections/${existingHero.id}`, {
           method: 'PUT',
           body: JSON.stringify({
             contentPayload: updatedPayload,
           }),
         });
+      } else {
+        await fetchApi(`/pages/${targetSlug}/sections`, {
+          method: 'POST',
+          body: JSON.stringify({
+            sectionIdentifier: 'hero-banner',
+            componentType: 'HERO',
+            displayOrder: 1,
+            isActive: true,
+            contentPayload: updatedPayload,
+          }),
+        });
       }
 
-      notify.success(`Country page "/${slug}" saved successfully.`);
+      notify.success(`Country page "/${targetSlug}" saved successfully.`);
       await loadPageData();
     } catch (err: any) {
       notify.error(err?.message || 'Failed to save changes');
