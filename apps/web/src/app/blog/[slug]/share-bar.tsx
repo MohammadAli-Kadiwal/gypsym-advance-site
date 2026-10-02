@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Check, Copy, Twitter, Linkedin } from 'lucide-react';
+import { getSiteUrl } from '@/lib/site-url';
 
 interface ArticleShareBarProps {
   title: string;
@@ -15,7 +16,7 @@ export function ArticleShareBar({ title, slug }: ArticleShareBarProps) {
     if (typeof window !== 'undefined') {
       return window.location.href;
     }
-    return `https://gypsym.com/blog/${slug}`;
+    return `${getSiteUrl()}/blog/${slug}`;
   };
 
   const handleCopy = () => {

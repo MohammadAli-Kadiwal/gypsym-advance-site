@@ -87,16 +87,24 @@ export class EmailTemplatesController {
       duration: '30m Strategy Session',
       bookingNumber: 'BK-2026-8941',
       meetingLink: 'https://meet.google.com/gypsym-strategy-session',
-      rescheduleLink: 'http://localhost:3000/booking/calendar',
-      bookingCalendarUrl: 'http://localhost:3000/booking/calendar',
-      adminDashboardUrl: 'http://localhost:3001/content/submissions',
+      rescheduleLink: process.env.WEB_URL
+        ? `${process.env.WEB_URL.replace(/\/+$/, '')}/booking/calendar`
+        : (process.env.NODE_ENV === 'production' ? 'https://gypsym.com/booking/calendar' : 'http://localhost:3000/booking/calendar'),
+      bookingCalendarUrl: process.env.WEB_URL
+        ? `${process.env.WEB_URL.replace(/\/+$/, '')}/booking/calendar`
+        : (process.env.NODE_ENV === 'production' ? 'https://gypsym.com/booking/calendar' : 'http://localhost:3000/booking/calendar'),
+      adminDashboardUrl: process.env.ADMIN_URL
+        ? `${process.env.ADMIN_URL.replace(/\/+$/, '')}/content/submissions`
+        : (process.env.NODE_ENV === 'production' ? 'https://admin.gypsym.com/content/submissions' : 'http://localhost:3001/content/submissions'),
       receivedAt: new Date().toUTCString(),
       cancellationReason: 'Client requested reschedule due to executive board review meeting.',
       alertTitle: 'Database Connection Pool Near Capacity',
       alertLevel: 'WARNING',
       alertMessage: 'Primary PostgreSQL pool connection utilization exceeded 85% for 3 consecutive minutes.',
       sourceDetails: 'gypsym-production-db-cluster-01.us-east-1',
-      actionUrl: 'http://localhost:3001/system/health',
+      actionUrl: process.env.ADMIN_URL
+        ? `${process.env.ADMIN_URL.replace(/\/+$/, '')}/system/health`
+        : (process.env.NODE_ENV === 'production' ? 'https://admin.gypsym.com/system/health' : 'http://localhost:3001/system/health'),
       actionLabel: 'Inspect Database Metrics',
       timestamp: new Date().toUTCString(),
       projectDescription: 'Scaling past $15M ARR, seeking sub-second theme speed & checkout extensibility.',

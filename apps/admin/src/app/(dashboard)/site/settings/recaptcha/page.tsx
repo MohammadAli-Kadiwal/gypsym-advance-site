@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import {
   Card,
   CardHeader,
@@ -15,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import {
   ShieldCheck,
   KeyRound,
@@ -26,7 +26,6 @@ import {
   EyeOff,
   Sliders,
   Sparkles,
-  ArrowLeft,
   Loader2,
   HelpCircle,
 } from 'lucide-react';
@@ -160,94 +159,79 @@ export default function RecaptchaSettingsPage() {
 
   if (loading) {
     return (
-      <div className="w-full space-y-6 pb-24 animate-in fade-in-50 duration-200">
-        <div className="h-8 w-64 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-64 bg-white rounded-2xl border border-slate-200 animate-pulse" />
-      </div>
+      <AdminContentContainer variant="standard" className="space-y-6 pb-24">
+        <div className="h-8 w-64 bg-muted rounded-xl animate-pulse" />
+        <div className="h-64 bg-card rounded-2xl border border-border animate-pulse" />
+      </AdminContentContainer>
     );
   }
 
+  const statusBadge = settings.enabled && settings.isConfigured ? (
+    <Badge
+      variant="outline"
+      className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs font-mono uppercase"
+    >
+      <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600 dark:text-emerald-400" />
+      Active Protection
+    </Badge>
+  ) : settings.enabled && !settings.isConfigured ? (
+    <Badge
+      variant="outline"
+      className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs font-mono uppercase"
+    >
+      <AlertCircle className="h-3 w-3 mr-1 text-amber-600 dark:text-amber-400" />
+      Keys Incomplete
+    </Badge>
+  ) : (
+    <Badge
+      variant="outline"
+      className="bg-muted text-muted-foreground border-border text-xs font-mono uppercase"
+    >
+      Disabled
+    </Badge>
+  );
+
   return (
-    <div className="space-y-6 w-full pb-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div className="space-y-1">
-          <Link
-            href="/site/settings"
-            className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group mb-1"
+    <AdminContentContainer variant="standard" className="space-y-6 pb-24">
+      {/* ── HEADER & ACTIONS ── (Strictly NO breadcrumbs) */}
+      <AdminPageHeader
+        title="reCAPTCHA v3 & Bot Protection"
+        description="Invisible Google reCAPTCHA v3 protection against automated bot spam and credential stuffing on public forms."
+        status={statusBadge}
+        actions={
+          <Button
+            onClick={() => handleSave()}
+            disabled={saving}
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-9 px-5 text-xs font-semibold shadow-xs transition-all active:scale-[0.98] shrink-0"
           >
-            <ArrowLeft className="h-3.5 w-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Workspace Settings</span>
-          </Link>
-
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              reCAPTCHA v3 & Bot Protection
-            </h1>
-
-            {settings.enabled && settings.isConfigured ? (
-              <Badge
-                variant="outline"
-                className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-mono uppercase"
-              >
-                <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600" />
-                Active Protection
-              </Badge>
-            ) : settings.enabled && !settings.isConfigured ? (
-              <Badge
-                variant="outline"
-                className="bg-amber-50 text-amber-700 border-amber-200 text-xs font-mono uppercase"
-              >
-                <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
-                Keys Incomplete
-              </Badge>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Saving...</span>
+              </>
             ) : (
-              <Badge
-                variant="outline"
-                className="bg-slate-100 text-slate-600 border-slate-200 text-xs font-mono uppercase"
-              >
-                Disabled
-              </Badge>
+              <>
+                <Save className="h-4 w-4" />
+                <span>Save Changes</span>
+              </>
             )}
-          </div>
-
-          <p className="text-xs text-slate-500">
-            Invisible Google reCAPTCHA v3 protection against automated bot spam and credential stuffing on public forms.
-          </p>
-        </div>
-
-        <Button
-          onClick={() => handleSave()}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-5 text-xs font-semibold shadow-sm transition-all active:scale-[0.98] shrink-0"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              <span>Save Changes</span>
-            </>
-          )}
-        </Button>
-      </div>
+          </Button>
+        }
+      />
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* 1. Master Enable Switch */}
-        <Card className="rounded-2xl border-slate-200/90 shadow-xs overflow-hidden">
-          <CardHeader className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <Card className="rounded-2xl border-border bg-card shadow-xs overflow-hidden">
+          <CardHeader className="p-5 sm:p-6 border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-blue-600" />
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-bold text-card-foreground">
                     Enable reCAPTCHA v3 Bot Shield
                   </CardTitle>
                 </div>
-                <CardDescription className="text-xs text-slate-500">
+                <CardDescription className="text-xs text-muted-foreground">
                   When enabled, all public submissions must execute invisible reCAPTCHA v3 risk analysis.
                 </CardDescription>
               </div>
@@ -261,12 +245,12 @@ export default function RecaptchaSettingsPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-5 sm:p-6 text-xs text-slate-600 space-y-2">
-            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 text-blue-800">
-              <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+          <CardContent className="p-5 sm:p-6 text-xs text-muted-foreground space-y-2">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-primary/5 border border-primary/15 text-foreground">
+              <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="font-semibold text-blue-900">Zero-Friction Invisible Verification</span>
-                <p className="text-[11.5px] text-blue-700/90 leading-relaxed">
+                <span className="font-semibold text-foreground">Zero-Friction Invisible Verification</span>
+                <p className="text-[11.5px] text-muted-foreground leading-relaxed">
                   reCAPTCHA v3 never interrupts human visitors with image puzzles or checkboxes. It runs in the background and generates a behavioral risk score from 0.0 (bot) to 1.0 (human).
                 </p>
               </div>
@@ -275,12 +259,12 @@ export default function RecaptchaSettingsPage() {
         </Card>
 
         {/* 2. Google API Credentials */}
-        <Card className="rounded-2xl border-slate-200/90 shadow-xs">
-          <CardHeader className="p-5 sm:p-6 border-b border-slate-100">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
+          <CardHeader className="p-5 sm:p-6 border-b border-border/50">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-blue-600" />
-                <CardTitle className="text-sm font-bold text-slate-900">
+                <KeyRound className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-bold text-card-foreground">
                   Google reCAPTCHA v3 API Keys
                 </CardTitle>
               </div>
@@ -289,13 +273,13 @@ export default function RecaptchaSettingsPage() {
                 href="https://www.google.com/recaptcha/admin"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >
                 <span>Google reCAPTCHA Console</span>
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
-            <CardDescription className="text-xs text-slate-500 mt-1">
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Create a v3 key in the Google reCAPTCHA admin console and add your domains (e.g., localhost, gypsym.com).
             </CardDescription>
           </CardHeader>
@@ -303,8 +287,8 @@ export default function RecaptchaSettingsPage() {
           <CardContent className="p-5 sm:p-6 space-y-5">
             {/* Site Key */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Site Key <span className="font-normal text-slate-400">(Client-facing public key)</span>
+              <label className="text-xs font-bold text-foreground">
+                Site Key <span className="font-normal text-muted-foreground">(Client-facing public key)</span>
               </label>
               <Input
                 placeholder="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
@@ -312,15 +296,15 @@ export default function RecaptchaSettingsPage() {
                 onChange={(e) => setSettings({ ...settings, siteKey: e.target.value })}
                 className="font-mono text-xs h-10 rounded-xl"
               />
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 This public key is loaded in the browser to tokenize user interactions.
               </p>
             </div>
 
             {/* Secret Key */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Secret Key <span className="font-normal text-slate-400">(Server-side verification key)</span></span>
+              <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                <span>Secret Key <span className="font-normal text-muted-foreground">(Server-side verification key)</span></span>
                 {settings.hasSecretKey && !changeSecretKey && (
                   <button
                     type="button"
@@ -328,7 +312,7 @@ export default function RecaptchaSettingsPage() {
                       setChangeSecretKey(true);
                       setSecretKeyInput('');
                     }}
-                    className="text-[11px] text-blue-600 hover:underline font-semibold"
+                    className="text-[11px] text-primary hover:underline font-semibold"
                   >
                     Replace Secret Key
                   </button>
@@ -352,13 +336,13 @@ export default function RecaptchaSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowSecretKey(!showSecretKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
 
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 Stored securely on the backend server. Never exposed to web visitors.
               </p>
             </div>
@@ -366,15 +350,15 @@ export default function RecaptchaSettingsPage() {
         </Card>
 
         {/* 3. Threshold Configuration */}
-        <Card className="rounded-2xl border-slate-200/90 shadow-xs">
-          <CardHeader className="p-5 sm:p-6 border-b border-slate-100">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
+          <CardHeader className="p-5 sm:p-6 border-b border-border/50">
             <div className="flex items-center gap-2">
-              <Sliders className="h-4 w-4 text-blue-600" />
-              <CardTitle className="text-sm font-bold text-slate-900">
+              <Sliders className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-bold text-card-foreground">
                 Minimum Risk Score Threshold
               </CardTitle>
             </div>
-            <CardDescription className="text-xs text-slate-500 mt-1">
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Google reCAPTCHA v3 returns a score between 0.0 (likely bot) and 1.0 (likely human).
             </CardDescription>
           </CardHeader>
@@ -382,10 +366,10 @@ export default function RecaptchaSettingsPage() {
           <CardContent className="p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-800">
+                <span className="text-xs font-bold text-foreground">
                   Required Human Confidence Score:
                 </span>
-                <p className="text-[11.5px] text-slate-500">
+                <p className="text-[11.5px] text-muted-foreground">
                   Submissions scoring below this threshold will be immediately rejected with 400 Bad Request.
                 </p>
               </div>
@@ -410,9 +394,9 @@ export default function RecaptchaSettingsPage() {
 
             {/* Visual Threshold Bar */}
             <div className="space-y-2 pt-2">
-              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+              <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden flex">
                 <div
-                  className="h-full bg-rose-400 transition-all duration-300"
+                  className="h-full bg-rose-500 transition-all duration-300"
                   style={{ width: `${settings.minScore * 100}%` }}
                 />
                 <div
@@ -421,9 +405,9 @@ export default function RecaptchaSettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
                 <span>0.0 (Permissive)</span>
-                <span className="font-bold text-slate-700">0.5 (Recommended Standard)</span>
+                <span className="font-bold text-foreground">0.5 (Recommended Standard)</span>
                 <span>1.0 (Ultra-Strict)</span>
               </div>
             </div>
@@ -433,12 +417,12 @@ export default function RecaptchaSettingsPage() {
                 onClick={() => setSettings({ ...settings, minScore: 0.3 })}
                 className={`p-3 rounded-xl border cursor-pointer transition-all text-left ${
                   settings.minScore === 0.3
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50 bg-card'
                 }`}
               >
                 <div className="font-bold text-xs">Low (0.3)</div>
-                <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                   High tolerance. Minimal false-positives.
                 </div>
               </div>
@@ -447,15 +431,15 @@ export default function RecaptchaSettingsPage() {
                 onClick={() => setSettings({ ...settings, minScore: 0.5 })}
                 className={`p-3 rounded-xl border cursor-pointer transition-all text-left ${
                   settings.minScore === 0.5
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50 bg-card'
                 }`}
               >
                 <div className="font-bold text-xs flex items-center justify-between">
                   <span>Balanced (0.5)</span>
-                  <span className="text-[10px] font-mono font-semibold text-emerald-600">Default</span>
+                  <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">Default</span>
                 </div>
-                <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                   Enterprise standard. Optimal protection.
                 </div>
               </div>
@@ -464,12 +448,12 @@ export default function RecaptchaSettingsPage() {
                 onClick={() => setSettings({ ...settings, minScore: 0.7 })}
                 className={`p-3 rounded-xl border cursor-pointer transition-all text-left ${
                   settings.minScore === 0.7
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50 bg-card'
                 }`}
               >
                 <div className="font-bold text-xs">Strict (0.7)</div>
-                <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                   Maximum filter for high-spam environments.
                 </div>
               </div>
@@ -478,15 +462,15 @@ export default function RecaptchaSettingsPage() {
         </Card>
 
         {/* 4. Token Diagnostic Tool */}
-        <Card className="rounded-2xl border-slate-200/90 shadow-xs">
-          <CardHeader className="p-5 sm:p-6 border-b border-slate-100">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
+          <CardHeader className="p-5 sm:p-6 border-b border-border/50">
             <div className="flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-blue-600" />
-              <CardTitle className="text-sm font-bold text-slate-900">
+              <HelpCircle className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-bold text-card-foreground">
                 reCAPTCHA Token Verification Test
               </CardTitle>
             </div>
-            <CardDescription className="text-xs text-slate-500 mt-1">
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Validate that the server can successfully reach Google&apos;s siteverify API with your configured secret key.
             </CardDescription>
           </CardHeader>
@@ -522,14 +506,14 @@ export default function RecaptchaSettingsPage() {
               <div
                 className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
                   testResult.success
-                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                    : 'bg-rose-50/80 border-rose-200 text-rose-900'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-destructive/10 border-destructive/20 text-destructive'
                 }`}
               >
                 {testResult.success ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                 )}
                 <div className="space-y-0.5 min-w-0">
                   <div className="font-bold">
@@ -547,7 +531,7 @@ export default function RecaptchaSettingsPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-6 text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 px-6 text-xs font-semibold shadow-xs transition-all active:scale-[0.98]"
           >
             {saving ? (
               <>
@@ -563,6 +547,6 @@ export default function RecaptchaSettingsPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </AdminContentContainer>
   );
 }

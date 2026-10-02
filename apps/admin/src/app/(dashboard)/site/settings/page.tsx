@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { INITIAL_SITE_SETTINGS } from '@/lib/store';
 import { Save, Check, ShieldCheck, ArrowRight, Code, ShieldAlert } from 'lucide-react';
 
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+
 export default function SiteSettingsPage() {
   const [settings, setSettings] = React.useState(INITIAL_SITE_SETTINGS);
   const [saved, setSaved] = React.useState(false);
@@ -19,76 +21,72 @@ export default function SiteSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 w-full pb-24">
-      <div className="border-b border-border/40 pb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Global Enterprise Site Settings
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Corporate entity identification, primary contacts, regulatory jurisdictions, analytics scripts, and security defense.
-        </p>
-      </div>
+    <AdminContentContainer variant="standard" className="space-y-6 pb-24">
+      <AdminPageHeader
+        title="Global Enterprise Site Settings"
+        description="Corporate entity identification, primary contacts, regulatory jurisdictions, analytics scripts, and security defense."
+      />
 
       {/* Integration & Security Quick Hub Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
           href="/site/settings/scripts"
-          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all flex items-center justify-between"
+          className="group p-5 rounded-2xl bg-card border border-border/80 hover:border-primary/50 hover:shadow-md transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
               <Code className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                 Analytics & Custom Scripts
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
+              <div className="text-[11px] text-muted-foreground mt-0.5">
                 Google Analytics, Meta Pixel, GTM & &lt;head&gt; / &lt;body&gt; scripts
               </div>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all shrink-0" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
         </Link>
 
         <Link
           href="/site/settings/security"
-          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-rose-400 hover:shadow-md transition-all flex items-center justify-between"
+          className="group p-5 rounded-2xl bg-card border border-border/80 hover:border-destructive/50 hover:shadow-md transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive group-hover:scale-105 transition-transform">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
+              <div className="text-xs font-bold text-foreground group-hover:text-destructive transition-colors">
                 Security & Login Protection
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
+              <div className="text-[11px] text-muted-foreground mt-0.5">
                 Brute-force IP lockouts (5 wrong attempts) & 7-day session lifetime
               </div>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-rose-600 group-hover:translate-x-1 transition-all shrink-0" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-destructive group-hover:translate-x-1 transition-all shrink-0" />
         </Link>
 
         <Link
           href="/site/settings/recaptcha"
-          className="group p-5 rounded-2xl bg-white border border-slate-200/90 hover:border-emerald-400 hover:shadow-md transition-all flex items-center justify-between"
+          className="group p-5 rounded-2xl bg-card border border-border/80 hover:border-emerald-500/50 hover:shadow-md transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
+              <div className="text-xs font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 reCAPTCHA v3 Protection
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
+              <div className="text-[11px] text-muted-foreground mt-0.5">
                 Invisible risk analysis for public contact forms and lead acquisition
               </div>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
         </Link>
       </div>
 
@@ -177,6 +175,6 @@ export default function SiteSettingsPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </AdminContentContainer>
   );
 }

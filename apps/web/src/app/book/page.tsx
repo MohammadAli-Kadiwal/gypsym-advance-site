@@ -6,20 +6,25 @@ import { BookingCalendarSection } from '@/components/cms/booking-calendar-sectio
 import { DirectContactSection } from '@/components/cms/direct-contact-section';
 import { ClientOutcomesSection } from '@/components/cms/client-outcomes-section';
 import { ScrollReveal } from '@/components/motion';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Book a Discovery Call | Gypsym Technology',
-  description:
-    'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers. Live store audit, zero sales deck, actionable technical insights.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
+  return {
     title: 'Book a Discovery Call | Gypsym Technology',
     description:
-      'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.',
-    url: 'https://gypsym.com/book',
-  },
-};
+      'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers. Live store audit, zero sales deck, actionable technical insights.',
+    openGraph: {
+      title: 'Book a Discovery Call | Gypsym Technology',
+      description:
+        'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.',
+      url: `${siteUrl}/book`,
+    },
+  };
+}
 
 const CREDENTIAL_ITEMS: CredentialItem[] = [
   { value: '< 60m', label: 'Average Response Time', sub: 'Business Hours' },
@@ -73,8 +78,22 @@ export default async function BookPage() {
       ? heroPayload.credentials
       : CREDENTIAL_ITEMS;
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Book a Discovery Call', item: '/book' },
+  ]);
+
+  const bookSchema = buildWebPageSchema({
+    name: 'Book a Technical Discovery Session',
+    description: 'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.',
+    url: `${getSiteUrl()}/book`,
+    type: 'ContactPage',
+  });
+
   return (
     <div className="w-full">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={bookSchema} />
       {/* ── 1. Hero Section: Using Canonical SubpageHero Component ── */}
       <SubpageHero
         ariaLabel="Book Discovery Call Hero"

@@ -29,8 +29,6 @@ import {
   FileCheck,
   FileClock,
   Archive,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
   ExternalLink,
   Copy,
@@ -42,6 +40,8 @@ import { BaseRecord, ItemStatus } from '@/lib/store';
 import { ConfirmDialog } from './confirm-dialog';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api-client';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export interface ColumnDef<T> {
   key: string;
@@ -71,6 +71,7 @@ interface DataTableProps<T extends BaseRecord> {
   emptyStateDescription?: string;
   entityName?: string;
   customActions?: (item: T) => React.ReactNode;
+  tabs?: React.ReactNode;
 }
 
 export function DataTable<T extends BaseRecord>({
@@ -93,6 +94,7 @@ export function DataTable<T extends BaseRecord>({
   emptyStateDescription,
   entityName = 'item',
   customActions,
+  tabs,
 }: DataTableProps<T>) {
   const { hasPermission, user } = useAuth();
   const isSuperOrAdmin = !user || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
@@ -153,7 +155,6 @@ export function DataTable<T extends BaseRecord>({
   }, [data, selectedStatus, search, searchKeys, statusFilterKey, sortKey, sortOrder]);
 
   // Paginated Slice
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
   const paginatedData = React.useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredData.slice(start, start + pageSize);
@@ -195,26 +196,26 @@ export function DataTable<T extends BaseRecord>({
     switch (status) {
       case 'PUBLISHED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
             Published
           </span>
         );
       case 'DRAFT':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
             Draft
           </span>
         );
       case 'IN_REVIEW':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             In Review
           </span>
         );
       case 'ARCHIVED':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             Archived
           </span>
         );
@@ -291,32 +292,31 @@ export function DataTable<T extends BaseRecord>({
   const resolvedEmptyDesc = emptyStateDescription || `Create your first ${entityName} to populate this section.`;
 
   return (
-    <div className="space-y-5">
-      {/* ─── Standardized Header (No Breadcrumbs) ─────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
-          {description && (
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl">{description}</p>
-          )}
-        </div>
-
-        {onAdd && canMutate && (
-          <Button
-            onClick={onAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold rounded-xl px-4 h-10 transition-colors shrink-0"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            <span>{addButtonLabel}</span>
-          </Button>
-        )}
-      </div>
+    <AdminContentContainer variant="wide">
+      {/* ─── Standardized Header (Strictly No Breadcrumbs) ─────────── */}
+      <AdminPageHeader
+        title={title}
+        description={description}
+        tabs={tabs}
+        actions={
+          onAdd && canMutate ? (
+            <Button
+              onClick={onAdd}
+              size="sm"
+              className="gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{addButtonLabel}</span>
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* ─── Filter & Search Bar ───────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#eaedf3] shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border shadow-xs">
         {/* Search */}
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={`Search ${entityName}s...`}
             value={search}
@@ -324,12 +324,12 @@ export function DataTable<T extends BaseRecord>({
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="pl-9 pr-8 h-9 text-xs rounded-xl border-slate-200 bg-slate-50/50 focus-visible:bg-white focus-visible:border-blue-500"
+            className="pl-9 pr-8 h-9 text-xs rounded-xl border-input bg-background focus-visible:ring-primary"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -353,10 +353,10 @@ export function DataTable<T extends BaseRecord>({
                   setSelectedStatus(st.key);
                   setPage(1);
                 }}
-                className={`px-3 py-1 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {st.label}
@@ -367,10 +367,10 @@ export function DataTable<T extends BaseRecord>({
       </div>
 
       {/* ─── Main Table Container ──────────────────────────────────── */}
-      <div className="rounded-2xl border border-[#eaedf3] bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50/80 border-b border-slate-100">
+            <TableHeader className="bg-muted/40 border-b border-border">
               <TableRow>
                 <TableHead className="w-10 px-4">
                   <Checkbox
@@ -381,14 +381,14 @@ export function DataTable<T extends BaseRecord>({
                 </TableHead>
 
                 {columns.map((col) => (
-                  <TableHead key={col.key} className={`text-slate-700 font-semibold text-xs ${col.className || ''}`}>
+                  <TableHead key={col.key} className={`text-muted-foreground font-semibold text-xs ${col.className || ''}`}>
                     {col.sortable ? (
                       <button
                         onClick={() => handleSort(col.key)}
-                        className="flex items-center space-x-1 hover:text-slate-900 transition-colors font-semibold"
+                        className="flex items-center space-x-1 hover:text-foreground transition-colors font-semibold cursor-pointer"
                       >
                         <span>{col.header}</span>
-                        <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                       </button>
                     ) : (
                       <span>{col.header}</span>
@@ -396,8 +396,8 @@ export function DataTable<T extends BaseRecord>({
                   </TableHead>
                 ))}
 
-                <TableHead className="w-28 text-center text-slate-700 font-semibold text-xs">Status</TableHead>
-                <TableHead className="w-28 text-right pr-4 text-slate-700 font-semibold text-xs">Actions</TableHead>
+                <TableHead className="w-28 text-center text-muted-foreground font-semibold text-xs">Status</TableHead>
+                <TableHead className="w-28 text-right pr-4 text-muted-foreground font-semibold text-xs">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -406,20 +406,20 @@ export function DataTable<T extends BaseRecord>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length + 3}
-                    className="h-56 text-center text-slate-500 py-12"
+                    className="h-56 text-center text-muted-foreground py-12"
                   >
                     <div className="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
-                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+                      <div className="rounded-2xl bg-primary/10 p-3 text-primary">
                         <Sparkles className="h-6 w-6" />
                       </div>
-                      <div className="font-semibold text-slate-900 text-sm">{resolvedEmptyTitle}</div>
-                      <p className="text-xs text-slate-500 leading-relaxed">{resolvedEmptyDesc}</p>
+                      <div className="font-semibold text-foreground text-sm">{resolvedEmptyTitle}</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{resolvedEmptyDesc}</p>
                       {onAdd && canMutate && (
                         <Button
                           onClick={onAdd}
                           variant="outline"
                           size="sm"
-                          className="mt-2 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
+                          className="mt-2 rounded-xl border-border hover:bg-muted cursor-pointer"
                         >
                           <Plus className="h-3.5 w-3.5 mr-1" />
                           <span>{addButtonLabel}</span>
@@ -435,7 +435,7 @@ export function DataTable<T extends BaseRecord>({
                     <TableRow
                       key={item.id}
                       data-state={isSelected ? 'selected' : undefined}
-                      className="hover:bg-slate-50/75 transition-colors border-b border-slate-100 last:border-0"
+                      className="hover:bg-muted/50 transition-colors border-b border-border last:border-0"
                     >
                       <TableCell className="px-4 py-3">
                         <Checkbox
@@ -446,13 +446,30 @@ export function DataTable<T extends BaseRecord>({
                       </TableCell>
 
                       {columns.map((col) => (
-                        <TableCell key={col.key} className={`py-3 text-xs text-slate-700 ${col.className || ''}`}>
+                        <TableCell key={col.key} className={`py-3 text-xs text-foreground ${col.className || ''}`}>
                           {col.render ? col.render(item) : (item as any)[col.key] ?? '—'}
                         </TableCell>
                       ))}
 
                       <TableCell className="text-center py-3">
-                        {getStatusBadge(item.status)}
+                        {onBulkStatusChange && canMutate ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onBulkStatusChange([item.id], item.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED')
+                            }
+                            title={
+                              item.status === 'PUBLISHED'
+                                ? 'Public: Click to switch to Draft'
+                                : 'Draft: Click to publish Public'
+                            }
+                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95 inline-block"
+                          >
+                            {getStatusBadge(item.status)}
+                          </button>
+                        ) : (
+                          getStatusBadge(item.status)
+                        )}
                       </TableCell>
 
                       <TableCell className="text-right pr-4 py-3">
@@ -463,7 +480,7 @@ export function DataTable<T extends BaseRecord>({
                               variant="ghost"
                               size="sm"
                               onClick={() => onEdit(item)}
-                              className="h-8 px-2 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
+                              className="h-8 px-2 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg cursor-pointer"
                               title="Edit item"
                             >
                               <Edit2 className="h-3.5 w-3.5 mr-1" />
@@ -477,21 +494,42 @@ export function DataTable<T extends BaseRecord>({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-slate-600 rounded-lg"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl text-xs z-50 animate-in fade-in-50 zoom-in-95"
+                              className="w-44 rounded-xl border border-border bg-popover p-1.5 shadow-xl text-xs z-50 animate-in fade-in-50 zoom-in-95 text-popover-foreground"
                             >
+                              {onBulkStatusChange && canMutate && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    onBulkStatusChange([item.id], item.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED')
+                                  }
+                                  className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-muted text-foreground"
+                                >
+                                  {item.status === 'PUBLISHED' ? (
+                                    <>
+                                      <FileClock className="h-3.5 w-3.5 mr-2 text-amber-500" />
+                                      <span>Switch to Draft</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FileCheck className="h-3.5 w-3.5 mr-2 text-emerald-500" />
+                                      <span>Publish to Public</span>
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              )}
+
                               {onPreview && (
                                 <DropdownMenuItem
                                   onClick={() => onPreview(item)}
-                                  className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-slate-50 text-slate-700"
+                                  className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-muted text-foreground"
                                 >
-                                  <ExternalLink className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                  <ExternalLink className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
                                   <span>Preview</span>
                                 </DropdownMenuItem>
                               )}
@@ -499,9 +537,9 @@ export function DataTable<T extends BaseRecord>({
                               {onDuplicate && canMutate && (
                                 <DropdownMenuItem
                                   onClick={() => handleDuplicate(item)}
-                                  className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-slate-50 text-slate-700"
+                                  className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-muted text-foreground"
                                 >
-                                  <Copy className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                  <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
                                   <span>Duplicate</span>
                                 </DropdownMenuItem>
                               )}
@@ -510,12 +548,12 @@ export function DataTable<T extends BaseRecord>({
 
                               {onDelete && canDelete && (
                                 <>
-                                  <DropdownMenuSeparator className="h-px bg-slate-100 my-1" />
+                                  <DropdownMenuSeparator className="h-px bg-border my-1" />
                                   <DropdownMenuItem
                                     onClick={() => setDeleteTargetItem(item)}
-                                    className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-rose-50 text-rose-600"
+                                    className="flex items-center px-2.5 py-1.5 cursor-pointer rounded-lg hover:bg-destructive/10 text-destructive"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5 mr-2 text-rose-500" />
+                                    <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
                                     <span>Delete</span>
                                   </DropdownMenuItem>
                                 </>
@@ -533,57 +571,20 @@ export function DataTable<T extends BaseRecord>({
         </div>
 
         {/* ─── Table Footer: Pagination & Counts ─────────────────────── */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 text-xs text-slate-500 bg-white">
-          <div className="flex items-center space-x-2">
-            <span>
-              Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-              {Math.min(page * pageSize, filteredData.length)} of {filteredData.length} entries
-            </span>
-            <span className="text-slate-300">|</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
-            >
-              <option value={10}>10 per page</option>
-              <option value={25}>25 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-2 font-medium text-xs text-slate-700">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={page}
+          totalItems={filteredData.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          itemLabel={`${entityName}s`}
+        />
       </div>
 
       {/* ─── Floating Bulk Action Dock ─────────────────────────────── */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-border bg-card/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 text-card-foreground">
+          <span className="text-xs font-semibold text-foreground pr-2 border-r border-border">
             {selectedIds.size} selected
           </span>
 
@@ -592,30 +593,30 @@ export function DataTable<T extends BaseRecord>({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+                className="h-8 text-xs rounded-xl border-border hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 onClick={() => handleBulkStatus('PUBLISHED')}
               >
-                <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                <FileCheck className="h-3.5 w-3.5 mr-1" />
                 <span>Publish</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+                className="h-8 text-xs rounded-xl border-border hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
                 onClick={() => handleBulkStatus('DRAFT')}
               >
-                <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                <FileClock className="h-3.5 w-3.5 mr-1" />
                 <span>Draft</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+                className="h-8 text-xs rounded-xl border-border hover:bg-muted text-muted-foreground"
                 onClick={() => handleBulkStatus('ARCHIVED')}
               >
-                <Archive className="h-3.5 w-3.5 mr-1 text-slate-500" />
+                <Archive className="h-3.5 w-3.5 mr-1" />
                 <span>Archive</span>
               </Button>
             </>
@@ -625,7 +626,7 @@ export function DataTable<T extends BaseRecord>({
             <Button
               variant="destructive"
               size="sm"
-              className="h-8 text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+              className="h-8 text-xs rounded-xl shadow-xs"
               onClick={() => setBulkDeleteConfirm(true)}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -636,7 +637,7 @@ export function DataTable<T extends BaseRecord>({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-xs text-slate-400 hover:text-slate-600 rounded-xl ml-1"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground rounded-xl ml-1"
             onClick={() => setSelectedIds(new Set())}
           >
             Clear
@@ -665,6 +666,6 @@ export function DataTable<T extends BaseRecord>({
         variant="destructive"
         onConfirm={handleConfirmBulkDelete}
       />
-    </div>
+    </AdminContentContainer>
   );
 }

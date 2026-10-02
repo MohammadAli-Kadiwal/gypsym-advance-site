@@ -34,6 +34,22 @@ export function setupInterceptors(client: AxiosInstance): void {
     (config: InternalAxiosRequestConfig) => {
       const customConfig = config as CustomRequestConfig & InternalAxiosRequestConfig;
 
+      // 0. Dynamically resolve baseURL for IP/LAN device access
+      if (typeof window !== 'undefined' && window.location?.hostname) {
+        const currentHost = window.location.hostname;
+        if (currentHost && currentHost !== 'localhost' && config.baseURL) {
+          try {
+            const parsed = new URL(config.baseURL);
+            if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+              parsed.hostname = currentHost;
+              config.baseURL = parsed.toString().replace(/\/+$/, '');
+            }
+          } catch {
+            config.baseURL = config.baseURL.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
+          }
+        }
+      }
+
       // 1. Attach Request & Correlation IDs
       const correlationId = generateCorrelationId();
       config.headers.set('X-Correlation-ID', correlationId);

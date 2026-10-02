@@ -331,6 +331,19 @@ export function BookStudio({ onBack }: BookStudioProps) {
     }
   };
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    try {
+      await fetchApi('/pages/book', {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPageData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`Book page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
@@ -339,6 +352,7 @@ export function BookStudio({ onBack }: BookStudioProps) {
         layoutLabel="DISCOVERY SCHEDULER"
         sectionCount={3}
         status={pageData?.status || 'PUBLISHED'}
+        onStatusChange={handleStatusChange}
         saving={saving}
         loading={loading}
         onBack={onBack || (() => {})}

@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import {
   Save,
   Plus,
@@ -678,30 +679,23 @@ export default function FooterSettingsPage() {
   const brandName = branding?.companyName || entityDefaults?.companyName || 'Gypsym Technology';
 
   return (
-    <div className="space-y-6 w-full pb-24 max-w-6xl mx-auto">
-      {/* Top Header Bar — Consistent with Admin Workstation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div>
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Footer Settings
-            </h1>
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-semibold gap-1.5 py-0.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Global Component
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Configure multi-column navigation, regional market directories, brand mark, legal disclosures, and dynamic styling.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
+    <AdminContentContainer variant="wide" className="space-y-6 pb-24">
+      {/* ── Top Header Bar (Strictly No Breadcrumbs) ── */}
+      <AdminPageHeader
+        title="Footer Settings"
+        description="Configure multi-column navigation, regional market directories, brand mark, legal disclosures, and dynamic styling."
+        status={
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs font-semibold gap-1.5 py-0.5">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Global Component
+          </Badge>
+        }
+        actions={
           <Button
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-xs gap-1.5 min-w-[130px]"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-9 px-4 text-xs font-semibold shadow-xs gap-1.5 min-w-[130px]"
           >
             {saving ? (
               <>
@@ -715,8 +709,8 @@ export default function FooterSettingsPage() {
               </>
             )}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Main Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -2635,6 +2629,6 @@ export default function FooterSettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </AdminContentContainer>
   );
 }

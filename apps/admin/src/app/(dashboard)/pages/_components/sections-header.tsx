@@ -6,6 +6,8 @@ import { ArrowLeft, Save, Loader2, RefreshCw, ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
+
 interface SectionsHeaderProps {
   saving: boolean;
   loading?: boolean;
@@ -14,6 +16,7 @@ interface SectionsHeaderProps {
   layoutLabel?: string;
   sectionCount?: number;
   status?: string;
+  onStatusChange?: (status: 'PUBLISHED' | 'DRAFT' | any) => void;
   onBack: () => void;
   onSave: () => void;
   onRefresh?: () => void;
@@ -27,6 +30,7 @@ export function SectionsHeader({
   layoutLabel = 'LANDING PAGE',
   sectionCount,
   status,
+  onStatusChange,
   onBack,
   onSave,
   onRefresh,
@@ -67,12 +71,16 @@ export function SectionsHeader({
               {countLabel}
             </Badge>
           )}
-          {status && (
+          {!onStatusChange && status && (
             <Badge
               variant="outline"
-              className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 border-emerald-200"
+              className={`text-[10px] font-mono uppercase ${
+                status === 'PUBLISHED'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
             >
-              {status}
+              {status === 'PUBLISHED' ? 'PUBLIC' : status}
             </Badge>
           )}
         </div>
@@ -82,8 +90,16 @@ export function SectionsHeader({
         </p>
       </div>
 
-      {/* Right: Refresh + Preview + Save */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right: Status Toggle + Refresh + Preview + Save */}
+      <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        {onStatusChange && (
+          <StatusToggleField
+            value={status || 'PUBLISHED'}
+            onChange={(s) => onStatusChange(s)}
+            variant="compact"
+          />
+        )}
+
         {onRefresh && (
           <Button
             variant="ghost"

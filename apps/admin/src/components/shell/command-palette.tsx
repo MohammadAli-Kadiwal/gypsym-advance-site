@@ -33,10 +33,15 @@ import {
   Share2,
   Code,
   ShieldAlert,
+  Globe,
+  Copy,
+  Calculator,
+  Tags,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
 import { useSystemNotifications } from '@/lib/system-notifications-context';
+import { getSiteUrl } from '@/lib/site-url';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -143,6 +148,98 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         keywords: 'work portfolio cases client projects showcase',
       },
 
+      // Country Market Landing Pages
+      {
+        id: 'nav-country-hub',
+        title: 'Country Pages Hub',
+        subtitle: 'Manage all localized 8-section country landing pages',
+        path: '/pages/countries',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'countries global localization markets international hub',
+        badge: 'Hub',
+      },
+      {
+        id: 'nav-country-us',
+        title: 'United States (US) Market Studio',
+        subtitle: 'Enterprise US landing page & 8-section localized flow',
+        path: '/pages/countries/us',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'us usa united states america new york california dollar',
+        badge: '🇺🇸 US',
+      },
+      {
+        id: 'nav-country-uk',
+        title: 'United Kingdom (UK) Market Studio',
+        subtitle: 'Enterprise UK landing page & GBP localized architecture',
+        path: '/pages/countries/uk',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'uk united kingdom london britain pound gbp',
+        badge: '🇬🇧 UK',
+      },
+      {
+        id: 'nav-country-uae',
+        title: 'United Arab Emirates (UAE) Market Studio',
+        subtitle: 'Dubai & UAE high-conversion localized storefront',
+        path: '/pages/countries/uae',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'uae dubai abu dhabi emirates aed gulf',
+        badge: '🇦🇪 UAE',
+      },
+      {
+        id: 'nav-country-saudi',
+        title: 'Saudi Arabia (KSA) Market Studio',
+        subtitle: 'Riyadh & KSA enterprise headless commerce page',
+        path: '/pages/countries/saudi',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'saudi arabia ksa riyadh jeddah sar gulf',
+        badge: '🇸🇦 KSA',
+      },
+      {
+        id: 'nav-country-australia',
+        title: 'Australia (AU) Market Studio',
+        subtitle: 'Sydney & Melbourne high-speed edge commerce',
+        path: '/pages/countries/australia',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'australia sydney melbourne au aud oceania',
+        badge: '🇦🇺 AU',
+      },
+      {
+        id: 'nav-country-germany',
+        title: 'Germany (DE) Market Studio',
+        subtitle: 'Berlin & DACH European headless architecture',
+        path: '/pages/countries/germany',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'germany deutschland berlin munich dach euro eur',
+        badge: '🇩🇪 DE',
+      },
+      {
+        id: 'nav-country-singapore',
+        title: 'Singapore (SG) Market Studio',
+        subtitle: 'APAC regional headless flagship landing page',
+        path: '/pages/countries/singapore',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'singapore sg apac asia sgd',
+        badge: '🇸🇬 SG',
+      },
+      {
+        id: 'nav-country-canada',
+        title: 'Canada (CA) Market Studio',
+        subtitle: 'Toronto & Vancouver localized Shopify Plus page',
+        path: '/pages/countries/canada',
+        category: 'Pages',
+        icon: Globe,
+        keywords: 'canada toronto vancouver cad north america',
+        badge: '🇨🇦 CA',
+      },
+
       // Content & Collections
       {
         id: 'content-services',
@@ -197,6 +294,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         category: 'Content',
         icon: BookOpen,
         keywords: 'blog posts news editorial articles insights',
+      },
+      {
+        id: 'content-blog-categories',
+        title: 'Blog Categories Taxonomy',
+        subtitle: 'Manage dynamic blog categories, topics, and route slugs',
+        path: '/editorial/categories',
+        category: 'Content',
+        icon: Tags,
+        keywords: 'categories taxonomy topics tags blog editorial',
       },
       {
         id: 'content-inquiries',
@@ -337,6 +443,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         icon: Users,
         keywords: 'users accounts members permissions roles access iam',
       },
+      {
+        id: 'tools-roi-calculator',
+        title: 'ROI & Revenue Uplift Calculator',
+        subtitle: 'Admin sales tool: simulate prospect revenue lift from headless migration',
+        path: '/tools/roi-calculator',
+        category: 'System',
+        icon: Calculator,
+        badge: 'New',
+        keywords: 'roi calculator revenue uplift cro simulation headless sales tool ttfb',
+      },
 
       // Quick Actions
       {
@@ -355,11 +471,26 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       {
         id: 'act-toggle-theme',
         title: 'Toggle Color Theme',
-        subtitle: `Switch to ${theme === 'dark' ? 'Daylight Light' : 'Cosmic Dark'} mode`,
+        subtitle: `Switch to ${theme === 'dark' ? 'Warm Daylight (#f4f3ef)' : 'Cosmic Dark (#030712)'} mode`,
         category: 'Actions',
         icon: theme === 'dark' ? Sun : Moon,
         action: () => toggleTheme(),
-        keywords: 'theme dark light mode color daylight toggle',
+        badge: '⌘J',
+        keywords: 'theme dark light mode color daylight toggle shortcut',
+      },
+      {
+        id: 'act-view-roi-calc',
+        title: 'Interactive ROI & Revenue Uplift Calculator',
+        subtitle: 'Test live e-commerce speed acceleration simulator',
+        category: 'Actions',
+        icon: Calculator,
+        action: () => {
+          if (typeof window !== 'undefined') {
+            window.open(`${getSiteUrl()}/roi-calculator`, '_blank');
+          }
+        },
+        badge: 'New',
+        keywords: 'roi calculator revenue uplift cro simulation speed conversion',
       },
       {
         id: 'act-toggle-sidebar',
@@ -369,6 +500,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         icon: PanelLeft,
         action: () => toggleSidebar(),
         keywords: 'sidebar collapse expand toggle workspace',
+      },
+      {
+        id: 'act-copy-url',
+        title: 'Copy Current Admin URL',
+        subtitle: 'Copy active dashboard link to clipboard',
+        category: 'Actions',
+        icon: Copy,
+        action: () => {
+          if (typeof window !== 'undefined') {
+            navigator.clipboard.writeText(window.location.href);
+          }
+        },
+        keywords: 'copy link share url clipboard',
       },
       {
         id: 'act-mark-read',
@@ -491,20 +635,20 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className="p-0 max-w-2xl w-[92vw] sm:w-full overflow-hidden shadow-2xl border border-slate-200/90 bg-white rounded-2xl sm:rounded-3xl"
+        className="p-0 max-w-2xl w-[92vw] sm:w-full overflow-hidden shadow-2xl border border-border bg-card rounded-2xl sm:rounded-3xl"
       >
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 bg-slate-50/50">
-          <Search className="h-5 w-5 text-blue-600 mr-3 shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-border bg-muted/30">
+          <Search className="h-5 w-5 text-primary mr-3 shrink-0" />
           <input
-            placeholder="Type to search pages, live leads, bookings, or quick actions..."
+            placeholder="Type to search pages, country studios, live leads, bookings, or quick actions..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none font-normal"
+            className="w-full bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none font-normal"
             autoFocus
           />
 
@@ -513,7 +657,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                 title="Clear search"
               >
                 <X className="h-4 w-4" />
@@ -521,7 +665,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             )}
             <kbd
               onClick={() => onOpenChange(false)}
-              className="inline-flex items-center px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-100 text-[10px] font-mono text-slate-500 font-semibold cursor-pointer hover:bg-slate-200 transition-colors"
+              className="inline-flex items-center px-2 py-0.5 rounded-lg border border-border bg-muted text-[10px] font-mono text-muted-foreground font-semibold cursor-pointer hover:bg-muted/80 transition-colors"
             >
               ESC
             </kbd>
@@ -529,7 +673,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         </div>
 
         {/* Quick Filter Category Pills */}
-        <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-100 bg-white overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-card overflow-x-auto scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -540,8 +684,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               }}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                  ? 'bg-primary text-primary-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
               {cat}
@@ -553,12 +697,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         <div ref={listRef} className="max-h-[380px] overflow-y-auto p-2 space-y-1 divide-y-0">
           {filteredCommands.length === 0 ? (
             <div className="py-12 text-center space-y-2">
-              <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <div className="h-10 w-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center mx-auto">
                 <Search className="h-5 w-5" />
               </div>
-              <p className="text-xs font-bold text-slate-700">No matching results found</p>
-              <p className="text-[11px] text-slate-400">
-                Try searching for a page name, client inquiry, or booking appointment.
+              <p className="text-xs font-bold text-foreground">No matching results found</p>
+              <p className="text-[11px] text-muted-foreground">
+                Try searching for a page name, country, client inquiry, or booking appointment.
               </p>
             </div>
           ) : (
@@ -575,22 +719,22 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs transition-all text-left cursor-pointer group ${
                     isSelected
-                      ? 'bg-blue-50/80 text-blue-950 ring-1 ring-blue-500/30 shadow-2xs'
-                      : 'text-slate-700 hover:bg-slate-50'
+                      ? 'bg-primary/10 text-foreground ring-1 ring-primary/30 shadow-2xs'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   <div className="flex items-center space-x-3 min-w-0 pr-3">
                     <div
                       className={`p-2 rounded-xl shrink-0 transition-colors ${
                         item.category === 'Leads'
-                          ? 'bg-blue-100/70 text-blue-600'
+                          ? 'bg-primary/15 text-primary'
                           : item.category === 'Bookings'
-                          ? 'bg-emerald-100/70 text-emerald-600'
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                           : item.category === 'Actions'
-                          ? 'bg-amber-100/70 text-amber-600'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                           : item.category === 'Site'
-                          ? 'bg-violet-100/70 text-violet-600'
-                          : 'bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600'
+                          ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+                          : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -598,17 +742,17 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-slate-900 text-xs sm:text-sm truncate">
+                        <span className="font-semibold text-foreground text-xs sm:text-sm truncate">
                           {item.title}
                         </span>
                         {item.badge && (
-                          <span className="px-1.5 py-0.2 rounded-md bg-blue-100 text-blue-700 text-[9px] font-bold font-mono">
+                          <span className="px-1.5 py-0.2 rounded-md bg-primary/10 text-primary text-[9px] font-bold font-mono">
                             {item.badge}
                           </span>
                         )}
                       </div>
                       {item.subtitle && (
-                        <p className="text-[11px] text-slate-500 truncate mt-0.5 font-normal">
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5 font-normal">
                           {item.subtitle}
                         </p>
                       )}
@@ -619,23 +763,23 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                     <span
                       className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                         item.category === 'Leads'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          ? 'bg-primary/10 text-primary border-primary/20'
                           : item.category === 'Bookings'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
                           : item.category === 'Actions'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                          ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                          : 'bg-muted text-muted-foreground border-border'
                       }`}
                     >
                       {item.category}
                     </span>
 
                     {isSelected ? (
-                      <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-mono font-bold shadow-2xs">
+                      <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-mono font-bold shadow-2xs">
                         <span>↵</span>
                       </span>
                     ) : (
-                      <ArrowRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
                     )}
                   </div>
                 </button>
@@ -645,34 +789,34 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         </div>
 
         {/* Footer Navigation Bar */}
-        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="px-4 py-2.5 border-t border-border bg-muted/40 flex items-center justify-between text-[11px] text-muted-foreground">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-2xs">
+              <kbd className="px-1.5 py-0.5 rounded bg-card border border-border font-mono text-[10px] text-foreground shadow-2xs">
                 ↑
               </kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-2xs">
+              <kbd className="px-1.5 py-0.5 rounded bg-card border border-border font-mono text-[10px] text-foreground shadow-2xs">
                 ↓
               </kbd>
-              <span className="text-slate-400">navigate</span>
+              <span className="text-muted-foreground">navigate</span>
             </span>
 
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-2xs">
+              <kbd className="px-1.5 py-0.5 rounded bg-card border border-border font-mono text-[10px] text-foreground shadow-2xs">
                 ↵
               </kbd>
-              <span className="text-slate-400">select</span>
+              <span className="text-muted-foreground">select</span>
             </span>
 
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-2xs">
+              <kbd className="px-1.5 py-0.5 rounded bg-card border border-border font-mono text-[10px] text-foreground shadow-2xs">
                 esc
               </kbd>
-              <span className="text-slate-400">close</span>
+              <span className="text-muted-foreground">close</span>
             </span>
           </div>
 
-          <span className="text-slate-400 font-mono text-[10px]">
+          <span className="text-muted-foreground font-mono text-[10px]">
             {filteredCommands.length} command{filteredCommands.length === 1 ? '' : 's'}
           </span>
         </div>

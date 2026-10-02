@@ -196,7 +196,9 @@ export function HeroSection({ section }: HeroSectionProps) {
 
                 {/* Truly infinite seamless marquee using mathematically exact 50% loop */}
                 {(() => {
-                  const clientList = clientStrip.clients || [];
+                  const clientList = (clientStrip.clients || []).filter(
+                    (c: any) => c.status !== 'DRAFT' && c.isFeatured !== false && c.isActive !== false
+                  );
                   if (clientList.length === 0) return null;
 
                   // Build base set with at least 15 items so one half comfortably spans any widescreen display

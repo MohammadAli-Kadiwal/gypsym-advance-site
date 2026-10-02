@@ -30,6 +30,7 @@ import {
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService, AeoItemData } from '@/services/seo.service';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export function AeoTab() {
   const [items, setItems] = React.useState<AeoItemData[]>([]);
@@ -174,6 +175,14 @@ export function AeoTab() {
     });
   }, [items, search, topicFilter]);
 
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  const paginatedItems = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
+
   return (
     <div className="space-y-6">
       {/* Overview Card */}
@@ -209,7 +218,7 @@ export function AeoTab() {
               <Input
                 placeholder="Search questions, answers, topics or entities..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="pl-9"
               />
             </div>
@@ -218,7 +227,7 @@ export function AeoTab() {
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <select
                   value={topicFilter}
-                  onChange={(e) => setTopicFilter(e.target.value)}
+                  onChange={(e) => { setTopicFilter(e.target.value); setPage(1); }}
                   className="h-9 px-3 rounded-md border bg-background text-sm"
                 >
                   <option value="all">All Topics ({items.length})</option>
@@ -265,7 +274,7 @@ export function AeoTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredItems.map((item) => (
+                  {paginatedItems.map((item) => (
                     <tr key={item.id} className="hover:bg-muted/20 transition-colors">
                       <td className="p-3 max-w-[360px]">
                         <div className="font-semibold text-foreground text-sm flex items-start gap-1.5">
@@ -344,6 +353,17 @@ export function AeoTab() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {filteredItems.length > 0 && (
+            <TablePagination
+              currentPage={page}
+              totalItems={filteredItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="entries"
+            />
           )}
         </CardContent>
       </Card>

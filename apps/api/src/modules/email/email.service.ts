@@ -443,7 +443,9 @@ export class EmailService {
             serviceName: submission.serviceName || 'General Inquiry',
             projectDescription: submission.projectDescription || 'No details provided.',
             submittedFieldsTable: fieldsListHtml ? `<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">${fieldsListHtml}</table>` : '',
-            adminDashboardUrl: process.env.ADMIN_URL || 'http://localhost:3001/content/submissions',
+            adminDashboardUrl: process.env.ADMIN_URL
+              ? `${process.env.ADMIN_URL.replace(/\/+$/, '')}/content/submissions`
+              : (process.env.NODE_ENV === 'production' ? 'https://admin.gypsym.com/content/submissions' : 'http://localhost:3001/content/submissions'),
             receivedAt: new Date(submission.createdAt).toUTCString(),
           });
           subject = rendered.subject;
@@ -505,7 +507,9 @@ export class EmailService {
             companyName: submittedFields.companyName || 'Your Company',
             serviceName: submittedFields.serviceName || submittedFields.service || 'Solutions Architecture',
             projectDescription: submittedFields.projectDescription || submittedFields.message || 'Consultation request',
-            bookingCalendarUrl: process.env.WEB_URL ? `${process.env.WEB_URL}/booking/calendar` : 'http://localhost:3000/booking/calendar',
+            bookingCalendarUrl: process.env.WEB_URL
+              ? `${process.env.WEB_URL.replace(/\/+$/, '')}/booking/calendar`
+              : (process.env.NODE_ENV === 'production' ? 'https://gypsym.com/booking/calendar' : 'http://localhost:3000/booking/calendar'),
           });
           subject = rendered.subject;
           html = rendered.html;
@@ -574,8 +578,12 @@ export class EmailService {
       });
 
       const meetingLink = booking.meetingUrl || 'https://meet.google.com/gypsym-advisory-session';
-      const rescheduleLink = process.env.WEB_URL ? `${process.env.WEB_URL}/booking/calendar` : 'http://localhost:3000/booking/calendar';
-      const adminDashboardUrl = process.env.ADMIN_URL || 'http://localhost:3001/content/submissions';
+      const rescheduleLink = process.env.WEB_URL
+        ? `${process.env.WEB_URL.replace(/\/+$/, '')}/booking/calendar`
+        : (process.env.NODE_ENV === 'production' ? 'https://gypsym.com/booking/calendar' : 'http://localhost:3000/booking/calendar');
+      const adminDashboardUrl = process.env.ADMIN_URL
+        ? `${process.env.ADMIN_URL.replace(/\/+$/, '')}/content/submissions`
+        : (process.env.NODE_ENV === 'production' ? 'https://admin.gypsym.com/content/submissions' : 'http://localhost:3001/content/submissions');
 
       // 1. Send confirmation to client
       try {
@@ -711,7 +719,7 @@ export class EmailService {
             alertLevel: level.toUpperCase(),
             alertMessage: alert.message,
             sourceDetails: alert.sourceDetails || 'Gypsym Technology Cloud Platform',
-            actionUrl: alert.actionUrl || process.env.ADMIN_URL || 'http://localhost:3001',
+            actionUrl: alert.actionUrl || process.env.ADMIN_URL || (process.env.NODE_ENV === 'production' ? 'https://admin.gypsym.com' : 'http://localhost:3001'),
             actionLabel: alert.actionLabel || 'Access Workstation Console',
             timestamp: new Date().toUTCString(),
           });

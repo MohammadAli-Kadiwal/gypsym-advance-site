@@ -351,6 +351,19 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
     }
   };
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    try {
+      await fetchApi('/pages/contact', {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPageData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`Contact page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
@@ -359,6 +372,7 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
         layoutLabel="DIRECT INQUIRY DESK"
         sectionCount={3}
         status={pageData?.status || 'PUBLISHED'}
+        onStatusChange={handleStatusChange}
         saving={saving}
         loading={loading}
         onBack={onBack || (() => {})}

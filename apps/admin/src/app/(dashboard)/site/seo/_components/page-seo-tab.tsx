@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { PageSeoItem } from './types';
 
 interface PageSeoTabProps {
@@ -56,6 +57,14 @@ export function PageSeoTab({
     });
   }, [pages, search, statusFilter, missingOnly]);
 
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  const paginatedPages = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPages.slice(start, start + pageSize);
+  }, [filteredPages, page, pageSize]);
+
   return (
     <div className="space-y-6">
       {/* Control Bar */}
@@ -66,7 +75,10 @@ export function PageSeoTab({
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search pages by title or slug..."
                 className="pl-9 rounded-xl text-xs"
               />
@@ -74,7 +86,10 @@ export function PageSeoTab({
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
               className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
@@ -88,7 +103,10 @@ export function PageSeoTab({
               <input
                 type="checkbox"
                 checked={missingOnly}
-                onChange={(e) => setMissingOnly(e.target.checked)}
+                onChange={(e) => {
+                  setMissingOnly(e.target.checked);
+                  setPage(1);
+                }}
                 className="rounded accent-blue-600 h-4 w-4 cursor-pointer"
               />
               <span>Missing SEO Only</span>
@@ -123,7 +141,7 @@ export function PageSeoTab({
                   </td>
                 </tr>
               ) : (
-                filteredPages.map((page) => {
+                paginatedPages.map((page) => {
                   const hasCustomTitle = Boolean(page.seoMetadata.metaTitle);
                   const displayTitle = page.seoMetadata.metaTitle || page.title;
                   const titleLen = displayTitle.length;
@@ -255,6 +273,17 @@ export function PageSeoTab({
             </tbody>
           </table>
         </div>
+
+        {filteredPages.length > 0 && (
+          <TablePagination
+            currentPage={page}
+            totalItems={filteredPages.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="pages"
+          />
+        )}
       </Card>
     </div>
   );

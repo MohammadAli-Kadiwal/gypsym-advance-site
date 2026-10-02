@@ -291,6 +291,20 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
     }
   };
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    if (!page?.slug) return;
+    try {
+      await fetchApi(`/pages/${page.slug}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPage((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`Page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
@@ -299,6 +313,7 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
         layoutLabel="PAGE SECTIONS STUDIO"
         sectionCount={sections.length}
         status={page?.status || 'PUBLISHED'}
+        onStatusChange={handleStatusChange}
         saving={saving}
         loading={loading}
         onBack={onBack || (() => {})}

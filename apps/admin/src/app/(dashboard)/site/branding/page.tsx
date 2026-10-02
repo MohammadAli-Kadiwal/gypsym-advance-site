@@ -21,6 +21,7 @@ import {
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 
 function isValidHexOrHsl(val: string): boolean {
   if (!val) return false;
@@ -161,55 +162,51 @@ export default function BrandingStudioPage() {
   const activeBorderColor = previewTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
 
   return (
-    <div className="space-y-6 w-full pb-24">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2.5">
-            <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Palette className="h-5 w-5" />
-            </div>
-            <span>Branding & Visual Identity</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Manage website logo (light & dark), browser favicon, brand color palette, and canvas background tokens.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2.5 shrink-0">
+    <AdminContentContainer variant="standard">
+      <AdminPageHeader
+        title="Branding & Visual Identity"
+        description="Manage company logo (light & dark), browser favicon, brand color palette, and canvas background tokens."
+        status={
+          <div className="flex items-center gap-1.5 text-xs font-mono tracking-wider text-primary uppercase">
+            <Palette className="w-3.5 h-3.5" />
+            <span>Theme Pipeline</span>
+          </div>
+        }
+        actions={
           <Button
             onClick={() => handleSave()}
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-5 text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+            size="sm"
+            className="gap-2 shadow-xs cursor-pointer"
           >
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span>Saving...</span>
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-3.5 w-3.5" />
                 <span>Save Changes</span>
               </>
             )}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 1. Website Logo Section (Light & Dark) */}
-      <Card className="p-6 rounded-2xl border-slate-200/90 bg-white shadow-xs space-y-6">
-        <CardHeader className="p-0 border-b border-slate-100 pb-4">
+      <Card className="p-6 rounded-2xl border-border bg-card shadow-xs space-y-6">
+        <CardHeader className="p-0 border-b border-border pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-                <ImageIcon className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-bold text-foreground flex items-center space-x-2">
+                <ImageIcon className="h-4 w-4 text-primary" />
                 <span>Website Logos</span>
-                <Badge variant="outline" className="text-[10px] font-mono uppercase bg-blue-50/50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="text-[10px] font-mono uppercase bg-primary/10 text-primary border-primary/20">
                   Dual Mode Assets
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
+              <CardDescription className="text-xs text-muted-foreground mt-0.5">
                 Upload or specify high-resolution vector SVGs or PNGs for website header navigation.
               </CardDescription>
             </div>
@@ -218,7 +215,7 @@ export default function BrandingStudioPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Light Mode Logo */}
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-3">
+          <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
             <ImageUploadField
               label="Light Mode Logo (for White/Light Header)"
               description="Upload vector SVG or transparent PNG directly, or enter a URL"
@@ -230,7 +227,7 @@ export default function BrandingStudioPage() {
           </div>
 
           {/* Dark Mode Logo */}
-          <div className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-3">
+          <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
             <ImageUploadField
               label="Dark Mode Logo (for Obsidian/Dark Navbar)"
               description="Upload light/white emblem or vector SVG directly, or enter a URL"
@@ -244,13 +241,13 @@ export default function BrandingStudioPage() {
       </Card>
 
       {/* 2. Website Favicon Section with Browser Tab Mockup */}
-      <Card className="p-6 rounded-2xl border-slate-200/90 bg-white shadow-xs space-y-6">
-        <CardHeader className="p-0 border-b border-slate-100 pb-4">
-          <CardTitle className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-            <Globe className="h-4 w-4 text-blue-600" />
+      <Card className="p-6 rounded-2xl border-border bg-card shadow-xs space-y-6">
+        <CardHeader className="p-0 border-b border-border pb-4">
+          <CardTitle className="text-sm font-bold text-foreground flex items-center space-x-2">
+            <Globe className="h-4 w-4 text-primary" />
             <span>Website Favicon & Browser Tab Identity</span>
           </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
+          <CardDescription className="text-xs text-muted-foreground">
             The small icon displayed in visitor browser tabs, bookmarks, and shortcut icons.
           </CardDescription>
         </CardHeader>
@@ -265,23 +262,23 @@ export default function BrandingStudioPage() {
               onChange={(url) => setBranding({ ...branding, faviconUrl: url })}
               placeholder="/favicon.ico"
             />
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-muted-foreground">
               Standard 32x32 or 64x64 favicon. Auto-detected across mobile and desktop browser platforms.
             </p>
 
             <div className="flex items-center space-x-2 pt-2">
-              <span className="text-[11px] text-slate-500 font-medium">Quick Presets:</span>
+              <span className="text-[11px] text-muted-foreground font-medium">Quick Presets:</span>
               <button
                 type="button"
                 onClick={() => setBranding({ ...branding, faviconUrl: '/favicon.ico' })}
-                className="text-[10px] px-2.5 py-1 rounded-lg border border-slate-200 hover:border-blue-500 bg-slate-50 text-slate-700 transition-colors"
+                className="text-[10px] px-2.5 py-1 rounded-lg border border-border hover:border-primary bg-muted text-foreground transition-colors cursor-pointer"
               >
                 Default /favicon.ico
               </button>
               <button
                 type="button"
                 onClick={() => setBranding({ ...branding, faviconUrl: 'https://assets.gypsym.com/favicons/favicon.svg' })}
-                className="text-[10px] px-2.5 py-1 rounded-lg border border-slate-200 hover:border-blue-500 bg-slate-50 text-slate-700 transition-colors"
+                className="text-[10px] px-2.5 py-1 rounded-lg border border-border hover:border-primary bg-muted text-foreground transition-colors cursor-pointer"
               >
                 Vector SVG Favicon
               </button>
@@ -290,37 +287,37 @@ export default function BrandingStudioPage() {
 
           {/* Browser Tab Mockup */}
           <div className="lg:col-span-6">
-            <div className="rounded-xl border border-slate-200/90 bg-slate-100/70 p-3 shadow-2xs space-y-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block px-1">
+            <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs space-y-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block px-1">
                 Live Browser Tab Mockup
               </span>
 
               {/* Tab bar */}
-              <div className="flex items-end space-x-1 border-b border-slate-200 px-2 pt-1">
+              <div className="flex items-end space-x-1 border-b border-border px-2 pt-1">
                 {/* Active Tab */}
-                <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-t-lg border-t border-x border-slate-200 text-xs shadow-2xs max-w-[220px]">
-                  <div className="h-4 w-4 rounded-sm bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                <div className="flex items-center space-x-2 bg-card px-3 py-1.5 rounded-t-lg border-t border-x border-border text-xs shadow-2xs max-w-[220px]">
+                  <div className="h-4 w-4 rounded-sm bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shrink-0">
                     G
                   </div>
-                  <span className="text-slate-800 font-medium text-[11px] truncate">
+                  <span className="text-foreground font-medium text-[11px] truncate">
                     Gypsym Technology | Enterprise
                   </span>
-                  <X className="h-3 w-3 text-slate-400 hover:text-slate-600 cursor-pointer shrink-0" />
+                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-pointer shrink-0" />
                 </div>
 
                 {/* Inactive Tab */}
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 text-slate-400 text-xs max-w-[140px] truncate">
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 text-muted-foreground text-xs max-w-[140px] truncate">
                   <span className="truncate text-[11px]">New Tab</span>
                 </div>
               </div>
 
               {/* Address bar */}
-              <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
-                <Lock className="h-3 w-3 text-emerald-600 shrink-0" />
-                <span className="text-slate-700 font-mono text-[11px] truncate">
+              <div className="flex items-center space-x-2 bg-card px-3 py-1.5 rounded-lg border border-border text-xs">
+                <Lock className="h-3 w-3 text-emerald-500 shrink-0" />
+                <span className="text-foreground font-mono text-[11px] truncate">
                   https://gypsym.com
                 </span>
-                <span className="ml-auto text-[10px] text-slate-400">100% SSL</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">100% SSL</span>
               </div>
             </div>
           </div>
@@ -328,22 +325,22 @@ export default function BrandingStudioPage() {
       </Card>
 
       {/* 3. Brand Colors (Primary, Accent, Secondary) */}
-      <Card className="p-6 rounded-2xl border-slate-200/90 bg-white shadow-xs space-y-6">
-        <CardHeader className="p-0 border-b border-slate-100 pb-4">
-          <CardTitle className="text-sm font-bold text-slate-900">
+      <Card className="p-6 rounded-2xl border-border bg-card shadow-xs space-y-6">
+        <CardHeader className="p-0 border-b border-border pb-4">
+          <CardTitle className="text-sm font-bold text-foreground">
             Brand Semantic Colors
           </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
+          <CardDescription className="text-xs text-muted-foreground">
             Colors used for primary buttons, highlighted accents, and active UI interactive states.
           </CardDescription>
         </CardHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Primary Color */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200/90 bg-slate-50/50">
-            <label className="text-xs font-semibold text-slate-800 flex items-center justify-between">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/30">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span>Primary Brand Color</span>
-              <span className="text-[10px] font-mono text-slate-400">--primary</span>
+              <span className="text-[10px] font-mono text-muted-foreground">--primary</span>
             </label>
 
             <div className="flex items-center space-x-2">
@@ -351,12 +348,12 @@ export default function BrandingStudioPage() {
                 type="color"
                 value={branding.primaryColor || '#3b82f6'}
                 onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
-                className="h-10 w-10 rounded-xl border border-slate-300 bg-transparent cursor-pointer shrink-0"
+                className="h-10 w-10 rounded-xl border border-border bg-transparent cursor-pointer shrink-0"
               />
               <Input
                 value={branding.primaryColor || '#3b82f6'}
                 onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
-                className="text-xs font-mono rounded-xl bg-white border-slate-200"
+                className="text-xs font-mono rounded-xl bg-card border-border"
               />
             </div>
 
@@ -367,20 +364,20 @@ export default function BrandingStudioPage() {
                   key={preset.hex}
                   type="button"
                   onClick={() => setBranding({ ...branding, primaryColor: preset.hex })}
-                  className="text-[10px] px-2 py-0.5 rounded-md border border-slate-200 hover:border-blue-500 bg-white flex items-center space-x-1.5 transition-colors"
+                  className="text-[10px] px-2 py-0.5 rounded-md border border-border hover:border-primary bg-card flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: preset.hex }} />
-                  <span className="text-slate-700">{preset.label}</span>
+                  <span className="text-foreground">{preset.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Accent Color */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200/90 bg-slate-50/50">
-            <label className="text-xs font-semibold text-slate-800 flex items-center justify-between">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/30">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span>Accent Highlight Color</span>
-              <span className="text-[10px] font-mono text-slate-400">--accent</span>
+              <span className="text-[10px] font-mono text-muted-foreground">--accent</span>
             </label>
 
             <div className="flex items-center space-x-2">
@@ -388,12 +385,12 @@ export default function BrandingStudioPage() {
                 type="color"
                 value={branding.accentColor || '#60a5fa'}
                 onChange={(e) => setBranding({ ...branding, accentColor: e.target.value })}
-                className="h-10 w-10 rounded-xl border border-slate-300 bg-transparent cursor-pointer shrink-0"
+                className="h-10 w-10 rounded-xl border border-border bg-transparent cursor-pointer shrink-0"
               />
               <Input
                 value={branding.accentColor || '#60a5fa'}
                 onChange={(e) => setBranding({ ...branding, accentColor: e.target.value })}
-                className="text-xs font-mono rounded-xl bg-white border-slate-200"
+                className="text-xs font-mono rounded-xl bg-card border-border"
               />
             </div>
 
@@ -404,20 +401,20 @@ export default function BrandingStudioPage() {
                   key={preset.hex}
                   type="button"
                   onClick={() => setBranding({ ...branding, accentColor: preset.hex })}
-                  className="text-[10px] px-2 py-0.5 rounded-md border border-slate-200 hover:border-blue-500 bg-white flex items-center space-x-1.5 transition-colors"
+                  className="text-[10px] px-2 py-0.5 rounded-md border border-border hover:border-primary bg-card flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: preset.hex }} />
-                  <span className="text-slate-700">{preset.label}</span>
+                  <span className="text-foreground">{preset.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Secondary Color */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200/90 bg-slate-50/50">
-            <label className="text-xs font-semibold text-slate-800 flex items-center justify-between">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/30">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span>Secondary Tone / Border</span>
-              <span className="text-[10px] font-mono text-slate-400">--secondary</span>
+              <span className="text-[10px] font-mono text-muted-foreground">--secondary</span>
             </label>
 
             <div className="flex items-center space-x-2">
@@ -425,16 +422,16 @@ export default function BrandingStudioPage() {
                 type="color"
                 value={branding.secondaryColor || '#1e293b'}
                 onChange={(e) => setBranding({ ...branding, secondaryColor: e.target.value })}
-                className="h-10 w-10 rounded-xl border border-slate-300 bg-transparent cursor-pointer shrink-0"
+                className="h-10 w-10 rounded-xl border border-border bg-transparent cursor-pointer shrink-0"
               />
               <Input
                 value={branding.secondaryColor || '#1e293b'}
                 onChange={(e) => setBranding({ ...branding, secondaryColor: e.target.value })}
-                className="text-xs font-mono rounded-xl bg-white border-slate-200"
+                className="text-xs font-mono rounded-xl bg-card border-border"
               />
             </div>
 
-            <p className="text-[11px] text-slate-400 pt-1 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
               Provides structure for subheadings, card borders, and secondary buttons.
             </p>
           </div>
@@ -442,25 +439,25 @@ export default function BrandingStudioPage() {
       </Card>
 
       {/* 4. Canvas Background Colors (Light #F4F3EF & Dark #030712) */}
-      <Card className="p-6 rounded-2xl border-slate-200/90 bg-white shadow-xs space-y-6">
-        <CardHeader className="p-0 border-b border-slate-100 pb-4">
-          <CardTitle className="text-sm font-bold text-slate-900">
-            Website Canvas Background Colors
+      <Card className="p-6 rounded-2xl border-border bg-card shadow-xs space-y-6">
+        <CardHeader className="p-0 border-b border-border pb-4">
+          <CardTitle className="text-sm font-bold text-foreground">
+            Website &amp; Admin Canvas Background Colors
           </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Root page canvas background color tokens for daylight and obsidian dark modes.
+          <CardDescription className="text-xs text-muted-foreground">
+            Root page canvas background color tokens for warm daylight and obsidian dark modes. Synchronizes across website and admin panel.
           </CardDescription>
         </CardHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Light Mode Website Background */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200/90 bg-slate-50/50">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/30">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center space-x-1.5">
                 <Sun className="h-3.5 w-3.5 text-amber-500" />
-                <span>Light Mode Website Background</span>
+                <span>Light Mode Background (Warm Alabaster)</span>
               </label>
-              <span className="text-[10px] font-mono text-slate-400">--background</span>
+              <span className="text-[10px] font-mono text-muted-foreground">--background</span>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -468,19 +465,19 @@ export default function BrandingStudioPage() {
                 type="color"
                 value={branding.lightBgColor || '#f4f3ef'}
                 onChange={(e) => setBranding({ ...branding, lightBgColor: e.target.value })}
-                className="h-10 w-10 rounded-xl border border-slate-300 bg-transparent cursor-pointer shrink-0"
+                className="h-10 w-10 rounded-xl border border-border bg-transparent cursor-pointer shrink-0"
               />
               <Input
                 value={branding.lightBgColor || '#f4f3ef'}
                 onChange={(e) => setBranding({ ...branding, lightBgColor: e.target.value })}
-                className="text-xs font-mono rounded-xl bg-white border-slate-200"
+                className="text-xs font-mono rounded-xl bg-card border-border"
                 placeholder="#f4f3ef"
               />
             </div>
 
             {/* Presets with #F4F3EF highlighted */}
             <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] text-slate-400 font-medium">Available Presets:</span>
+              <span className="text-[10px] text-muted-foreground font-medium">Available Presets:</span>
               <div className="flex flex-wrap gap-1.5">
                 {lightBgPresets.map((preset) => {
                   const isSelected = (branding.lightBgColor || '#f4f3ef').toLowerCase() === preset.hex.toLowerCase();
@@ -489,16 +486,16 @@ export default function BrandingStudioPage() {
                       key={preset.hex}
                       type="button"
                       onClick={() => setBranding({ ...branding, lightBgColor: preset.hex })}
-                      className={`text-[10px] px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 transition-all ${
+                      className={`text-[10px] px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50 text-blue-800 font-semibold shadow-2xs'
-                          : 'border-slate-200 hover:border-slate-400 bg-white text-slate-700'
+                          ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                          : 'border-border hover:border-border/80 bg-card text-foreground'
                       }`}
                     >
                       <span className="h-2.5 w-2.5 rounded-full border border-black/10" style={{ backgroundColor: preset.hex }} />
                       <span>{preset.label}</span>
                       {preset.recommended && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-bold">
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold">
                           Active
                         </span>
                       )}
@@ -510,13 +507,13 @@ export default function BrandingStudioPage() {
           </div>
 
           {/* Dark Mode Website Background */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200/90 bg-slate-50/50">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/30">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                <Moon className="h-3.5 w-3.5 text-blue-600" />
-                <span>Dark Mode Website Background</span>
+              <label className="text-xs font-semibold text-foreground flex items-center space-x-1.5">
+                <Moon className="h-3.5 w-3.5 text-primary" />
+                <span>Dark Mode Background (Obsidian)</span>
               </label>
-              <span className="text-[10px] font-mono text-slate-400">--background</span>
+              <span className="text-[10px] font-mono text-muted-foreground">--background</span>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -524,19 +521,19 @@ export default function BrandingStudioPage() {
                 type="color"
                 value={branding.darkBgColor || '#030712'}
                 onChange={(e) => setBranding({ ...branding, darkBgColor: e.target.value })}
-                className="h-10 w-10 rounded-xl border border-slate-300 bg-transparent cursor-pointer shrink-0"
+                className="h-10 w-10 rounded-xl border border-border bg-transparent cursor-pointer shrink-0"
               />
               <Input
                 value={branding.darkBgColor || '#030712'}
                 onChange={(e) => setBranding({ ...branding, darkBgColor: e.target.value })}
-                className="text-xs font-mono rounded-xl bg-white border-slate-200"
+                className="text-xs font-mono rounded-xl bg-card border-border"
                 placeholder="#030712"
               />
             </div>
 
             {/* Presets */}
             <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] text-slate-400 font-medium">Available Presets:</span>
+              <span className="text-[10px] text-muted-foreground font-medium">Available Presets:</span>
               <div className="flex flex-wrap gap-1.5">
                 {darkBgPresets.map((preset) => {
                   const isSelected = (branding.darkBgColor || '#030712').toLowerCase() === preset.hex.toLowerCase();
@@ -545,16 +542,16 @@ export default function BrandingStudioPage() {
                       key={preset.hex}
                       type="button"
                       onClick={() => setBranding({ ...branding, darkBgColor: preset.hex })}
-                      className={`text-[10px] px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 transition-all ${
+                      className={`text-[10px] px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50 text-blue-800 font-semibold shadow-2xs'
-                          : 'border-slate-200 hover:border-slate-400 bg-white text-slate-700'
+                          ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                          : 'border-border hover:border-border/80 bg-card text-foreground'
                       }`}
                     >
                       <span className="h-2.5 w-2.5 rounded-full border border-white/20" style={{ backgroundColor: preset.hex }} />
                       <span>{preset.label}</span>
                       {preset.recommended && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-800 font-bold">
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-primary/10 text-primary font-bold">
                           Recommended
                         </span>
                       )}
@@ -568,26 +565,26 @@ export default function BrandingStudioPage() {
       </Card>
 
       {/* 5. Live Interactive Website Header & Component Preview */}
-      <Card className="p-6 rounded-2xl border-slate-200/90 bg-white shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <Card className="p-6 rounded-2xl border-border bg-card shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
+            <h2 className="text-sm font-bold text-foreground flex items-center space-x-2">
+              <Sparkles className="h-4 w-4 text-primary" />
               <span>Live Website Token Simulation</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Simulates how the chosen logos, brand colors, and canvas backgrounds look on the public website.
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Simulates how the chosen logos, brand colors, and canvas backgrounds look on the public website and admin panel.
             </p>
           </div>
 
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center space-x-1 bg-muted p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setPreviewTheme('light')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
                 previewTheme === 'light'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Sun className="h-3.5 w-3.5 text-amber-500" />
@@ -596,13 +593,13 @@ export default function BrandingStudioPage() {
             <button
               type="button"
               onClick={() => setPreviewTheme('dark')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer ${
                 previewTheme === 'dark'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Moon className="h-3.5 w-3.5 text-blue-400" />
+              <Moon className="h-3.5 w-3.5 text-primary" />
               <span>Dark Mode</span>
             </button>
           </div>
@@ -716,6 +713,6 @@ export default function BrandingStudioPage() {
           </div>
         </div>
       </Card>
-    </div>
+    </AdminContentContainer>
   );
 }

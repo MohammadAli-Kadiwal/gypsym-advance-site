@@ -12,6 +12,7 @@ export interface PartnersLayoutSettings {
   desktopRow1?: number;
   desktopRow2?: number;
   desktopRow3?: number;
+  desktopCols?: number;
   mobileCols?: 2 | 3;
   logoStyle?: 'muted' | 'grayscale' | 'monochrome' | 'original';
   logoSize?: 'small' | 'medium' | 'large';
@@ -58,11 +59,6 @@ export function PartnersSection({ section }: PartnersSectionProps) {
   const layout = p.layout || {};
   const animation = p.animation || {};
 
-  const r1 = layout.desktopRow1 ?? 8;
-  const r2 = layout.desktopRow2 ?? 6;
-  const r3 = layout.desktopRow3 ?? 4;
-  const desktopRows = [r1, r2, r3];
-
   return (
     <BrandLogosSection
       sectionIdentifier={section.sectionIdentifier || 'partners'}
@@ -71,10 +67,12 @@ export function PartnersSection({ section }: PartnersSectionProps) {
       titleHighlight={titleHighlight}
       description={description}
       cta={cta}
-      items={p.partners || []}
+      items={(p.partners || []).filter(
+        (item: any) => item.status === 'PUBLISHED' && item.status !== 'DRAFT' && item.status !== 'ARCHIVED'
+      )}
       layout={{
         displayMode: 'cards',
-        desktopRows,
+        desktopCols: layout.desktopCols,
         logoStyle: layout.logoStyle || 'original',
         logoSize: layout.logoSize || 'medium',
         mobileCols: layout.mobileCols || 3,

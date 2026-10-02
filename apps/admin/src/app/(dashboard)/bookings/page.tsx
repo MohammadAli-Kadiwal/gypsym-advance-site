@@ -24,8 +24,12 @@ import {
   Clock3,
   Sliders,
   Copy,
+  Printer,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { ExecutiveBriefingDossier, type BriefingData } from '@/components/briefing/executive-briefing-dossier';
 
 interface BookingItem {
   id: string;
@@ -82,11 +86,15 @@ export default function BookingsManagementPage() {
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('ALL');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [totalCount, setTotalCount] = React.useState(0);
   const [selectedBooking, setSelectedBooking] = React.useState<BookingItem | null>(null);
   const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null);
   const [adminNotesInput, setAdminNotesInput] = React.useState('');
   const [savingNotes, setSavingNotes] = React.useState(false);
   const [showSettings, setShowSettings] = React.useState(false);
+  const [dossierTarget, setDossierTarget] = React.useState<BriefingData | null>(null);
 
   // Metrics
   const [metrics, setMetrics] = React.useState({
@@ -102,7 +110,8 @@ export default function BookingsManagementPage() {
       const params = new URLSearchParams();
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (search.trim()) params.set('search', search.trim());
-      params.set('limit', '50');
+      params.set('page', page.toString());
+      params.set('limit', pageSize.toString());
 
       const [resList, resMetrics] = await Promise.all([
         fetchApi<any>(`/bookings?${params.toString()}`),
@@ -110,7 +119,9 @@ export default function BookingsManagementPage() {
       ]);
 
       if (resList) {
-        setItems(resList.items || resList.data?.items || []);
+        const fetchedItems = resList.items || resList.data?.items || [];
+        setItems(fetchedItems);
+        setTotalCount(resList.total ?? resList.data?.total ?? fetchedItems.length);
       }
       if (resMetrics) {
         setMetrics(resMetrics.data || resMetrics);
@@ -120,7 +131,7 @@ export default function BookingsManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [search, statusFilter, page, pageSize]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -187,106 +198,106 @@ export default function BookingsManagementPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+    <AdminContentContainer variant="wide">
+      {/* ── Unified Admin Page Header ────────────────────────────────────────── */}
+      <AdminPageHeader
+        title={
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
               <CalendarCheck className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Discovery Call Bookings
-            </h1>
+            <span>Discovery Call Bookings</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Manage scheduled Shopify discovery sessions, timezone conversions, and client notes.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSettings(true)}
-            className="text-xs font-semibold gap-1.5 h-9 rounded-xl"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Booking Settings</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => loadData()}
-            className="text-xs font-semibold gap-1.5 h-9 rounded-xl"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </Button>
-        </div>
-      </div>
+        }
+        description="Manage scheduled Shopify discovery sessions, timezone conversions, and client notes."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettings(true)}
+              className="gap-1.5 cursor-pointer"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Booking Settings</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadData()}
+              className="gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* ── KPI Metric Cards ────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
           <CardContent className="p-4">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Total Bookings
             </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-foreground mt-1">
               {metrics.total}
             </div>
-            <span className="text-[11px] text-slate-500">All-time reservations</span>
+            <span className="text-[11px] text-muted-foreground">All-time reservations</span>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
           <CardContent className="p-4">
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
               Upcoming Calls
             </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-foreground mt-1">
               {metrics.upcoming}
             </div>
-            <span className="text-[11px] text-slate-500">Confirmed & future</span>
+            <span className="text-[11px] text-muted-foreground">Confirmed & future</span>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
           <CardContent className="p-4">
-            <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
               Completed
             </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-foreground mt-1">
               {metrics.completed}
             </div>
-            <span className="text-[11px] text-slate-500">Finished strategy calls</span>
+            <span className="text-[11px] text-muted-foreground">Finished strategy calls</span>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+        <Card className="rounded-2xl border-border bg-card shadow-xs">
           <CardContent className="p-4">
             <span className="text-[11px] font-bold text-rose-500 uppercase tracking-wider">
               Cancelled / No-Show
             </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-foreground mt-1">
               {metrics.cancelled}
             </div>
-            <span className="text-[11px] text-slate-500">Inactive bookings</span>
+            <span className="text-[11px] text-muted-foreground">Inactive bookings</span>
           </CardContent>
         </Card>
       </div>
 
       {/* ── Filter & Search Bar ─────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs">
+      <Card className="rounded-2xl border-border bg-card shadow-xs">
         <CardContent className="p-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search by client, store, email or #..."
-              className="pl-9 h-9 text-xs rounded-xl bg-slate-50 border-slate-200"
+              className="pl-9 h-9 text-xs rounded-xl bg-card border-border"
             />
           </div>
 
@@ -295,11 +306,14 @@ export default function BookingsManagementPage() {
               <button
                 key={st}
                 type="button"
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+                onClick={() => {
+                  setStatusFilter(st);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                   statusFilter === st
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 {st === 'ALL' ? 'All' : STATUS_CONFIG[st]?.label || st}
@@ -310,11 +324,11 @@ export default function BookingsManagementPage() {
       </Card>
 
       {/* ── Bookings Data Table ─────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs overflow-hidden">
+      <Card className="rounded-2xl border-border bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-border bg-muted/40 text-muted-foreground font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-3 px-4">Booking #</th>
                 <th className="py-3 px-4">Client</th>
                 <th className="py-3 px-4">Store URL</th>
@@ -325,7 +339,7 @@ export default function BookingsManagementPage() {
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -419,10 +433,32 @@ export default function BookingsManagementPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              setDossierTarget({
+                                clientName: b.fullName,
+                                email: b.email,
+                                phone: b.phone,
+                                storeUrl: b.storeUrl,
+                                bookingNumber: b.bookingNumber,
+                                scheduledDate: b.date,
+                                slotTime: b.slotTime,
+                                timezone: b.timezone,
+                                notes: b.notes,
+                                status: b.status,
+                              });
+                            }}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                            title="1-Click Executive Dossier (PDF / Print)"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
                               setSelectedBooking(b);
                               setAdminNotesInput(b.adminNotes || '');
                             }}
-                            className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                             title="View Details"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -431,7 +467,7 @@ export default function BookingsManagementPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeleteTargetId(b.id)}
-                            className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50"
+                            className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -445,6 +481,17 @@ export default function BookingsManagementPage() {
             </tbody>
           </table>
         </div>
+
+        {!loading && totalCount > 0 && (
+          <TablePagination
+            currentPage={page}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="bookings"
+          />
+        )}
       </Card>
 
       {/* ── Booking Details Drawer / Modal ──────────────────────── */}
@@ -677,6 +724,15 @@ export default function BookingsManagementPage() {
         variant="destructive"
         onConfirm={handleDelete}
       />
-    </div>
+
+      {/* ── 1-Click Executive PDF Briefing Dossier Modal ──────────── */}
+      <ExecutiveBriefingDossier
+        open={Boolean(dossierTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDossierTarget(null);
+        }}
+        data={dossierTarget}
+      />
+    </AdminContentContainer>
   );
 }

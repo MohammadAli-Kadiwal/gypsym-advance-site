@@ -171,6 +171,8 @@ export function BlogHubClient({ initialPosts, categories }: BlogHubClientProps) 
                     <img
                       src={spotlightPost.coverImage}
                       alt={spotlightPost.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
                     <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
@@ -224,6 +226,8 @@ export function BlogHubClient({ initialPosts, categories }: BlogHubClientProps) 
                           <img
                             src={spotlightPost.author.avatar}
                             alt={spotlightPost.author.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-9 h-9 rounded-full object-cover border border-neutral-200"
                           />
                         )}
@@ -283,6 +287,8 @@ export function BlogHubClient({ initialPosts, categories }: BlogHubClientProps) 
                     <img
                       src={post.coverImage}
                       alt={post.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                     />
                     <div className="absolute top-3 left-3">
@@ -322,6 +328,8 @@ export function BlogHubClient({ initialPosts, categories }: BlogHubClientProps) 
                       <img
                         src={post.author.avatar}
                         alt={post.author.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-7 h-7 rounded-full object-cover border border-neutral-200"
                       />
                     )}

@@ -60,6 +60,15 @@ export class InquiriesController {
   }
 
   /**
+   * Admin: Bulk delete inquiries
+   */
+  @Post('bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteInquiries(@Body() body: { ids: string[] }): Promise<any> {
+    return this.inquiriesService.bulkDeleteInquiries(body.ids);
+  }
+
+  /**
    * Admin: Delete inquiry
    */
   @Delete(':id')

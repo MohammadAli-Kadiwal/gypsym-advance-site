@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getPublicSitemapUrls, getPublicGlobalSeo } from '@/lib/api';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // Dynamic minimal fallback to configured Site URL if DB has no pages yet
-    const baseUrl = globalSeo?.siteUrl?.replace(/\/+$/, '') || 'https://gypsym.com';
+    const baseUrl = globalSeo?.siteUrl?.replace(/\/+$/, '') || getSiteUrl();
     return [
       {
         url: baseUrl,
@@ -32,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch {
     return [
       {
-        url: 'https://gypsym.com',
+        url: getSiteUrl(),
         lastModified: new Date(),
         changeFrequency: 'daily',
         priority: 1.0,

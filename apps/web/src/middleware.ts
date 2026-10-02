@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.gypsym.com/api/v1' : 'http://localhost:4000/api/v1');
   const redirects = await fetchActiveRedirects(apiUrl);
 
   const cleanPath = pathname.toLowerCase().replace(/\/+$/, '') || '/';

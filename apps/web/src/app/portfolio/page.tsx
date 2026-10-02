@@ -9,6 +9,8 @@ import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { SubpageHero } from '@/components/ui/subpage-hero';
+import { JsonLd, buildBreadcrumbsSchema, buildPortfolioSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -168,8 +170,25 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
           { label: 'Dedicated Specialists', value: '25+', sub: 'Liquid, CRO & Theme leads' },
         ];
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Portfolio', item: '/portfolio' },
+  ]);
+
+  const portfolioSchema = buildPortfolioSchema(
+    projects.map((p) => ({
+      title: p.title,
+      description: p.description,
+      image: p.imageUrl,
+      client: p.client,
+      url: p.projectUrl || `${getSiteUrl()}/portfolio#${p.slug || p.id}`,
+    }))
+  );
+
   return (
     <div className="w-full">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={portfolioSchema} />
       {/* ── 1. Editorial Image-Based Hero Section (Home Page Aesthetic) ── */}
       <SubpageHero
         ariaLabel="Portfolio Hero"

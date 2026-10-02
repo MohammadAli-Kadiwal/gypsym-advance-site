@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService, RobotsConfigData } from '@/services/seo.service';
+import { getSiteUrl } from '@/lib/site-url';
 
 export function RobotsTab() {
   const [config, setConfig] = React.useState<RobotsConfigData>({
@@ -210,7 +211,7 @@ export function RobotsTab() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => window.open('http://localhost:3000/robots.txt', '_blank')}
+                onClick={() => window.open(`${getSiteUrl()}/robots.txt`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Live /robots.txt

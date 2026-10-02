@@ -15,6 +15,8 @@ import { ServiceFaqAccordion } from '@/components/services/service-faq';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { SubpageHero } from '@/components/ui/subpage-hero';
+import { JsonLd, buildBreadcrumbsSchema, buildServiceSchema, buildFaqSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,8 +89,38 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     },
   };
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Services', item: '/services' },
+    { name: service.title, item: `/services/${service.slug}` },
+  ]);
+
+  const serviceSchema = buildServiceSchema({
+    name: service.title,
+    description: service.tagline || service.shortDescription || service.detailedContent || service.title,
+    url: `${getSiteUrl()}/services/${service.slug}`,
+    image: '/assets/editorial/agency-hero-editorial.png',
+    offers: service.pricing?.map((t) => ({
+      name: t.name,
+      price: t.prices?.[0]?.amount ? t.prices[0].amount.replace(/[^0-9.]/g, '') : undefined,
+      priceCurrency: t.prices?.[0]?.currency || 'USD',
+    })),
+  });
+
+  const faqSchema = service.faqs?.length
+    ? buildFaqSchema(
+        service.faqs.map((f: any) => ({
+          question: f.question,
+          answer: f.answer,
+        }))
+      )
+    : null;
+
   return (
     <div className="w-full bg-[#f4f3ef] min-h-screen">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={serviceSchema} />
+      {faqSchema && <JsonLd data={faqSchema} />}
       {/* ── 1. Editorial Hero Section using Standard SubpageHero ── */}
       <SubpageHero
         ariaLabel={`${service.title} Hero`}

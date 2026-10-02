@@ -177,6 +177,25 @@ export class PortfolioService {
     });
   }
 
+  async bulkDeleteCategories(ids: string[]) {
+    if (!ids || ids.length === 0) return { count: 0 };
+    const withProjects = await this.prisma.portfolioCategory.findMany({
+      where: {
+        id: { in: ids },
+        projects: { some: {} },
+      },
+      select: { name: true },
+    });
+    if (withProjects.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete categories because projects are assigned to: ${withProjects.map((c) => c.name).join(', ')}. Please reassign or delete them first.`,
+      );
+    }
+    return this.prisma.portfolioCategory.deleteMany({
+      where: { id: { in: ids } },
+    });
+  }
+
   async reorderCategories(items: Array<{ id: string; displayOrder: number }>) {
     await this.prisma.$transaction(
       items.map((item) =>
@@ -475,6 +494,13 @@ export class PortfolioService {
 
     return this.prisma.portfolioProjectItem.delete({
       where: { id },
+    });
+  }
+
+  async bulkDeleteProjects(ids: string[]) {
+    if (!ids || ids.length === 0) return { count: 0 };
+    return this.prisma.portfolioProjectItem.deleteMany({
+      where: { id: { in: ids } },
     });
   }
 

@@ -14,11 +14,12 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "db:generate": "turbo run db:generate",
+    "package": "node scripts/package-deploy.js",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
-    "turbo": "^2.4.4"
+    "turbo": "^2.11.6"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

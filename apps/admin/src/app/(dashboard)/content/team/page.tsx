@@ -23,10 +23,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { useCmsCollection, BaseRecord } from '@/lib/store';
+import { BaseRecord, ItemStatus } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { Linkedin, Twitter, Github } from 'lucide-react';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
 
 interface TeamRecord extends BaseRecord {
   avatar?: string;
@@ -50,6 +52,7 @@ interface TeamFormState {
   twitterUrl: string;
   githubUrl: string;
   isLeadership: boolean;
+  status: ItemStatus;
 }
 
 const EMPTY_FORM: TeamFormState = {
@@ -62,7 +65,27 @@ const EMPTY_FORM: TeamFormState = {
   twitterUrl: '',
   githubUrl: '',
   isLeadership: false,
+  status: 'PUBLISHED',
 };
+
+function getInitialForm(
+  initial?: (TeamRecord & { firstName?: string; lastName?: string; roleTitle?: string }) | null
+): TeamFormState {
+  if (!initial) return EMPTY_FORM;
+  const fullName = initial.name || [initial.firstName, initial.lastName].filter(Boolean).join(' ');
+  return {
+    avatar: initial.avatar || '',
+    name: fullName || '',
+    role: initial.role || initial.roleTitle || '',
+    department: initial.department || (initial as any).department?.name || '',
+    bio: initial.bio || '',
+    linkedinUrl: initial.linkedinUrl || (initial as any).socialLinks?.linkedin || '',
+    twitterUrl: initial.twitterUrl || (initial as any).socialLinks?.twitter || '',
+    githubUrl: initial.githubUrl || (initial as any).socialLinks?.github || '',
+    isLeadership: initial.isLeadership ?? false,
+    status: (initial.status || (initial.isActive !== false ? 'PUBLISHED' : 'DRAFT')) as ItemStatus,
+  };
+}
 
 // ─── Team Member Dialog ───────────────────────────────────────────────────────
 
@@ -76,8 +99,10 @@ interface TeamDialogProps {
 }
 
 function TeamDialog({ open, mode, initial, saving, onClose, onSubmit }: TeamDialogProps) {
-  const [form, setForm] = React.useState<TeamFormState>(EMPTY_FORM);
-  const [avatarTab, setAvatarTab] = React.useState<'upload' | 'url'>('upload');
+  const [form, setForm] = React.useState<TeamFormState>(() => getInitialForm(initial));
+  const [avatarTab, setAvatarTab] = React.useState<'upload' | 'url'>(() => {
+    return initial?.avatar?.startsWith('http') ? 'url' : 'upload';
+  });
   const [fileName, setFileName] = React.useState('');
   const [fileSize, setFileSize] = React.useState('');
   const [dragActive, setDragActive] = React.useState(false);
@@ -85,31 +110,23 @@ function TeamDialog({ open, mode, initial, saving, onClose, onSubmit }: TeamDial
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    if (initial) {
-      setForm({
-        avatar: initial.avatar || '',
-        name: initial.name || '',
-        role: initial.role || '',
-        department: initial.department || '',
-        bio: initial.bio || '',
-        linkedinUrl: initial.linkedinUrl || '',
-        twitterUrl: initial.twitterUrl || '',
-        githubUrl: initial.githubUrl || '',
-        isLeadership: initial.isLeadership ?? false,
-      });
-      if (initial.avatar?.startsWith('http')) {
-        setAvatarTab('url');
+    if (open) {
+      if (initial) {
+        setForm(getInitialForm(initial));
+        if (initial.avatar?.startsWith('http')) {
+          setAvatarTab('url');
+        } else {
+          setAvatarTab('upload');
+        }
       } else {
+        setForm(EMPTY_FORM);
         setAvatarTab('upload');
       }
-    } else {
-      setForm(EMPTY_FORM);
-      setAvatarTab('upload');
+      setFileName('');
+      setFileSize('');
+      setAvatarError(false);
     }
-    setFileName('');
-    setFileSize('');
-    setAvatarError(false);
-  }, [initial, open]);
+  }, [open, initial]);
 
   const patch = <K extends keyof TeamFormState>(key: K, value: TeamFormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -451,6 +468,12 @@ function TeamDialog({ open, mode, initial, saving, onClose, onSubmit }: TeamDial
             />
           </div>
 
+          {/* Publication Status: Draft vs Public */}
+          <StatusToggleField
+            value={form.status}
+            onChange={(status) => patch('status', status)}
+          />
+
           {/* Footer Actions */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
             <Button
@@ -492,24 +515,59 @@ function TeamDialog({ open, mode, initial, saving, onClose, onSubmit }: TeamDial
 // ─── Main Team Admin Page ─────────────────────────────────────────────────────
 
 export default function TeamAdminPage() {
-  const { data, createItem, updateItem, deleteItem, bulkDelete, bulkUpdateStatus } =
-    useCmsCollection<TeamRecord>('team');
-
+  const [data, setData] = React.useState<TeamRecord[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<TeamRecord | null>(null);
   const [saving, setSaving] = React.useState(false);
 
+  const loadData = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchApi<TeamRecord[]>('/team/admin/all');
+      setData(Array.isArray(res) ? res : []);
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not load team members.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   function handleCloseEdit() {
     setEditOpen(false);
-    setEditingItem(null);
+    setTimeout(() => {
+      setEditingItem(null);
+    }, 300);
   }
 
   async function handleCreate(form: TeamFormState) {
     setSaving(true);
     try {
-      await createItem(form as any);
+      const created = await fetchApi<TeamRecord>('/team', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: form.name,
+          role: form.role,
+          department: form.department,
+          bio: form.bio,
+          avatar: form.avatar || undefined,
+          linkedinUrl: form.linkedinUrl || undefined,
+          twitterUrl: form.twitterUrl || undefined,
+          githubUrl: form.githubUrl || undefined,
+          isLeadership: form.isLeadership,
+          isActive: form.status === 'PUBLISHED',
+        }),
+      });
+      setData((prev) => [created, ...prev]);
       setCreateOpen(false);
+      notify.success(`Team member "${form.name}" created successfully.`);
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not create team member.');
     } finally {
       setSaving(false);
     }
@@ -519,10 +577,71 @@ export default function TeamAdminPage() {
     if (!editingItem) return;
     setSaving(true);
     try {
-      await updateItem(editingItem.id, form as any);
+      const updated = await fetchApi<TeamRecord>(`/team/${editingItem.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: form.name,
+          role: form.role,
+          department: form.department,
+          bio: form.bio,
+          avatar: form.avatar || undefined,
+          linkedinUrl: form.linkedinUrl || undefined,
+          twitterUrl: form.twitterUrl || undefined,
+          githubUrl: form.githubUrl || undefined,
+          isLeadership: form.isLeadership,
+          isActive: form.status === 'PUBLISHED',
+        }),
+      });
+      setData((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       handleCloseEdit();
+      notify.success(`Team member "${form.name}" updated successfully.`);
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not update team member.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await fetchApi(`/team/${id}`, { method: 'DELETE' });
+      setData((prev) => prev.filter((item) => item.id !== id));
+      notify.success('Team member deleted.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not delete team member.');
+    }
+  }
+
+  async function handleBulkDelete(ids: string[]) {
+    try {
+      await fetchApi('/team/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      });
+      setData((prev) => prev.filter((item) => !ids.includes(item.id)));
+      notify.success(`${ids.length} team member(s) deleted.`);
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not delete team members.');
+    }
+  }
+
+  async function handleBulkStatusChange(ids: string[], status: ItemStatus) {
+    try {
+      const isActive = status === 'PUBLISHED';
+      await fetchApi('/team/bulk-status', {
+        method: 'PUT',
+        body: JSON.stringify({ ids, isActive }),
+      });
+      setData((prev) =>
+        prev.map((item) =>
+          ids.includes(item.id)
+            ? { ...item, status, isActive }
+            : item
+        )
+      );
+      notify.success(`${ids.length} team member(s) updated.`);
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not update team member statuses.');
     }
   }
 
@@ -647,6 +766,15 @@ export default function TeamAdminPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="space-y-4 p-6">
+        <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse" />
+        <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <>
       <DataTable<TeamRecord>
@@ -665,13 +793,14 @@ export default function TeamAdminPage() {
           setEditingItem(item);
           setEditOpen(true);
         }}
-        onDelete={deleteItem}
-        onBulkDelete={bulkDelete}
-        onBulkStatusChange={bulkUpdateStatus}
+        onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
+        onBulkStatusChange={handleBulkStatusChange}
       />
 
       {/* Create Dialog */}
       <TeamDialog
+        key={createOpen ? 'create-team' : 'create-closed'}
         open={createOpen}
         mode="create"
         saving={saving}
@@ -681,6 +810,7 @@ export default function TeamAdminPage() {
 
       {/* Edit Dialog */}
       <TeamDialog
+        key={editingItem?.id || 'edit-team'}
         open={editOpen}
         mode="edit"
         initial={editingItem}

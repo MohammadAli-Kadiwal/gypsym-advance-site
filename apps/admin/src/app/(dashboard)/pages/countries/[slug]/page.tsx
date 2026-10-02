@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   Globe,
-  ArrowLeft,
   Save,
   RefreshCw,
   ExternalLink,
@@ -25,6 +24,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../../_components/types';
 
 const EIGHT_SECTIONS_SPEC = [
@@ -39,7 +41,6 @@ const EIGHT_SECTIONS_SPEC = [
 ];
 
 export default function CountryStudioPage() {
-  const router = useRouter();
   const params = useParams();
   const slug = typeof params?.slug === 'string' ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : '';
 
@@ -185,82 +186,73 @@ export default function CountryStudioPage() {
     }
   };
 
-  const liveUrl = `http://localhost:3000/${slug}`;
+  const liveUrl = `${getSiteUrl()}/${slug}`;
 
   if (loading) {
     return (
-      <div className="w-full py-16 flex flex-col items-center justify-center space-y-3 text-slate-400">
-        <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
-        <span className="text-xs">Loading Country Studio...</span>
-      </div>
+      <AdminContentContainer variant="wide">
+        <div className="w-full py-16 flex flex-col items-center justify-center space-y-3 text-muted-foreground">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
+          <span className="text-xs">Loading Country Studio...</span>
+        </div>
+      </AdminContentContainer>
     );
   }
 
   return (
-    <div className="w-full space-y-6 pb-24 animate-in fade-in-50 duration-200">
-      {/* Top Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push('/pages/countries')}
-            className="rounded-xl h-8 px-2.5 border-slate-200 text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            <span>Country Pages</span>
-          </Button>
+    <AdminContentContainer variant="wide">
+      {/* Unified Admin Page Header */}
+      <AdminPageHeader
+        backHref="/pages/countries"
+        backLabel="Country Pages"
+        title={pageTitle || slug}
+        status={
+          <Badge variant="outline" className="font-mono text-xs bg-primary/5 text-primary border-primary/20">
+            /{slug}
+          </Badge>
+        }
+        description="Complete 8-section localized country landing page."
+        actions={
+          <div className="flex items-center gap-2">
+            <StatusToggleField
+              value={pageStatus}
+              onChange={(s) => setPageStatus(s as any)}
+              variant="compact"
+            />
 
-          <div className="h-4 w-px bg-slate-200" />
+            <a
+              href={liveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-border text-xs font-semibold text-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
+            >
+              <span>Live Page</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                {pageTitle || slug}
-              </h1>
-              <Badge variant="outline" className="font-mono text-xs bg-blue-50 text-blue-700 border-blue-200">
-                /{slug}
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-500">
-              Complete 8-section localized country landing page.
-            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadPageData}
+              disabled={saving}
+              className="cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${saving ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className="gap-1.5 shadow-xs cursor-pointer"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              <span>Save All Changes</span>
+            </Button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <a
-            href={liveUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition-colors"
-          >
-            <span>Live Page</span>
-            <ExternalLink className="h-3 w-3" />
-          </a>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadPageData}
-            disabled={saving}
-            className="rounded-xl border-slate-200 text-xs"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${saving ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
-            <span>Save All Changes</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -587,17 +579,17 @@ export default function CountryStudioPage() {
               </div>
 
               {/* 8-Section Flow Diagram in Device */}
-              <div className="p-3 space-y-1.5 bg-slate-100 text-[9px] font-medium text-slate-600">
-                <div className="text-center font-bold text-slate-400 text-[8px] uppercase tracking-wider py-0.5">
+              <div className="p-3 space-y-1.5 bg-muted text-[9px] font-medium text-muted-foreground">
+                <div className="text-center font-bold text-muted-foreground text-[8px] uppercase tracking-wider py-0.5">
                   Page Sections Below Fold
                 </div>
                 {EIGHT_SECTIONS_SPEC.slice(1).map((sec, idx) => (
                   <div
                     key={sec.id}
-                    className="p-1.5 bg-white rounded-lg border border-slate-200/80 shadow-2xs flex items-center justify-between"
+                    className="p-1.5 bg-card rounded-lg border border-border shadow-2xs flex items-center justify-between"
                   >
-                    <span className="truncate font-semibold text-slate-800">{sec.label}</span>
-                    <span className="text-[8px] text-blue-600 font-mono">Order {idx + 2}</span>
+                    <span className="truncate font-semibold text-foreground">{sec.label}</span>
+                    <span className="text-[8px] text-primary font-mono">Order {idx + 2}</span>
                   </div>
                 ))}
               </div>
@@ -605,6 +597,6 @@ export default function CountryStudioPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminContentContainer>
   );
 }

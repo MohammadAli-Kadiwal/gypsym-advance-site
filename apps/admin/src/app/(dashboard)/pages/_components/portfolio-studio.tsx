@@ -156,6 +156,19 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
       ? p.heroCredentials
       : defaultHeroCredentials;
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    try {
+      await fetchApi('/pages/portfolio', {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPageData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`Portfolio page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-200">
       {/* ── Studio Header — shared SectionsHeader UI ── */}
@@ -167,6 +180,7 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
         layoutLabel="PORTFOLIO PAGE"
         sectionCount={pageData?.sections?.filter((s) => s.isActive).length}
         status={pageData?.status || 'PUBLISHED'}
+        onStatusChange={handleStatusChange}
         onBack={onBack || (() => window.history.back())}
         onSave={handleSave}
         onRefresh={loadData}

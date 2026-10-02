@@ -12,6 +12,7 @@ import {
   Layers,
   Mail,
   Calendar,
+  Calculator,
   ExternalLink,
   Plus,
   Settings2,
@@ -47,6 +48,10 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { notify } from '@/lib/notifications';
 import type { PageData } from './types';
 
 export type PageSlug = string;
@@ -64,8 +69,6 @@ const LAYOUT_OPTIONS = [
   { value: 'FULL_WIDTH', label: 'Full Width Canvas' },
   { value: 'MINIMAL', label: 'Minimal Clean' },
 ];
-
-const STATUS_OPTIONS = ['PUBLISHED', 'DRAFT', 'ARCHIVED'] as const;
 
 const COUNTRY_SLUGS = new Set([
   'united-states', 'us',
@@ -96,6 +99,8 @@ function getPageIcon(slug?: string) {
       return <Mail className="h-4 w-4" />;
     case 'book':
       return <Calendar className="h-4 w-4" />;
+    case 'roi-calculator':
+      return <Calculator className="h-4 w-4" />;
     default:
       return <FileText className="h-4 w-4" />;
   }
@@ -113,6 +118,8 @@ export function PagesTable({
   onCreatePage,
 }: PagesTableProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
 
   // ── Page Settings Modal State ──────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -160,6 +167,17 @@ export function PagesTable({
     }
   };
 
+  const handleToggleSingleStatus = async (page: PageData) => {
+    if (!page.slug) return;
+    const nextStatus = page.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    try {
+      await onSavePageSettings(page.slug, { status: nextStatus as any });
+      notify.success(`Page "${page.title}" status updated to ${nextStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   // ── Auto-open create dialog from URL param ────────────────────────────────
   const searchParams = useSearchParams();
   const routerInner = useRouter();
@@ -184,6 +202,11 @@ export function PagesTable({
         (p.description || '').toLowerCase().includes(q)
     );
   }, [pages, searchQuery]);
+
+  const paginatedPages = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPages.slice(start, start + pageSize);
+  }, [filteredPages, page, pageSize]);
 
   // ── Open Settings Modal ────────────────────────────────────────────────────
   function handleOpenSettings(page: PageData) {
@@ -266,57 +289,62 @@ export function PagesTable({
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2.5">
-            <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <FileText className="h-5 w-5" />
+      {/* Unified Admin Page Header */}
+      <AdminPageHeader
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <FileText className="h-4 w-4" />
             </div>
             <span>Website Pages Directory</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage all registered public website pages, SEO metadata, layouts, and live section configurations.
-          </p>
-        </div>
+          </div>
+        }
+        description="Manage all registered public website pages, SEO metadata, layouts, and live section configurations."
+        actions={
+          <div className="flex items-center gap-2.5">
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            <Badge
+              variant="outline"
+              className="text-xs font-mono bg-primary/5 text-primary border-primary/20"
+            >
+              {pages.length} Registered Pages
+            </Badge>
 
-        <div className="flex items-center gap-2.5">
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-          <Badge
-            variant="outline"
-            className="text-xs font-mono bg-blue-50/60 text-blue-700 border-blue-200"
-          >
-            {pages.length} Registered Pages
-          </Badge>
-
-          <Button
-            size="sm"
-            onClick={() => setCreateOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            <span>Add New Page</span>
-          </Button>
-        </div>
-      </div>
+            <Button
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+              className="gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add New Page</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* Search & Filter Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search pages by title, route slug, layout, or status..."
-            className="pl-9 text-xs sm:text-sm rounded-xl bg-white border-slate-200"
+            className="pl-9 text-xs sm:text-sm rounded-xl bg-card border-border"
           />
         </div>
         {searchQuery && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSearchQuery('')}
-            className="text-xs text-slate-500"
+            onClick={() => {
+              setSearchQuery('');
+              setPage(1);
+            }}
+            className="text-xs text-muted-foreground"
           >
             Clear Filter
           </Button>
@@ -324,19 +352,19 @@ export function PagesTable({
       </div>
 
       {/* Pages Table Card */}
-      <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+      <Card className="rounded-2xl border-border bg-card shadow-xs overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/30">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Active Directory ({filteredPages.length} of {pages.length})
           </span>
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-[11px] text-muted-foreground font-mono">
             {loading ? 'Synchronizing...' : 'PostgreSQL Database: Connected'}
           </span>
         </div>
 
         <Table>
-          <TableHeader className="bg-slate-50/60">
-            <TableRow className="border-b border-slate-100">
+          <TableHeader className="bg-muted/40">
+            <TableRow className="border-b border-border">
               <TableHead className="w-10 px-4 text-center">
                 <Checkbox
                   checked={
@@ -356,18 +384,18 @@ export function PagesTable({
                   aria-label="Select all pages"
                 />
               </TableHead>
-              <TableHead className="w-[320px] text-xs font-bold text-slate-600">
+              <TableHead className="w-[320px] text-xs font-bold text-muted-foreground">
                 Page Title &amp; Route
               </TableHead>
-              <TableHead className="text-xs font-bold text-slate-600">Layout</TableHead>
-              <TableHead className="text-xs font-bold text-slate-600">Sections</TableHead>
-              <TableHead className="text-xs font-bold text-slate-600">Status</TableHead>
-              <TableHead className="text-xs font-bold text-slate-600">SEO Config</TableHead>
-              <TableHead className="text-right text-xs font-bold text-slate-600">Actions</TableHead>
+              <TableHead className="text-xs font-bold text-muted-foreground">Layout</TableHead>
+              <TableHead className="text-xs font-bold text-muted-foreground">Sections</TableHead>
+              <TableHead className="text-xs font-bold text-muted-foreground">Status</TableHead>
+              <TableHead className="text-xs font-bold text-muted-foreground">SEO Config</TableHead>
+              <TableHead className="text-right text-xs font-bold text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPages.map((page) => {
+            {paginatedPages.map((page) => {
               const pageSlug = page.slug || page.id || '';
               const route = getPageRoute(page.slug);
               const sectionCount = page.sectionsCount ?? page.sections?.length ?? 0;
@@ -376,8 +404,8 @@ export function PagesTable({
               return (
                 <TableRow
                   key={pageSlug}
-                  className={`hover:bg-blue-50/30 transition-colors group ${
-                    isSelected ? 'bg-blue-50/40' : ''
+                  className={`hover:bg-muted/50 transition-colors group ${
+                    isSelected ? 'bg-primary/5' : ''
                   }`}
                 >
                   <TableCell className="px-4 py-3.5 text-center">
@@ -396,25 +424,25 @@ export function PagesTable({
                   {/* Title & Route */}
                   <TableCell className="py-3.5">
                     <div className="flex items-center space-x-3">
-                      <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         {getPageIcon(page.slug)}
                       </div>
                       <div>
-                        <div className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <div className="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                           <span className="whitespace-nowrap">{page.title}</span>
                           {page.slug === 'home' && (
-                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 whitespace-nowrap leading-tight">
+                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 whitespace-nowrap leading-tight">
                               Root /
                             </span>
                           )}
                           {isCountryPage(page.slug) && (
-                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 whitespace-nowrap leading-tight flex items-center gap-1">
+                            <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent text-accent-foreground border border-border whitespace-nowrap leading-tight flex items-center gap-1">
                               <Globe className="w-2.5 h-2.5" />
                               Country Landing
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground mt-0.5">
                           <span>{route}</span>
                           <a
                             href={route}
@@ -451,17 +479,28 @@ export function PagesTable({
 
                   {/* Status */}
                   <TableCell className="py-3.5">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSingleStatus(page)}
+                      title={
                         page.status === 'PUBLISHED'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : page.status === 'DRAFT'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
+                          ? 'Public: Click to switch to Draft'
+                          : 'Draft: Click to publish Public'
+                      }
+                      className="cursor-pointer transition-transform hover:scale-105 active:scale-95 inline-block"
                     >
-                      {page.status || 'PUBLISHED'}
-                    </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          page.status === 'PUBLISHED'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : page.status === 'DRAFT'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        {page.status === 'PUBLISHED' ? 'PUBLIC' : page.status || 'PUBLIC'}
+                      </span>
+                    </button>
                   </TableCell>
 
                   {/* SEO indicator */}
@@ -560,6 +599,17 @@ export function PagesTable({
                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Button>
                         </Link>
+                      ) : page.slug === 'roi-calculator' ? (
+                        <Link href="/pages/roi-calculator">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
                       ) : isCountryPage(page.slug) ? (
                         <Link href={`/pages/countries/${page.slug}`}>
                           <Button
@@ -600,6 +650,15 @@ export function PagesTable({
             })}
           </TableBody>
         </Table>
+
+        <TablePagination
+          currentPage={page}
+          totalItems={filteredPages.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="pages"
+        />
       </Card>
 
       {/* ── Page Settings & SEO Dialog ──────────────────────────────────────── */}
@@ -688,31 +747,12 @@ export function PagesTable({
                       ))}
                     </select>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Status</label>
-                    <div className="flex items-center gap-1.5">
-                      {STATUS_OPTIONS.map((st) => (
-                        <button
-                          key={st}
-                          type="button"
-                          onClick={() => setFormStatus(st)}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-all ${
-                            formStatus === st
-                              ? st === 'PUBLISHED'
-                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                : st === 'DRAFT'
-                                ? 'bg-amber-600 text-white border-amber-600'
-                                : 'bg-slate-700 text-white border-slate-700'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          {st}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
+
+                <StatusToggleField
+                  value={formStatus}
+                  onChange={(st) => setFormStatus(st as any)}
+                />
               </TabsContent>
 
               {/* TAB 2: SEO */}
@@ -874,24 +914,14 @@ export function PagesTable({
                     </option>
                   ))}
                 </select>
-              </div>
+                  </div>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Status</label>
-                <select
+                <StatusToggleField
                   value={createStatus}
-                  onChange={(e) => setCreateStatus(e.target.value)}
-                  className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-white p-2.5 text-slate-800"
-                >
-                  {STATUS_OPTIONS.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(st) => setCreateStatus(st as any)}
+                />
               </div>
-            </div>
-          </div>
 
           <DialogFooter>
             <Button

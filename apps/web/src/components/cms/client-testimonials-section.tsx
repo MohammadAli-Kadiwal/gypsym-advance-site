@@ -25,12 +25,12 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
 
   const rawVideos: VideoTestimonialDto[] = Array.isArray(p.videoTestimonials) ? p.videoTestimonials : [];
   const videos = rawVideos
-    .filter((v) => v && v.isActive !== false)
+    .filter((v) => v && v.isActive !== false && (v as any).status !== 'DRAFT')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const rawTestimonials: TextTestimonialDto[] = Array.isArray(p.textTestimonials) ? p.textTestimonials : [];
   const testimonials = rawTestimonials
-    .filter((t) => t && t.isActive !== false)
+    .filter((t) => t && t.isActive !== false && (t as any).status !== 'DRAFT')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   // Separate featured testimonial from regular grid testimonials
@@ -223,6 +223,7 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
                         muted
                         loop
                         playsInline
+                        preload="metadata"
                         poster={vid.thumbnailUrl}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
                       />
@@ -285,6 +286,7 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
                         muted
                         loop
                         playsInline
+                        preload="metadata"
                         poster={vid.thumbnailUrl}
                         className="w-full h-full object-cover pointer-events-none"
                       />

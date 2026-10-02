@@ -28,6 +28,7 @@ import {
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService, RedirectData } from '@/services/seo.service';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export function RedirectsTab() {
   const [redirects, setRedirects] = React.useState<RedirectData[]>([]);
@@ -170,6 +171,14 @@ export function RedirectsTab() {
     });
   }, [redirects, search, statusFilter]);
 
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  const paginatedRedirects = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredRedirects.slice(start, start + pageSize);
+  }, [filteredRedirects, page, pageSize]);
+
   const loopWarning = React.useMemo(() => {
     // Basic loop check: if any target matches another's source
     for (const r1 of redirects) {
@@ -224,7 +233,7 @@ export function RedirectsTab() {
               <Input
                 placeholder="Search redirects by source, target, or notes..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="pl-9"
               />
             </div>
@@ -232,7 +241,7 @@ export function RedirectsTab() {
               <Filter className="h-4 w-4 text-muted-foreground" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 className="h-9 px-3 rounded-md border bg-background text-sm"
               >
                 <option value="all">All Statuses</option>
@@ -279,7 +288,7 @@ export function RedirectsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredRedirects.map((item) => (
+                  {paginatedRedirects.map((item) => (
                     <tr key={item.id} className="hover:bg-muted/20 transition-colors">
                       <td className="p-3 font-mono text-xs max-w-[200px] truncate" title={item.sourceUrl}>
                         {item.sourceUrl}
@@ -340,6 +349,17 @@ export function RedirectsTab() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {filteredRedirects.length > 0 && (
+            <TablePagination
+              currentPage={page}
+              totalItems={filteredRedirects.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="redirects"
+            />
           )}
         </CardContent>
       </Card>

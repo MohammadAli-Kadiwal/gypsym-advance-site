@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getPublicRobotsRules, getPublicGlobalSeo } from '@/lib/api';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       getPublicGlobalSeo(),
     ]);
 
-    const siteUrl = (globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const siteUrl = (globalSeo?.siteUrl || getSiteUrl()).replace(/\/+$/, '');
     const sitemapUrl = config?.sitemapUrl || `${siteUrl}/sitemap.xml`;
 
     const rules = (config?.rules || [
@@ -38,7 +39,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           disallow: ['/api/', '/admin/'],
         },
       ],
-      sitemap: 'https://gypsym.com/sitemap.xml',
+      sitemap: `${getSiteUrl()}/sitemap.xml`,
     };
   }
 }

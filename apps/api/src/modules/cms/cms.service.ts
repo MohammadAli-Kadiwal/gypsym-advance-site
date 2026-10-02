@@ -1,11 +1,8 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class CmsService implements OnModuleInit {
-  private clientsCache: { data: any[]; expiresAt: number } | null = null;
-  private homepagePartnersCache: { data: any[]; expiresAt: number } | null = null;
-
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
@@ -40,9 +37,13 @@ export class CmsService implements OnModuleInit {
   }
 
   // 1. Services
-  async getServices() {
+  async getServices(status?: string) {
+    const where: any = { deletedAt: null };
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
     const services = await this.prisma.service.findMany({
-      where: { deletedAt: null },
+      where,
       orderBy: { displayOrder: 'asc' },
     });
 
@@ -82,9 +83,13 @@ export class CmsService implements OnModuleInit {
     });
   }
 
-  async getServiceBySlug(slug: string) {
+  async getServiceBySlug(slug: string, status?: string) {
+    const where: any = { slug, deletedAt: null };
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
     const s = await this.prisma.service.findFirst({
-      where: { slug, deletedAt: null },
+      where,
     });
     if (!s) throw new NotFoundException(`Service '${slug}' not found`);
 
@@ -1420,7 +1425,7 @@ export class CmsService implements OnModuleInit {
         _count: {
           select: {
             posts: {
-              where: { deletedAt: null, status: 'PUBLISHED' },
+              where: { deletedAt: null },
             },
           },
         },
@@ -1434,7 +1439,231 @@ export class CmsService implements OnModuleInit {
       name: c.name,
       description: c.description,
       postCount: c._count.posts,
+      count: c._count.posts,
     }));
+  }
+
+  async createBlogCategory(dto: { name: string; slug?: string; description?: string }): Promise<any> {
+    if (!dto.name || !dto.name.trim()) {
+      throw new BadRequestException('Category name is required.');
+    }
+
+    const name = dto.name.trim();
+    let slug = (dto.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).trim();
+
+    if (!slug) {
+      slug = `cat-${Date.now()}`;
+    }
+
+    const existing = await this.prisma.blogCategory.findUnique({
+      where: { slug },
+    });
+
+    if (existing) {
+      throw new ConflictException(`A category with route slug "${slug}" already exists.`);
+    }
+
+    const category = await this.prisma.blogCategory.create({
+      data: {
+        name,
+        slug,
+        description: dto.description?.trim() || null,
+      },
+    });
+
+    return {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      description: category.description,
+      postCount: 0,
+      count: 0,
+    };
+  }
+
+  async updateBlogCategory(
+    id: string,
+    dto: { name?: string; slug?: string; description?: string },
+  ): Promise<any> {
+    const existing = await this.prisma.blogCategory.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Category with ID ${id} not found.`);
+    }
+
+    let slug = dto.slug ? dto.slug.trim().toLowerCase() : existing.slug;
+    if (dto.slug && slug !== existing.slug) {
+      const duplicate = await this.prisma.blogCategory.findUnique({
+        where: { slug },
+      });
+      if (duplicate) {
+        throw new ConflictException(`A category with route slug "${slug}" already exists.`);
+      }
+    }
+
+    const updated = await this.prisma.blogCategory.update({
+      where: { id },
+      data: {
+        ...(dto.name ? { name: dto.name.trim() } : {}),
+        slug,
+        ...(dto.description !== undefined ? { description: dto.description?.trim() || null } : {}),
+      },
+      include: {
+        _count: {
+          select: {
+            posts: {
+              where: { deletedAt: null },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      id: updated.id,
+      slug: updated.slug,
+      name: updated.name,
+      description: updated.description,
+      postCount: updated._count.posts,
+      count: updated._count.posts,
+    };
+  }
+
+  async deleteBlogCategory(id: string, options?: { reassignToId?: string }): Promise<any> {
+    const existing = await this.prisma.blogCategory.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            posts: {
+              where: { deletedAt: null },
+            },
+          },
+        },
+      },
+    });
+
+    // Idempotent: If category does not exist or was already deleted, return success
+    if (!existing) {
+      return { success: true, message: `Category already deleted.` };
+    }
+
+    const activePostsCount = existing._count.posts;
+
+    // Rule: Block deletion if active posts exist and no destination category was specified
+    if (activePostsCount > 0 && !options?.reassignToId) {
+      throw new BadRequestException(
+        `Cannot delete category "${existing.name}" because it has ${activePostsCount} assigned active post(s). Please reassign or delete those posts first.`,
+      );
+    }
+
+    // If an explicit reassign target was passed by the user, reassign active posts to it
+    if (options?.reassignToId && options.reassignToId !== id) {
+      const specifiedTarget = await this.prisma.blogCategory.findUnique({
+        where: { id: options.reassignToId },
+      });
+      if (!specifiedTarget) {
+        throw new NotFoundException(`Target reassignment category '${options.reassignToId}' not found.`);
+      }
+      await this.prisma.blogPost.updateMany({
+        where: { categoryId: id, deletedAt: null },
+        data: { categoryId: specifiedTarget.id },
+      });
+    }
+
+    // Purge any soft-deleted posts that were previously assigned to this category (avoids FK violation without adding static fallback)
+    const softDeletedPosts = await this.prisma.blogPost.findMany({
+      where: { categoryId: id, deletedAt: { not: null } },
+      select: { id: true },
+    });
+    const postIds = softDeletedPosts.map((p) => p.id);
+    if (postIds.length > 0) {
+      await this.prisma.blogPostTag.deleteMany({ where: { postId: { in: postIds } } });
+      await this.prisma.blogPostRevision.deleteMany({ where: { postId: { in: postIds } } });
+      await this.prisma.seoMetadata.deleteMany({ where: { blogPostId: { in: postIds } } });
+      await this.prisma.blogPost.deleteMany({ where: { id: { in: postIds } } });
+    }
+
+    // Disassociate child categories
+    await this.prisma.blogCategory.updateMany({
+      where: { parentId: id },
+      data: { parentId: null },
+    });
+
+    await this.prisma.blogCategory.delete({
+      where: { id },
+    });
+
+    return { success: true, message: `Category "${existing.name}" has been deleted.` };
+  }
+
+  async bulkDeleteBlogCategories(ids: string[], options?: { reassignToId?: string }): Promise<{ count: number }> {
+    if (!ids || ids.length === 0) return { count: 0 };
+    const uniqueIds = [...new Set(ids)];
+
+    // Check if any of these categories have active posts assigned
+    const withActivePosts = await this.prisma.blogCategory.findMany({
+      where: {
+        id: { in: uniqueIds },
+        posts: { some: { deletedAt: null } },
+      },
+      select: {
+        name: true,
+        _count: {
+          select: {
+            posts: { where: { deletedAt: null } },
+          },
+        },
+      },
+    });
+
+    if (withActivePosts.length > 0 && !options?.reassignToId) {
+      const names = withActivePosts.map((c) => `"${c.name}" (${c._count.posts} posts)`).join(', ');
+      throw new BadRequestException(
+        `Cannot delete the following categories because they have assigned active posts: ${names}. Please reassign or delete their posts first.`,
+      );
+    }
+
+    // If a reassign target was passed by the user, reassign active posts
+    if (options?.reassignToId && !uniqueIds.includes(options.reassignToId)) {
+      const specifiedTarget = await this.prisma.blogCategory.findUnique({
+        where: { id: options.reassignToId },
+      });
+      if (!specifiedTarget) {
+        throw new NotFoundException(`Target reassignment category '${options.reassignToId}' not found.`);
+      }
+      await this.prisma.blogPost.updateMany({
+        where: { categoryId: { in: uniqueIds }, deletedAt: null },
+        data: { categoryId: specifiedTarget.id },
+      });
+    }
+
+    // Purge any soft-deleted posts referencing these categories (avoids FK violation without adding static fallback)
+    const softDeletedPosts = await this.prisma.blogPost.findMany({
+      where: { categoryId: { in: uniqueIds }, deletedAt: { not: null } },
+      select: { id: true },
+    });
+    const postIds = softDeletedPosts.map((p) => p.id);
+    if (postIds.length > 0) {
+      await this.prisma.blogPostTag.deleteMany({ where: { postId: { in: postIds } } });
+      await this.prisma.blogPostRevision.deleteMany({ where: { postId: { in: postIds } } });
+      await this.prisma.seoMetadata.deleteMany({ where: { blogPostId: { in: postIds } } });
+      await this.prisma.blogPost.deleteMany({ where: { id: { in: postIds } } });
+    }
+
+    // Disassociate child categories
+    await this.prisma.blogCategory.updateMany({
+      where: { parentId: { in: uniqueIds } },
+      data: { parentId: null },
+    });
+
+    const res = await this.prisma.blogCategory.deleteMany({
+      where: { id: { in: uniqueIds } },
+    });
+
+    return { count: res.count };
   }
 
   async getBlogPosts(query?: { category?: string; search?: string; limit?: number }): Promise<any[]> {
@@ -1843,51 +2072,233 @@ export class CmsService implements OnModuleInit {
   async getTeam() {
     const members = await this.prisma.teamMember.findMany({
       where: { isActive: true },
-      include: { department: true },
+      include: { department: true, avatar: true },
       orderBy: { displayOrder: 'asc' },
     });
 
-    return members.map((m) => ({
+    return members.map((m) => this.mapTeamMember(m));
+  }
+
+  /** Map a TeamMember DB row to the public-facing shape */
+  private mapTeamMember(m: any) {
+    const avatarUrl = this.logoUrlFromMedia(m.avatar) || null;
+    return {
       id: m.id,
       slug: m.slug,
       name: `${m.firstName} ${m.lastName}`,
+      firstName: m.firstName,
+      lastName: m.lastName,
       role: m.roleTitle,
       department: m.department?.name || 'Executive Leadership',
       bio: m.bio || '',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-      socialLinks: {
-        linkedin: m.linkedinUrl || 'https://linkedin.com/company/gypsym',
-        twitter: m.twitterUrl || 'https://twitter.com/gypsymtech',
-        github: m.githubUrl || 'https://github.com/gypsym',
+      avatar: avatarUrl,
+      isLeadership: m.isLeadership,
+      displayOrder: m.displayOrder,
+      isActive: m.isActive,
+      status: m.isActive ? 'PUBLISHED' : 'DRAFT',
+      linkedinUrl: m.linkedinUrl || null,
+      twitterUrl: m.twitterUrl || null,
+      githubUrl: m.githubUrl || null,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+    };
+  }
+
+  /** Admin: list ALL team members (active + inactive) */
+  async getAllTeamAdmin() {
+    const members = await this.prisma.teamMember.findMany({
+      include: { department: true, avatar: true },
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+    return members.map((m) => this.mapTeamMember(m));
+  }
+
+  /** Admin: create team member */
+  async createTeamMember(body: {
+    name: string;
+    role: string;
+    department?: string;
+    bio?: string;
+    avatar?: string;
+    linkedinUrl?: string;
+    twitterUrl?: string;
+    githubUrl?: string;
+    isLeadership?: boolean;
+    displayOrder?: number;
+    isActive?: boolean;
+  }) {
+    const parts = (body.name || 'New Member').trim().split(' ');
+    const firstName = parts[0] || 'New';
+    const lastName = parts.slice(1).join(' ') || '';
+    const baseSlug = `${firstName}-${lastName}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    // Ensure slug uniqueness
+    let slug = baseSlug || 'member';
+    const existing = await this.prisma.teamMember.count({ where: { slug } });
+    if (existing > 0) slug = `${slug}-${Date.now()}`;
+
+    // Resolve or create department
+    const deptName = (body.department || 'General').trim();
+    let deptSlug = deptName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    let dept = await this.prisma.department.findFirst({ where: { slug: deptSlug } });
+    if (!dept) {
+      dept = await this.prisma.department.create({ data: { name: deptName, slug: deptSlug } });
+    }
+
+    const member = await this.prisma.teamMember.create({
+      data: {
+        slug,
+        firstName,
+        lastName,
+        roleTitle: body.role || 'Team Member',
+        departmentId: dept.id,
+        bio: body.bio || null,
+        linkedinUrl: body.linkedinUrl || null,
+        twitterUrl: body.twitterUrl || null,
+        githubUrl: body.githubUrl || null,
+        isLeadership: body.isLeadership ?? false,
+        displayOrder: body.displayOrder ?? 0,
+        isActive: body.isActive ?? true,
       },
-    }));
+      include: { department: true, avatar: true },
+    });
+
+    return this.mapTeamMember(member);
+  }
+
+  /** Admin: update team member */
+  async updateTeamMember(
+    id: string,
+    body: {
+      name?: string;
+      role?: string;
+      department?: string;
+      bio?: string;
+      avatar?: string;
+      linkedinUrl?: string;
+      twitterUrl?: string;
+      githubUrl?: string;
+      isLeadership?: boolean;
+      displayOrder?: number;
+      isActive?: boolean;
+    },
+  ) {
+    const existing = await this.prisma.teamMember.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Team member with ID ${id} not found.`);
+
+    const updateData: any = {};
+
+    if (body.name !== undefined) {
+      const parts = body.name.trim().split(' ');
+      const firstName = parts[0] || 'Member';
+      const lastName = parts.slice(1).join(' ') || '';
+      updateData.firstName = firstName;
+      updateData.lastName = lastName;
+    }
+    if (body.role !== undefined) updateData.roleTitle = body.role;
+    if (body.bio !== undefined) updateData.bio = body.bio;
+    if (body.linkedinUrl !== undefined) updateData.linkedinUrl = body.linkedinUrl || null;
+    if (body.twitterUrl !== undefined) updateData.twitterUrl = body.twitterUrl || null;
+    if (body.githubUrl !== undefined) updateData.githubUrl = body.githubUrl || null;
+    if (body.isLeadership !== undefined) updateData.isLeadership = body.isLeadership;
+    if (body.displayOrder !== undefined) updateData.displayOrder = body.displayOrder;
+    if (body.isActive !== undefined) updateData.isActive = body.isActive;
+
+    // Resolve department if changed
+    if (body.department !== undefined) {
+      const deptName = body.department.trim() || 'General';
+      const deptSlug = deptName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      let dept = await this.prisma.department.findFirst({ where: { slug: deptSlug } });
+      if (!dept) {
+        dept = await this.prisma.department.create({ data: { name: deptName, slug: deptSlug } });
+      }
+      updateData.departmentId = dept.id;
+    }
+
+    const updated = await this.prisma.teamMember.update({
+      where: { id },
+      data: updateData,
+      include: { department: true, avatar: true },
+    });
+
+    return this.mapTeamMember(updated);
+  }
+
+  /** Admin: delete a single team member */
+  async deleteTeamMember(id: string) {
+    const existing = await this.prisma.teamMember.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Team member with ID ${id} not found.`);
+    await this.prisma.teamMember.delete({ where: { id } });
+  }
+
+  /** Admin: bulk delete team members */
+  async bulkDeleteTeamMembers(ids: string[]) {
+    const result = await this.prisma.teamMember.deleteMany({ where: { id: { in: ids } } });
+    return { count: result.count };
+  }
+
+  /** Admin: bulk update team member status */
+  async bulkUpdateTeamStatus(ids: string[], isActive: boolean) {
+    const result = await this.prisma.teamMember.updateMany({
+      where: { id: { in: ids } },
+      data: { isActive },
+    });
+    return { count: result.count };
   }
 
   // 7. Dynamic Brand Settings
   async getBrandSettings(): Promise<any> {
-    const brand = await this.prisma.brandSetting.findFirst({
-      where: { isActive: true },
-      orderBy: { version: 'desc' },
-      include: {
-        logoLight: true,
-        logoDark: true,
-        favicon: true,
-      },
-    });
+    try {
+      const brand = await this.prisma.brandSetting.findFirst({
+        where: { isActive: true },
+        orderBy: { version: 'desc' },
+        include: {
+          logoLight: true,
+          logoDark: true,
+          favicon: true,
+        },
+      });
 
-    if (!brand) {
-      throw new NotFoundException('Active brand settings not found in database');
+      if (brand) {
+        return {
+          id: brand.id,
+          companyName: brand.companyName,
+          colors: brand.colors,
+          typography: brand.typography,
+          socialLinks: brand.socialLinks,
+          logoLight: this.logoUrlFromMedia(brand.logoLight) || brand.logoLight?.storageKey || null,
+          logoDark: this.logoUrlFromMedia(brand.logoDark) || brand.logoDark?.storageKey || null,
+          favicon: this.logoUrlFromMedia(brand.favicon) || brand.favicon?.storageKey || null,
+        };
+      }
+    } catch {
+      // Gracefully fall back to defaults if database connection is temporarily lagging
     }
 
     return {
-      id: brand.id,
-      companyName: brand.companyName,
-      colors: brand.colors,
-      typography: brand.typography,
-      socialLinks: brand.socialLinks,
-      logoLight: this.logoUrlFromMedia(brand.logoLight) || brand.logoLight?.storageKey || null,
-      logoDark: this.logoUrlFromMedia(brand.logoDark) || brand.logoDark?.storageKey || null,
-      favicon: this.logoUrlFromMedia(brand.favicon) || brand.favicon?.storageKey || null,
+      id: 'default',
+      companyName: 'Gypsym Technology',
+      colors: {
+        primary: '217 91% 60%',
+        secondary: '217.2 32.6% 14%',
+        accent: '217 91% 60%',
+        lightBg: '48 18% 95%',
+        darkBg: '224 71% 4%',
+      },
+      typography: {
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      },
+      socialLinks: {
+        linkedin: 'https://linkedin.com/company/gypsym',
+        twitter: 'https://twitter.com/gypsym',
+        github: 'https://github.com/gypsym',
+      },
+      logoLight: null,
+      logoDark: null,
+      favicon: '/favicon.ico',
     };
   }
 
@@ -2142,6 +2553,11 @@ export class CmsService implements OnModuleInit {
         title: 'Cookie Declaration',
         description: 'Tracking governance, telemetry consent disclosures, and browser cookie preferences.',
       },
+      {
+        slug: 'roi-calculator',
+        title: 'ROI Calculator',
+        description: "Simulate your store's projected annual revenue increase by switching to Gypsym's 42ms Next.js 15 Headless Edge architecture.",
+      },
     ];
 
     for (const item of coreLegalPages) {
@@ -2379,7 +2795,7 @@ export class CmsService implements OnModuleInit {
       'om': 'oman',
     };
     const targetSlug = slugAliases[slug.toLowerCase()] || slug;
-    const page = await this.prisma.page.findFirst({
+    let page = await this.prisma.page.findFirst({
       where: {
         slug: targetSlug,
         deletedAt: null,
@@ -2393,13 +2809,34 @@ export class CmsService implements OnModuleInit {
       },
     });
 
+    if (!page && targetSlug === 'roi-calculator') {
+      page = await this.prisma.page.create({
+        data: {
+          slug: 'roi-calculator',
+          title: 'ROI Calculator',
+          description: "Simulate your store's projected annual revenue increase by switching to Gypsym's 42ms Next.js 15 Headless Edge architecture.",
+          layoutType: 'DEFAULT',
+          status: 'PUBLISHED',
+          locale: 'en',
+          publishedAt: new Date(),
+        },
+        include: {
+          sections: {
+            where: { isActive: true },
+            orderBy: { displayOrder: 'asc' },
+          },
+          seoMetadata: true,
+        },
+      });
+    }
+
     if (!page) {
       throw new NotFoundException(`Page '${slug}' not found`);
     }
 
     // Load live dependencies concurrently
     const [liveClients, livePartners, livePortfolioProjects, siteSettingsRow, brandSettingsRow] = await Promise.all([
-      this.getClients(),
+      this.getClients('PUBLISHED'),
       this.getPartners({ status: 'PUBLISHED', showOnHomepage: true }),
       (this.prisma as any).portfolioProjectItem.findMany({
         where: { status: 'PUBLISHED' },
@@ -2521,7 +2958,7 @@ export class CmsService implements OnModuleInit {
               enabled: clientStrip.enabled ?? true,
               title: clientStrip.title || 'The agency behind ..',
               clients: liveClients
-                .filter((c: any) => c.logoUrl && !c.logoUrl.includes('apex-bank-logo'))
+                .filter((c: any) => c.status !== 'DRAFT' && c.isFeatured !== false && c.logoUrl && !c.logoUrl.includes('apex-bank-logo'))
                 .map((c: any) => ({
                   id: c.id,
                   name: c.name,
@@ -2550,6 +2987,7 @@ export class CmsService implements OnModuleInit {
 
         const allClients = liveClients
           .filter((c: any) => {
+            if (c.status === 'DRAFT' || c.isFeatured === false) return false;
             if (!c.logoUrl) return false;
             if (c.logoUrl.includes('apex-bank-logo')) return false;
             const n = (c.name || '').trim().toLowerCase();
@@ -3169,37 +3607,48 @@ export class CmsService implements OnModuleInit {
     return v.original ?? v.lg ?? v.md ?? null;
   }
 
-  async getClients(): Promise<any[]> {
-    if (this.clientsCache && Date.now() < this.clientsCache.expiresAt) {
-      return this.clientsCache.data;
+  async getClients(status?: string): Promise<any[]> {
+    const where: any = {};
+    if (status && status !== 'ALL') {
+      if (status === 'PUBLISHED') {
+        where.isFeatured = true;
+      } else if (status === 'DRAFT') {
+        where.isFeatured = false;
+      }
     }
     const clients = await this.prisma.client.findMany({
+      where,
       orderBy: { displayOrder: 'asc' },
       include: {
         logoLight: { select: { variants: true } },
       },
     });
-    const mapped = clients.map((c) => ({
-      id: c.id,
-      name: c.name,
-      logoUrl: this.logoUrlFromMedia(c.logoLight),
-      websiteUrl: c.websiteUrl ?? null,
-      tier: c.tier,
-      isFeatured: c.isFeatured,
-      displayOrder: c.displayOrder,
-      isActive: true,
-      createdAt: c.createdAt,
-    }));
-    this.clientsCache = { data: mapped, expiresAt: Date.now() + 60000 };
-    return mapped;
+    return clients.map((c) => {
+      const isPublic = c.isFeatured !== false;
+      return {
+        id: c.id,
+        name: c.name,
+        logoUrl: this.logoUrlFromMedia(c.logoLight),
+        websiteUrl: c.websiteUrl ?? null,
+        tier: c.tier,
+        isFeatured: isPublic,
+        displayOrder: c.displayOrder,
+        status: isPublic ? 'PUBLISHED' : 'DRAFT',
+        isActive: isPublic,
+        createdAt: c.createdAt,
+      };
+    });
   }
 
   async createClient(body: {
     name: string;
     logoUrl?: string;
     websiteUrl?: string;
+    status?: string;
+    isActive?: boolean;
   }): Promise<any> {
-    this.clientsCache = null;
+    const isPublic = body.status !== undefined ? body.status === 'PUBLISHED' : body.isActive !== false;
+
     // Persist logoUrl in media.variants JSON so it survives without S3 upload
     const mediaRow = await this.prisma.media.create({
       data: {
@@ -3234,6 +3683,7 @@ export class CmsService implements OnModuleInit {
         logoDarkId: mediaRow.id,
         websiteUrl: body.websiteUrl || null,
         displayOrder: nextOrder,
+        isFeatured: isPublic,
       },
       include: { logoLight: { select: { variants: true } } },
     });
@@ -3246,14 +3696,15 @@ export class CmsService implements OnModuleInit {
       tier: client.tier,
       isFeatured: client.isFeatured,
       displayOrder: client.displayOrder,
-      isActive: true,
+      status: client.isFeatured ? 'PUBLISHED' : 'DRAFT',
+      isActive: client.isFeatured,
       createdAt: client.createdAt,
     };
   }
 
   async updateClient(
     id: string,
-    body: { name?: string; logoUrl?: string; websiteUrl?: string },
+    body: { name?: string; logoUrl?: string; websiteUrl?: string; status?: string; isActive?: boolean },
   ): Promise<any> {
     const existing = await this.prisma.client.findUnique({
       where: { id },
@@ -3261,19 +3712,65 @@ export class CmsService implements OnModuleInit {
     });
     if (!existing) throw new NotFoundException(`Client '${id}' not found`);
 
-    // Update logo URL stored in variants JSON
+    // Update logo URL stored in variants JSON safely
     if (body.logoUrl !== undefined) {
-      await this.prisma.media.update({
-        where: { id: existing.logoLightId },
-        data: { variants: { original: body.logoUrl } },
-      });
+      if (existing.logoLightId) {
+        try {
+          await this.prisma.media.update({
+            where: { id: existing.logoLightId },
+            data: { variants: body.logoUrl ? { original: body.logoUrl } : {} },
+          });
+        } catch {
+          // If media record was missing, create a new one
+          if (body.logoUrl) {
+            const mediaRow = await this.prisma.media.create({
+              data: {
+                originalFilename: `${body.name || 'client'}-logo`,
+                mimeType: 'image/svg+xml',
+                fileSizeBytes: BigInt(0),
+                storageKey: `clients/logo-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                altText: `${body.name || 'client'} logo`,
+                variants: { original: body.logoUrl },
+              },
+            });
+            await this.prisma.client.update({
+              where: { id },
+              data: { logoLightId: mediaRow.id, logoDarkId: mediaRow.id },
+            });
+          }
+        }
+      } else if (body.logoUrl) {
+        // No existing logoLightId, create one
+        const mediaRow = await this.prisma.media.create({
+          data: {
+            originalFilename: `${body.name || 'client'}-logo`,
+            mimeType: 'image/svg+xml',
+            fileSizeBytes: BigInt(0),
+            storageKey: `clients/logo-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            altText: `${body.name || 'client'} logo`,
+            variants: { original: body.logoUrl },
+          },
+        });
+        await this.prisma.client.update({
+          where: { id },
+          data: { logoLightId: mediaRow.id, logoDarkId: mediaRow.id },
+        });
+      }
     }
+
+    const isFeatured =
+      body.status !== undefined
+        ? body.status === 'PUBLISHED'
+        : body.isActive !== undefined
+        ? body.isActive
+        : undefined;
 
     const client = await this.prisma.client.update({
       where: { id },
       data: {
         ...(body.name && { name: body.name }),
         ...(body.websiteUrl !== undefined && { websiteUrl: body.websiteUrl }),
+        ...(isFeatured !== undefined && { isFeatured }),
       },
       include: { logoLight: { select: { variants: true } } },
     });
@@ -3286,7 +3783,8 @@ export class CmsService implements OnModuleInit {
       tier: client.tier,
       isFeatured: client.isFeatured,
       displayOrder: client.displayOrder,
-      isActive: true,
+      status: client.isFeatured ? 'PUBLISHED' : 'DRAFT',
+      isActive: client.isFeatured,
       createdAt: client.createdAt,
     };
   }
@@ -3297,9 +3795,102 @@ export class CmsService implements OnModuleInit {
       select: { logoLightId: true, logoDarkId: true },
     });
     if (!existing) throw new NotFoundException(`Client '${id}' not found`);
+
+    // Disassociate testimonials and projects first
+    await this.prisma.testimonial.updateMany({
+      where: { clientId: id },
+      data: { clientId: null },
+    }).catch(() => {});
+
+    await this.prisma.project.updateMany({
+      where: { clientId: id },
+      data: { clientId: null },
+    }).catch(() => {});
+
+    // Cascade delete any referencing case studies and their dependencies
+    const caseStudies = await this.prisma.caseStudy.findMany({
+      where: { clientId: id },
+      select: { id: true },
+    });
+    const caseStudyIds = caseStudies.map((cs) => cs.id);
+    if (caseStudyIds.length > 0) {
+      await this.prisma.caseStudyTechnology.deleteMany({
+        where: { caseStudyId: { in: caseStudyIds } },
+      }).catch(() => {});
+      await this.prisma.seoMetadata.deleteMany({
+        where: { caseStudyId: { in: caseStudyIds } },
+      }).catch(() => {});
+      await this.prisma.caseStudy.deleteMany({
+        where: { id: { in: caseStudyIds } },
+      }).catch(() => {});
+    }
+
     await this.prisma.client.delete({ where: { id } });
-    const mediaIds = [...new Set([existing.logoLightId, existing.logoDarkId])];
-    await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } });
+
+    // Safely delete orphan media (ignored if referenced elsewhere)
+    const mediaIds = [...new Set([existing.logoLightId, existing.logoDarkId])].filter(Boolean) as string[];
+    if (mediaIds.length > 0) {
+      await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } }).catch(() => {});
+    }
+  }
+
+  async bulkDeleteClients(ids: string[]): Promise<{ count: number }> {
+    if (!ids || ids.length === 0) return { count: 0 };
+
+    const existing = await this.prisma.client.findMany({
+      where: { id: { in: ids } },
+      select: { logoLightId: true, logoDarkId: true },
+    });
+    const mediaIds = existing.flatMap((c) => [c.logoLightId, c.logoDarkId]).filter(Boolean) as string[];
+
+    // Disassociate testimonials and projects
+    await this.prisma.testimonial.updateMany({
+      where: { clientId: { in: ids } },
+      data: { clientId: null },
+    }).catch(() => {});
+
+    await this.prisma.project.updateMany({
+      where: { clientId: { in: ids } },
+      data: { clientId: null },
+    }).catch(() => {});
+
+    // Cascade delete referencing case studies and their dependencies
+    const caseStudies = await this.prisma.caseStudy.findMany({
+      where: { clientId: { in: ids } },
+      select: { id: true },
+    });
+    const caseStudyIds = caseStudies.map((cs) => cs.id);
+    if (caseStudyIds.length > 0) {
+      await this.prisma.caseStudyTechnology.deleteMany({
+        where: { caseStudyId: { in: caseStudyIds } },
+      }).catch(() => {});
+      await this.prisma.seoMetadata.deleteMany({
+        where: { caseStudyId: { in: caseStudyIds } },
+      }).catch(() => {});
+      await this.prisma.caseStudy.deleteMany({
+        where: { id: { in: caseStudyIds } },
+      }).catch(() => {});
+    }
+
+    const result = await this.prisma.client.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    if (mediaIds.length > 0) {
+      await this.prisma.media.deleteMany({ where: { id: { in: mediaIds } } }).catch(() => {});
+    }
+
+    return result;
+  }
+
+  async bulkUpdateClientStatus(ids: string[], status: any): Promise<{ count: number }> {
+    if (!ids || ids.length === 0) return { count: 0 };
+    const isFeatured = status === 'PUBLISHED' || status === true;
+    const result = await this.prisma.client.updateMany({
+      where: { id: { in: ids } },
+      data: { isFeatured },
+    });
+    return { count: result.count };
   }
 
   // ── Partners ──────────────────────────────────────────────────────────────────
@@ -3310,16 +3901,6 @@ export class CmsService implements OnModuleInit {
     partnerType?: string;
     search?: string;
   }): Promise<any[]> {
-    const isHomepageDefault =
-      filters?.status === 'PUBLISHED' &&
-      (filters?.showOnHomepage === true || filters?.showOnHomepage === 'true') &&
-      !filters?.partnerType &&
-      !filters?.search;
-
-    if (isHomepageDefault && this.homepagePartnersCache && Date.now() < this.homepagePartnersCache.expiresAt) {
-      return this.homepagePartnersCache.data;
-    }
-
     const where: any = {};
 
     if (filters?.status && filters.status !== 'ALL') {
@@ -3368,10 +3949,6 @@ export class CmsService implements OnModuleInit {
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
-
-    if (isHomepageDefault) {
-      this.homepagePartnersCache = { data: mapped, expiresAt: Date.now() + 60000 };
-    }
 
     return mapped;
   }
@@ -3538,9 +4115,41 @@ export class CmsService implements OnModuleInit {
     // Update logo media
     if (body.logoUrl !== undefined) {
       if (existing.logoId) {
-        await this.prisma.media.update({
-          where: { id: existing.logoId },
-          data: { variants: { original: body.logoUrl } },
+        try {
+          await this.prisma.media.update({
+            where: { id: existing.logoId },
+            data: { variants: body.logoUrl ? { original: body.logoUrl } : {} },
+          });
+        } catch {
+          if (body.logoUrl) {
+            const media = await this.prisma.media.create({
+              data: {
+                originalFilename: `partner-logo-${id}`,
+                mimeType: 'image/svg+xml',
+                fileSizeBytes: BigInt(0),
+                storageKey: `partners/logo-${Date.now()}`,
+                variants: { original: body.logoUrl },
+              },
+            });
+            await this.prisma.partner.update({
+              where: { id },
+              data: { logoId: media.id },
+            });
+          }
+        }
+      } else if (body.logoUrl) {
+        const media = await this.prisma.media.create({
+          data: {
+            originalFilename: `partner-logo-${id}`,
+            mimeType: 'image/svg+xml',
+            fileSizeBytes: BigInt(0),
+            storageKey: `partners/logo-${Date.now()}`,
+            variants: { original: body.logoUrl },
+          },
+        });
+        await this.prisma.partner.update({
+          where: { id },
+          data: { logoId: media.id },
         });
       }
     }
@@ -3550,10 +4159,23 @@ export class CmsService implements OnModuleInit {
     if (body.logoDarkUrl !== undefined) {
       if (body.logoDarkUrl) {
         if (existing.logoDarkId) {
-          await this.prisma.media.update({
-            where: { id: existing.logoDarkId },
-            data: { variants: { original: body.logoDarkUrl } },
-          });
+          try {
+            await this.prisma.media.update({
+              where: { id: existing.logoDarkId },
+              data: { variants: { original: body.logoDarkUrl } },
+            });
+          } catch {
+            const darkMedia = await this.prisma.media.create({
+              data: {
+                originalFilename: `partner-dark-logo-${id}`,
+                mimeType: 'image/svg+xml',
+                fileSizeBytes: BigInt(0),
+                storageKey: `partners/logo-dark-${Date.now()}`,
+                variants: { original: body.logoDarkUrl },
+              },
+            });
+            logoDarkId = darkMedia.id;
+          }
         } else {
           const darkMedia = await this.prisma.media.create({
             data: {
@@ -3614,7 +4236,6 @@ export class CmsService implements OnModuleInit {
   }
 
   async deletePartner(id: string): Promise<void> {
-    this.homepagePartnersCache = null;
     const existing = await this.prisma.partner.findUnique({
       where: { id },
       select: { logoId: true, logoDarkId: true },
@@ -3630,7 +4251,6 @@ export class CmsService implements OnModuleInit {
   }
 
   async reorderPartners(items: Array<{ id: string; displayOrder: number }>): Promise<void> {
-    this.homepagePartnersCache = null;
     await this.prisma.$transaction(
       items.map((item) =>
         this.prisma.partner.update({
@@ -3642,7 +4262,6 @@ export class CmsService implements OnModuleInit {
   }
 
   async updatePartnerHomepageVisibility(id: string, showOnHomepage: boolean): Promise<any> {
-    this.homepagePartnersCache = null;
     return this.prisma.partner.update({
       where: { id },
       data: { showOnHomepage },
@@ -3651,7 +4270,6 @@ export class CmsService implements OnModuleInit {
   }
 
   async bulkUpdatePartnerStatus(ids: string[], status: any): Promise<{ count: number }> {
-    this.homepagePartnersCache = null;
     return this.prisma.partner.updateMany({
       where: { id: { in: ids } },
       data: { status },
@@ -3659,7 +4277,6 @@ export class CmsService implements OnModuleInit {
   }
 
   async bulkDeletePartners(ids: string[]): Promise<{ count: number }> {
-    this.homepagePartnersCache = null;
     const existing = await this.prisma.partner.findMany({
       where: { id: { in: ids } },
       select: { logoId: true, logoDarkId: true },

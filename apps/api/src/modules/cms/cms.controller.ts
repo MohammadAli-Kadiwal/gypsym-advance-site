@@ -10,8 +10,8 @@ export class CmsController {
   constructor(private readonly cmsService: CmsService) {}
 
   @Get('services')
-  async getServices() {
-    return this.cmsService.getServices();
+  async getServices(@Query('status') status?: string) {
+    return this.cmsService.getServices(status);
   }
 
   @Post('services')
@@ -39,8 +39,8 @@ export class CmsController {
   }
 
   @Get('services/:slug')
-  async getServiceBySlug(@Param('slug') slug: string) {
-    return this.cmsService.getServiceBySlug(slug);
+  async getServiceBySlug(@Param('slug') slug: string, @Query('status') status?: string) {
+    return this.cmsService.getServiceBySlug(slug, status);
   }
 
   @Put('services/:id')
@@ -87,6 +87,46 @@ export class CmsController {
   @Get('blog/categories')
   async getBlogCategories(): Promise<any[]> {
     return this.cmsService.getBlogCategories();
+  }
+
+  @Get('cms/blog/categories')
+  @UseGuards(AuthGuard)
+  async getCmsBlogCategories(): Promise<any[]> {
+    return this.cmsService.getBlogCategories();
+  }
+
+  @Post('cms/blog/categories')
+  @UseGuards(AuthGuard)
+  async createBlogCategory(
+    @Body() body: { name: string; slug?: string; description?: string },
+  ): Promise<any> {
+    return this.cmsService.createBlogCategory(body);
+  }
+
+  @Put('cms/blog/categories/:id')
+  @UseGuards(AuthGuard)
+  async updateBlogCategory(
+    @Param('id') id: string,
+    @Body() body: { name?: string; slug?: string; description?: string },
+  ): Promise<any> {
+    return this.cmsService.updateBlogCategory(id, body);
+  }
+
+  @Post('cms/blog/categories/bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteBlogCategories(
+    @Body() body: { ids: string[]; reassignToId?: string },
+  ): Promise<{ count: number }> {
+    return this.cmsService.bulkDeleteBlogCategories(body.ids, { reassignToId: body.reassignToId });
+  }
+
+  @Delete('cms/blog/categories/:id')
+  @UseGuards(AuthGuard)
+  async deleteBlogCategory(
+    @Param('id') id: string,
+    @Query('reassignToId') reassignToId?: string,
+  ): Promise<any> {
+    return this.cmsService.deleteBlogCategory(id, { reassignToId });
   }
 
   @Get('blog/:slug')
@@ -164,6 +204,44 @@ export class CmsController {
   @Get('team')
   async getTeam() {
     return this.cmsService.getTeam();
+  }
+
+  // ── Team Admin CRUD ────────────────────────────────────────────────────────
+
+  @Get('team/admin/all')
+  @UseGuards(AuthGuard)
+  async getAllTeamAdmin() {
+    return this.cmsService.getAllTeamAdmin();
+  }
+
+  @Post('team')
+  @UseGuards(AuthGuard)
+  async createTeamMember(@Body() body: any) {
+    return this.cmsService.createTeamMember(body);
+  }
+
+  @Put('team/bulk-status')
+  @UseGuards(AuthGuard)
+  async bulkUpdateTeamStatus(@Body() body: { ids: string[]; isActive: boolean }) {
+    return this.cmsService.bulkUpdateTeamStatus(body.ids, body.isActive);
+  }
+
+  @Post('team/bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteTeam(@Body() body: { ids: string[] }) {
+    return this.cmsService.bulkDeleteTeamMembers(body.ids);
+  }
+
+  @Put('team/:id')
+  @UseGuards(AuthGuard)
+  async updateTeamMember(@Param('id') id: string, @Body() body: any) {
+    return this.cmsService.updateTeamMember(id, body);
+  }
+
+  @Delete('team/:id')
+  @UseGuards(AuthGuard)
+  async deleteTeamMember(@Param('id') id: string) {
+    return this.cmsService.deleteTeamMember(id);
   }
 
   @Get('branding')
@@ -310,13 +388,15 @@ export class CmsController {
   // ── Clients ────────────────────────────────────────────────────────────────
 
   @Get('clients')
-  async getClients(): Promise<any[]> {
-    return this.cmsService.getClients();
+  async getClients(@Query('status') status?: string): Promise<any[]> {
+    return this.cmsService.getClients(status);
   }
 
   @Post('clients')
   @UseGuards(AuthGuard)
-  async createClient(@Body() body: { name: string; logoUrl?: string; websiteUrl?: string }): Promise<any> {
+  async createClient(
+    @Body() body: { name: string; logoUrl?: string; websiteUrl?: string; status?: string; isActive?: boolean },
+  ): Promise<any> {
     return this.cmsService.createClient(body);
   }
 
@@ -324,9 +404,21 @@ export class CmsController {
   @UseGuards(AuthGuard)
   async updateClient(
     @Param('id') id: string,
-    @Body() body: { name?: string; logoUrl?: string; websiteUrl?: string },
+    @Body() body: { name?: string; logoUrl?: string; websiteUrl?: string; status?: string; isActive?: boolean },
   ): Promise<any> {
     return this.cmsService.updateClient(id, body);
+  }
+
+  @Put('clients/bulk-status')
+  @UseGuards(AuthGuard)
+  async bulkUpdateClientStatus(@Body() body: { ids: string[]; status: any }): Promise<{ count: number }> {
+    return this.cmsService.bulkUpdateClientStatus(body.ids, body.status);
+  }
+
+  @Post('clients/bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteClients(@Body() body: { ids: string[] }): Promise<{ count: number }> {
+    return this.cmsService.bulkDeleteClients(body.ids);
   }
 
   @Delete('clients/:id')

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { settingsService } from '@/services/settings.service';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 
 export interface SocialProfileItem {
   id: string;
@@ -285,62 +286,56 @@ export default function SocialProfilesPage() {
   const activeCount = profiles.filter((p) => p.isActive).length;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
-      {/* ── HEADER & ACTIONS ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
-              Site & Branding
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-500 font-medium">Public Channels</span>
+    <AdminContentContainer variant="standard">
+      <AdminPageHeader
+        title="Social Profiles"
+        description="Configure official brand profiles, community handles, and developer channels shown across Gypsym's public website footer and contact sections."
+        status={
+          <div className="flex items-center gap-1.5 text-xs font-mono tracking-wider text-primary uppercase">
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Public Channels</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Share2 className="w-6 h-6 text-blue-600" />
-            <span>Social Profiles</span>
-          </h1>
-          <p className="text-xs text-slate-500 max-w-2xl">
-            Configure the official brand profiles, community handles, and developer channels shown across Gypsym&apos;s public website footer and contact section.
-          </p>
-        </div>
+        }
+        actions={
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleAddProfile()}
+              className="gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Custom</span>
+            </Button>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleAddProfile()}
-            className="rounded-xl h-9 text-xs font-semibold border-slate-200 hover:bg-slate-100 flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Custom</span>
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-xl h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 min-w-[105px]"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : hasChanges ? (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Changes</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Saved</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              size="sm"
+              className="gap-1.5 shadow-xs cursor-pointer min-w-[105px]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : hasChanges ? (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Saved</span>
+                </>
+              )}
+            </Button>
+          </div>
+        }
+      />
 
       {/* ── QUICK ADD PRESET BAR ── */}
       {missingPresets.length > 0 && (
@@ -611,6 +606,6 @@ export default function SocialProfilesPage() {
           </div>
         )}
       </Card>
-    </div>
+    </AdminContentContainer>
   );
 }

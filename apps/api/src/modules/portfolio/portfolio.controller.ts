@@ -63,6 +63,12 @@ export class PortfolioController {
     return this.portfolioService.updateCategory(id, body);
   }
 
+  @Post('categories/bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteCategories(@Body() body: { ids: string[] }) {
+    return this.portfolioService.bulkDeleteCategories(body.ids);
+  }
+
   @Delete('categories/:id')
   @UseGuards(AuthGuard)
   async deleteCategory(@Param('id') id: string) {
@@ -71,6 +77,12 @@ export class PortfolioController {
   }
 
   // ─── Project Detail & CRUD ───────────────────────────────────────────────────
+
+  @Post('bulk-delete')
+  @UseGuards(AuthGuard)
+  async bulkDeleteProjects(@Body() body: { ids: string[] }) {
+    return this.portfolioService.bulkDeleteProjects(body.ids);
+  }
 
   @Put('reorder')
   @UseGuards(AuthGuard)

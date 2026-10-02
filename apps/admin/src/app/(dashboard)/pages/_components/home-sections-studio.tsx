@@ -731,6 +731,19 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
     );
   }
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    try {
+      await fetchApi('/pages/home', {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPageData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`Home page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           <SectionsHeader
@@ -741,6 +754,7 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
             layoutLabel="LANDING PAGE"
             sectionCount={pageData?.sections?.filter((s) => s.isActive).length}
             status={pageData?.status}
+            onStatusChange={handleStatusChange}
             onBack={onBack || (() => window.history.back())}
             onSave={handleSave}
             onRefresh={loadBackendData}

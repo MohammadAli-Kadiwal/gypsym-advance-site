@@ -6,10 +6,10 @@ import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { useAuth } from '@/lib/auth-context';
 import { NotificationProvider, ToastContainer } from '@/lib/notifications';
-
 import { SidebarProvider } from '@/lib/sidebar-context';
 import { BrandingProvider } from '@/lib/branding-context';
 import { SystemNotificationsProvider } from '@/lib/system-notifications-context';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,10 +24,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f6fa]">
-        <div className="flex flex-col items-center gap-3 text-slate-400">
-          <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-          <span className="text-xs font-semibold text-slate-500">Securing cluster session...</span>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span className="text-xs font-semibold text-muted-foreground">Securing cluster session...</span>
         </div>
       </div>
     );
@@ -42,24 +42,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <NotificationProvider>
         <SystemNotificationsProvider>
           <SidebarProvider>
-            {/* Toast renders at root level — outside overflow-hidden so fixed positioning works correctly */}
-            <ToastContainer />
-            <div className="flex h-screen overflow-hidden bg-[#f4f6fa] text-slate-800 antialiased">
-              {/* Collapsible Workspace Sidebar */}
-              <Sidebar />
+            <TooltipProvider delayDuration={150}>
+              {/* Toast renders at root level — outside overflow-hidden so fixed positioning works correctly */}
+              <ToastContainer />
+              <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
+                {/* Desktop and Mobile-Drawer Sidebar */}
+                <Sidebar />
 
-              {/* Main Content Area */}
-              <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden bg-[#f4f6fa]">
-                <Header />
-                <main className="flex-1 overflow-y-auto p-6 md:p-8">
-                  {children}
-                </main>
+                {/* Main Content Area */}
+                <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden bg-background">
+                  <Header />
+                  <main className="flex-1 overflow-y-auto">
+                    {children}
+                  </main>
+                </div>
               </div>
-            </div>
+            </TooltipProvider>
           </SidebarProvider>
         </SystemNotificationsProvider>
       </NotificationProvider>
     </BrandingProvider>
   );
 }
-

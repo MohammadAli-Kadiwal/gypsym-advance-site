@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { settingsService } from '@/services/settings.service';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 
 interface ScriptSettings {
   googleAnalytics: {
@@ -142,32 +143,17 @@ export default function AnalyticsScriptsSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
+    <AdminContentContainer variant="standard" className="space-y-6 pb-24">
       {/* ── HEADER & ACTIONS ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
-              Site & Branding
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-500 font-medium">Tracking & Code Injection</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Code className="w-6 h-6 text-blue-600" />
-            <span>Analytics & Custom Scripts</span>
-          </h1>
-          <p className="text-xs text-slate-500 max-w-2xl">
-            Integrate Google Analytics (GA4), Meta (Facebook) Pixel, Google Tag Manager, and custom &lt;head&gt; / &lt;body&gt; scripts on all public website pages.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+      <AdminPageHeader
+        title="Analytics & Custom Scripts"
+        description="Integrate Google Analytics (GA4), Meta (Facebook) Pixel, Google Tag Manager, and custom <head> / <body> scripts on all public website pages."
+        actions={
           <Button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 min-w-[115px]"
+            className="rounded-xl h-9 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs flex items-center gap-1.5 min-w-[115px]"
           >
             {saving ? (
               <>
@@ -186,28 +172,28 @@ export default function AnalyticsScriptsSettingsPage() {
               </>
             )}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400">
-          <Loader2 className="w-7 h-7 animate-spin text-blue-600" />
+        <div className="py-20 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="w-7 h-7 animate-spin text-primary" />
           <span className="text-xs">Loading analytics & script settings...</span>
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           {/* ── GOOGLE ANALYTICS (GA4) ── */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <Card className="rounded-2xl border-border bg-card p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border/50 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200/70 flex items-center justify-center text-orange-600">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
                   <BarChart3 className="w-4 h-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                  <CardTitle className="text-sm font-bold text-card-foreground">
                     Google Analytics 4 (GA4)
                   </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
+                  <CardDescription className="text-xs text-muted-foreground">
                     Automated page views, session measurement, and conversion event tracking.
                   </CardDescription>
                 </div>
@@ -223,16 +209,16 @@ export default function AnalyticsScriptsSettingsPage() {
                     })
                   }
                 />
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-foreground">
                   {settings.googleAnalytics.enabled ? 'Active' : 'Disabled'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1.5 max-w-lg">
-              <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <span>GA4 Measurement ID</span>
-                <span className="text-[10px] text-slate-400 font-normal font-mono">(Format: G-XXXXXXXXXX)</span>
+                <span className="text-[10px] text-muted-foreground font-normal font-mono">(Format: G-XXXXXXXXXX)</span>
               </label>
               <Input
                 value={settings.googleAnalytics.measurementId}
@@ -245,24 +231,24 @@ export default function AnalyticsScriptsSettingsPage() {
                 placeholder="G-74X9KLV28P"
                 className="text-xs font-mono rounded-xl h-9"
               />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 Found in Google Analytics under Admin → Data Streams → Stream details.
               </p>
             </div>
           </Card>
 
           {/* ── GOOGLE TAG MANAGER (GTM) ── */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <Card className="rounded-2xl border-border bg-card p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border/50 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-600">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                  <CardTitle className="text-sm font-bold text-card-foreground">
                     Google Tag Manager (GTM)
                   </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
+                  <CardDescription className="text-xs text-muted-foreground">
                     Centralized tag firing container for marketing, remarketing, and analytics pixels.
                   </CardDescription>
                 </div>
@@ -278,16 +264,16 @@ export default function AnalyticsScriptsSettingsPage() {
                     })
                   }
                 />
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-foreground">
                   {settings.googleTagManager.enabled ? 'Active' : 'Disabled'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1.5 max-w-lg">
-              <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <span>GTM Container ID</span>
-                <span className="text-[10px] text-slate-400 font-normal font-mono">(Format: GTM-XXXXXXX)</span>
+                <span className="text-[10px] text-muted-foreground font-normal font-mono">(Format: GTM-XXXXXXX)</span>
               </label>
               <Input
                 value={settings.googleTagManager.containerId}
@@ -300,24 +286,24 @@ export default function AnalyticsScriptsSettingsPage() {
                 placeholder="GTM-N89B72L"
                 className="text-xs font-mono rounded-xl h-9"
               />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 Injected in the &lt;head&gt; container on all public pages.
               </p>
             </div>
           </Card>
 
           {/* ── META (FACEBOOK) PIXEL ── */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <Card className="rounded-2xl border-border bg-card p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border/50 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/70 flex items-center justify-center text-indigo-600">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <Share2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                  <CardTitle className="text-sm font-bold text-card-foreground">
                     Meta (Facebook) Pixel
                   </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
+                  <CardDescription className="text-xs text-muted-foreground">
                     Tracks conversion events, custom audiences, and ad performance for Meta ads.
                   </CardDescription>
                 </div>
@@ -333,16 +319,16 @@ export default function AnalyticsScriptsSettingsPage() {
                     })
                   }
                 />
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-foreground">
                   {settings.facebookPixel.enabled ? 'Active' : 'Disabled'}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1.5 max-w-lg">
-              <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <span>Meta Pixel ID (Dataset ID)</span>
-                <span className="text-[10px] text-slate-400 font-normal font-mono">(Digits only)</span>
+                <span className="text-[10px] text-muted-foreground font-normal font-mono">(Digits only)</span>
               </label>
               <Input
                 value={settings.facebookPixel.pixelId}
@@ -355,77 +341,77 @@ export default function AnalyticsScriptsSettingsPage() {
                 placeholder="1049284719284729"
                 className="text-xs font-mono rounded-xl h-9"
               />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 Found in Meta Events Manager under Data Sources → Settings → Pixel ID.
               </p>
             </div>
           </Card>
 
           {/* ── CUSTOM HEADER SCRIPTS (<HEAD>) ── */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-600">
+          <Card className="rounded-2xl border-border bg-card p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-border/50 pb-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <FileCode className="w-4 h-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-slate-900">
+                <CardTitle className="text-sm font-bold text-card-foreground">
                   Header Code & Custom Scripts (&lt;head&gt;)
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
+                <CardDescription className="text-xs text-muted-foreground">
                   Raw HTML, &lt;script&gt;, &lt;meta&gt;, or &lt;link&gt; tags injected into the document &lt;head&gt; across the entire public website.
                 </CardDescription>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-semibold">HTML / JavaScript Snippet</span>
-                <span className="text-[11px] text-slate-400">e.g. Hotjar, Microsoft Clarity, Search Console meta tags</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">HTML / JavaScript Snippet</span>
+                <span className="text-[11px] text-muted-foreground">e.g. Hotjar, Microsoft Clarity, Search Console meta tags</span>
               </div>
               <Textarea
                 rows={5}
                 value={settings.headerScripts}
                 onChange={(e) => updateSetting('headerScripts', e.target.value)}
                 placeholder="<!-- Hotjar Tracking Code -->&#10;<script>&#10;  (function(h,o,t,j,a,r){ ... })();&#10;</script>"
-                className="font-mono text-xs rounded-xl bg-slate-950 text-emerald-400 border-slate-800 focus:border-blue-500"
+                className="font-mono text-xs rounded-xl bg-slate-950 text-emerald-400 border-slate-800 focus:border-primary"
               />
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Ensure scripts are properly wrapped in &lt;script&gt; tags or are valid HTML tags.</span>
               </div>
             </div>
           </Card>
 
           {/* ── CUSTOM FOOTER / BODY SCRIPTS ── */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-600">
+          <Card className="rounded-2xl border-border bg-card p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-border/50 pb-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                 <Code className="w-4 h-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-slate-900">
+                <CardTitle className="text-sm font-bold text-card-foreground">
                   Footer / Body End Scripts (&lt;body&gt;)
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
+                <CardDescription className="text-xs text-muted-foreground">
                   Raw HTML and scripts injected right before the closing &lt;/body&gt; tag (ideal for live chat widgets, popups, and conversion pixels).
                 </CardDescription>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-semibold">HTML / JavaScript Snippet</span>
-                <span className="text-[11px] text-slate-400">e.g. Intercom, Zendesk Chat, Crisp, HubSpot tracking</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">HTML / JavaScript Snippet</span>
+                <span className="text-[11px] text-muted-foreground">e.g. Intercom, Zendesk Chat, Crisp, HubSpot tracking</span>
               </div>
               <Textarea
                 rows={5}
                 value={settings.footerScripts}
                 onChange={(e) => updateSetting('footerScripts', e.target.value)}
                 placeholder="<!-- Live Chat or Conversion Tracker -->&#10;<script>&#10;  window.$crisp=[];window.CRISP_WEBSITE_ID='...';&#10;</script>"
-                className="font-mono text-xs rounded-xl bg-slate-950 text-emerald-400 border-slate-800 focus:border-blue-500"
+                className="font-mono text-xs rounded-xl bg-slate-950 text-emerald-400 border-slate-800 focus:border-primary"
               />
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Runs after DOM content has loaded without blocking page render speed.</span>
               </div>
             </div>
@@ -436,7 +422,7 @@ export default function AnalyticsScriptsSettingsPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="rounded-xl h-10 px-6 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-2"
+              className="rounded-xl h-10 px-6 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs flex items-center gap-2"
             >
               {saving ? (
                 <>
@@ -453,6 +439,6 @@ export default function AnalyticsScriptsSettingsPage() {
           </div>
         </form>
       )}
-    </div>
+    </AdminContentContainer>
   );
 }

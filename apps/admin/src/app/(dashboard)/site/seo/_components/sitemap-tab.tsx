@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService, SitemapConfigData } from '@/services/seo.service';
+import { getSiteUrl } from '@/lib/site-url';
 
 export function SitemapTab() {
   const [config, setConfig] = React.useState<SitemapConfigData>({
@@ -149,7 +150,7 @@ export function SitemapTab() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => window.open('http://localhost:3000/sitemap.xml', '_blank')}
+                onClick={() => window.open(`${getSiteUrl()}/sitemap.xml`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Live /sitemap.xml

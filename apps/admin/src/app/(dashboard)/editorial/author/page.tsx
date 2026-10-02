@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { fetchApi } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { getSiteUrl } from '@/lib/site-url';
 
 interface AuthorProfileData {
   name: string;
@@ -181,63 +183,62 @@ export default function EditorialAuthorSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 p-6 lg:p-10 max-w-[1600px] mx-auto pb-28">
-      {/* ─── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-[#98c22a] uppercase mb-1">
+    <AdminContentContainer variant="wide">
+      <AdminPageHeader
+        title="Author Profile & Byline Settings"
+        description="Configure the primary author identity, credentials, professional bios, and social channels displayed across all engineering publications."
+        status={
+          <div className="flex items-center gap-1.5 text-xs font-mono tracking-wider text-primary uppercase">
             <Sparkles className="w-3.5 h-3.5" />
-            Editorial Authority
+            <span>Editorial Authority</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
-            Author Profile & Byline Settings
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Configure the primary author identity, credentials, professional bios, and social channels displayed across all engineering publications.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadProfile}
-            disabled={isLoading}
-            className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Sync
-          </Button>
-
-          <a
-            href="http://localhost:3000/blog"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+        }
+        actions={
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-2"
+              onClick={loadProfile}
+              disabled={isLoading}
+              className="gap-2 cursor-pointer"
             >
-              <ExternalLink className="w-4 h-4 text-slate-500" />
-              Live Blog Hub
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Sync</span>
             </Button>
-          </a>
 
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-[#98c22a] hover:bg-[#86ad23] text-slate-950 font-semibold gap-2 shadow-sm"
-          >
-            {isSaving ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Save Author Profile
-          </Button>
-        </div>
-      </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="gap-2 cursor-pointer"
+            >
+              <a
+                href={`${getSiteUrl()}/blog`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Live Blog Hub</span>
+              </a>
+            </Button>
+
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              size="sm"
+              className="gap-2 shadow-xs cursor-pointer"
+            >
+              {isSaving ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              <span>Save Author Profile</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* ─── Two-Column Layout (Form on Left, Live Preview on Right) ────────── */}
       <form onSubmit={handleSave} className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
@@ -380,15 +381,15 @@ export default function EditorialAuthorSettingsPage() {
                 onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
                 required
                 placeholder="A 1-2 sentence executive summary of the author's primary technical domain..."
-                className="w-full text-xs text-slate-800 bg-slate-50/50 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+                className="w-full text-xs text-foreground bg-muted/30 border border-input rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Displays beneath author name on article pages and search engine snippets.
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5">
                 Extended Author Biography (Bottom Article Box)
               </label>
               <textarea
@@ -396,7 +397,7 @@ export default function EditorialAuthorSettingsPage() {
                 value={profile.extendedBio}
                 onChange={(e) => setProfile((p) => ({ ...p, extendedBio: e.target.value }))}
                 placeholder="Comprehensive technical background, leadership history, and publications overview..."
-                className="w-full text-xs text-slate-800 bg-slate-50/50 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+                className="w-full text-xs text-foreground bg-muted/30 border border-input rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-primary"
               />
               <p className="text-[11px] text-slate-400 mt-0.5">
                 Full-width author bio block rendered at the conclusion of every individual technical article.
@@ -606,22 +607,22 @@ export default function EditorialAuthorSettingsPage() {
 
         {/* Right Column: Live Real-Time Previews */}
         <div className="xl:col-span-5 space-y-6 sticky top-24">
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-xs font-mono tracking-wider text-[#98c22a] uppercase">
+          <div className="bg-card text-card-foreground rounded-2xl p-6 shadow-sm border border-border space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2 text-xs font-mono tracking-wider text-primary uppercase">
                 <BookOpen className="w-4 h-4" />
                 Live Publication Preview
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">Dynamic Rendering</span>
+              <span className="text-[10px] text-muted-foreground font-mono">Dynamic Rendering</span>
             </div>
 
             {/* Byline Preview */}
             <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 1. Post Header Byline Preview
               </span>
-              <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60 flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#98c22a] shrink-0 bg-slate-700">
+              <div className="bg-muted/40 rounded-xl p-4 border border-border flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary shrink-0 bg-muted">
                   <img
                     src={profile.avatar || DEFAULT_PROFILE.avatar}
                     alt={profile.name}
@@ -632,14 +633,14 @@ export default function EditorialAuthorSettingsPage() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <span>{profile.name || 'Author Name'}</span>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#98c22a]" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <div className="text-xs text-[#98c22a] font-medium truncate">
+                  <div className="text-xs text-primary font-medium truncate">
                     {profile.role || 'Designation'}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                  <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
                     {profile.bio || 'Short executive bio...'}
                   </div>
                 </div>
@@ -648,12 +649,12 @@ export default function EditorialAuthorSettingsPage() {
 
             {/* Footer Author Box Preview */}
             <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 2. Post Footer Author Card Preview
               </span>
-              <div className="bg-white text-slate-900 rounded-xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div className="bg-card text-card-foreground rounded-xl p-5 border border-border shadow-xs space-y-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 shrink-0 bg-slate-100 shadow-xs">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-border shrink-0 bg-muted shadow-xs">
                     <img
                       src={profile.avatar || DEFAULT_PROFILE.avatar}
                       alt={profile.name}
@@ -664,37 +665,37 @@ export default function EditorialAuthorSettingsPage() {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold text-[#d9287c] uppercase tracking-wider">
+                    <div className="text-[10px] font-bold text-primary uppercase tracking-wider">
                       About the Author
                     </div>
-                    <div className="text-base font-bold text-slate-900 mt-0.5">
+                    <div className="text-base font-bold text-foreground mt-0.5">
                       {profile.name || 'Author Name'}
                     </div>
-                    <div className="text-xs text-slate-600 font-medium">
+                    <div className="text-xs text-muted-foreground font-medium">
                       {profile.role || 'Designation'}
                     </div>
 
                     {profile.location && (
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
-                        <MapPin className="w-3 h-3 text-slate-400" />
+                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground" />
                         <span>{profile.location}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {profile.extendedBio || profile.bio || 'Author biography overview...'}
                 </p>
 
                 {/* Social icons */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
                   {profile.socials.linkedin && (
                     <a
                       href={profile.socials.linkedin}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg bg-slate-50 text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="p-1.5 rounded-lg bg-muted text-primary hover:bg-muted/80 transition-colors"
                       title="LinkedIn"
                     >
                       <Linkedin className="w-4 h-4" />
@@ -705,7 +706,7 @@ export default function EditorialAuthorSettingsPage() {
                       href={profile.socials.twitter}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg bg-slate-50 text-sky-500 hover:bg-sky-50 transition-colors"
+                      className="p-1.5 rounded-lg bg-muted text-sky-500 hover:bg-muted/80 transition-colors"
                       title="Twitter / X"
                     >
                       <Twitter className="w-4 h-4" />
@@ -716,7 +717,7 @@ export default function EditorialAuthorSettingsPage() {
                       href={profile.socials.github}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg bg-slate-50 text-slate-800 hover:bg-slate-100 transition-colors"
+                      className="p-1.5 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
                       title="GitHub"
                     >
                       <Github className="w-4 h-4" />
@@ -725,7 +726,7 @@ export default function EditorialAuthorSettingsPage() {
                   {profile.email && (
                     <a
                       href={`mailto:${profile.email}`}
-                      className="p-1.5 rounded-lg bg-slate-50 text-rose-500 hover:bg-rose-50 transition-colors"
+                      className="p-1.5 rounded-lg bg-muted text-rose-500 hover:bg-muted/80 transition-colors"
                       title="Email Author"
                     >
                       <Mail className="w-4 h-4" />
@@ -736,7 +737,7 @@ export default function EditorialAuthorSettingsPage() {
                       href={profile.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors ml-auto text-xs flex items-center gap-1 font-medium"
+                      className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors ml-auto text-xs flex items-center gap-1 font-medium"
                     >
                       <span>Website</span>
                       <ExternalLink className="w-3 h-3" />
@@ -754,7 +755,7 @@ export default function EditorialAuthorSettingsPage() {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="bg-[#98c22a] hover:bg-[#86ad23] text-slate-950 font-bold gap-2 text-xs"
+                className="font-bold gap-2 text-xs shadow-xs cursor-pointer"
               >
                 {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Save Changes
@@ -763,6 +764,6 @@ export default function EditorialAuthorSettingsPage() {
           </div>
         </div>
       </form>
-    </div>
+    </AdminContentContainer>
   );
 }

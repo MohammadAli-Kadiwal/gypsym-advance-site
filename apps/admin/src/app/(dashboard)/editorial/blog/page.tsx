@@ -21,12 +21,13 @@ import {
   FileClock,
   Archive,
   User,
+  Upload,
+  Tags,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import {
@@ -37,8 +38,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { fetchApi } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { getSiteUrl } from '@/lib/site-url';
 
 interface BlogPostRecord {
   id: string;
@@ -80,6 +86,8 @@ export default function EditorialBlogAdminPage() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [selectedStatus, setSelectedStatus] = React.useState('all');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
 
   // Modal State
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -105,6 +113,12 @@ export default function EditorialBlogAdminPage() {
   });
 
   const [autoSlug, setAutoSlug] = React.useState(true);
+  const coverFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Quick Category Creation State
+  const [isQuickCategoryOpen, setIsQuickCategoryOpen] = React.useState(false);
+  const [quickCategoryName, setQuickCategoryName] = React.useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = React.useState(false);
 
   // Load posts & categories
   const loadData = React.useCallback(async () => {
@@ -133,6 +147,32 @@ export default function EditorialBlogAdminPage() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Handle Quick Category Creation
+  const handleQuickCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickCategoryName.trim()) return;
+    setIsCreatingCategory(true);
+    try {
+      const res = await fetchApi<any>('/cms/blog/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name: quickCategoryName.trim() }),
+      });
+      notify.success(`Category "${res.name}" created!`);
+      const updatedCatRes = await fetchApi<any>('/blog/categories');
+      const catList = updatedCatRes?.data ?? updatedCatRes;
+      if (Array.isArray(catList)) {
+        setCategories(catList);
+      }
+      setFormData((prev) => ({ ...prev, categoryId: res.id }));
+      setQuickCategoryName('');
+      setIsQuickCategoryOpen(false);
+    } catch (err: any) {
+      notify.error(err?.message || 'Failed to create category.');
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
 
   // Open Create modal
   const handleOpenCreate = () => {
@@ -210,19 +250,66 @@ export default function EditorialBlogAdminPage() {
 
     setIsSaving(true);
     try {
-      // Build bodyContent structured JSON
-      const paragraphs = formData.content
-        .split('\n\n')
-        .map((p) => p.trim())
-        .filter(Boolean);
+      // Parse markdown content into structured sections preserving headings and images
+      const sections: { heading?: string; paragraphs: string[] }[] = [];
+      const lines = formData.content.split('\n');
+      let currentHeading = 'Overview';
+      let currentParagraphs: string[] = [];
+
+      const flushParagraphs = (rawBlock: string) => {
+        const p = rawBlock.trim();
+        if (p) currentParagraphs.push(p);
+      };
+
+      let buffer: string[] = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? '';
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith('## ')) {
+          if (buffer.length > 0) {
+            flushParagraphs(buffer.join('\n'));
+            buffer = [];
+          }
+          if (currentParagraphs.length > 0) {
+            sections.push({
+              heading: currentHeading,
+              paragraphs: currentParagraphs,
+            });
+            currentParagraphs = [];
+          }
+          currentHeading = trimmed.replace(/^##\s+/, '').trim();
+        } else if (trimmed === '') {
+          if (buffer.length > 0) {
+            flushParagraphs(buffer.join('\n'));
+            buffer = [];
+          }
+        } else {
+          buffer.push(line);
+        }
+      }
+
+      if (buffer.length > 0) {
+        flushParagraphs(buffer.join('\n'));
+      }
+      if (currentParagraphs.length > 0) {
+        sections.push({
+          heading: currentHeading,
+          paragraphs: currentParagraphs,
+        });
+      }
 
       const bodyPayload = {
-        sections: [
-          {
-            heading: 'Overview',
-            paragraphs: paragraphs.length > 0 ? paragraphs : [formData.excerpt],
-          },
-        ],
+        sections:
+          sections.length > 0
+            ? sections
+            : [
+                {
+                  heading: 'Overview',
+                  paragraphs: [formData.excerpt],
+                },
+              ],
       };
 
       const payload = {
@@ -359,6 +446,11 @@ export default function EditorialBlogAdminPage() {
     });
   }, [posts, searchQuery, selectedCategory, selectedStatus]);
 
+  const paginatedPosts = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPosts.slice(start, start + pageSize);
+  }, [filteredPosts, page, pageSize]);
+
   // Quick stats
   const stats = React.useMemo(() => {
     const total = posts.length;
@@ -369,118 +461,134 @@ export default function EditorialBlogAdminPage() {
   }, [posts]);
 
   return (
-    <div className="space-y-8 p-6 lg:p-10 max-w-[1600px] mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-[#98c22a] uppercase mb-1">
+    <AdminContentContainer variant="wide">
+      <AdminPageHeader
+        title="Technical Blog & Articles"
+        description="Manage high-impact engineering publications, cloud architecture deep-dives, and technical leadership content."
+        status={
+          <div className="flex items-center gap-1.5 text-xs font-mono tracking-wider text-primary uppercase">
             <Sparkles className="w-3.5 h-3.5" />
-            Editorial Engine
+            <span>Editorial Engine</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
-            Technical Blog & Articles
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage high-impact engineering publications, cloud architecture deep-dives, and technical leadership content.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={isLoading}
-            className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Sync
-          </Button>
-
-          <Link href="/editorial/author">
+        }
+        actions={
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-300 text-slate-700 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 gap-2"
+              onClick={loadData}
+              disabled={isLoading}
+              className="gap-2 cursor-pointer"
             >
-              <User className="w-4 h-4 text-purple-600" />
-              Author Profile
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Sync</span>
             </Button>
-          </Link>
 
-          <Button
-            onClick={handleOpenCreate}
-            className="bg-[#98c22a] hover:bg-[#86ad23] text-slate-950 font-semibold gap-2 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            New Article
-          </Button>
-        </div>
-      </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="gap-2 cursor-pointer"
+            >
+              <Link href="/editorial/author">
+                <User className="w-3.5 h-3.5 text-primary" />
+                <span>Author Profile</span>
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="gap-2 cursor-pointer"
+            >
+              <Link href="/editorial/categories">
+                <Tags className="w-3.5 h-3.5 text-primary" />
+                <span>Categories</span>
+              </Link>
+            </Button>
+
+            <Button
+              onClick={handleOpenCreate}
+              size="sm"
+              className="gap-2 shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Article</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Total Articles</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">Total Articles</span>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-slate-900">{stats.total}</div>
-          <div className="mt-1 text-xs text-slate-400">Published across all categories</div>
+          <div className="mt-3 text-2xl font-bold text-foreground">{stats.total}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Published across all categories</div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Live on Site</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">Live on Site</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-emerald-600">{stats.published}</div>
-          <div className="mt-1 text-xs text-slate-400">Directly accessible on /blog</div>
+          <div className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.published}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Directly accessible on /blog</div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Drafts & Scheduled</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">Drafts & Scheduled</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-amber-600">{stats.drafts}</div>
-          <div className="mt-1 text-xs text-slate-400">In review / editorial staging</div>
+          <div className="mt-3 text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.drafts}</div>
+          <div className="mt-1 text-xs text-muted-foreground">In review / editorial staging</div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Total Engagement</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">Total Engagement</span>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-purple-600">
+          <div className="mt-3 text-2xl font-bold text-primary">
             {(stats.totalViews / 1000).toFixed(1)}k
           </div>
-          <div className="mt-1 text-xs text-slate-400">Total verified reads</div>
+          <div className="mt-1 text-xs text-muted-foreground">Total verified reads</div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-card rounded-xl border border-border p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
           <Input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search by article title, slug, or keywords..."
-            className="pl-9 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#98c22a]"
+            className="pl-9 bg-background border-input focus-visible:ring-1 focus-visible:ring-primary"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => {
+                setSearchQuery('');
+                setPage(1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -489,12 +597,15 @@ export default function EditorialBlogAdminPage() {
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2">
-            <Folder className="w-4 h-4 text-slate-400" />
+            <Folder className="w-4 h-4 text-muted-foreground" />
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setPage(1);
+              }}
               aria-label="Filter articles by category"
-              className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+              className="text-xs font-medium bg-background border border-input rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">All Categories ({posts.length})</option>
               {categories.map((cat) => (
@@ -508,9 +619,12 @@ export default function EditorialBlogAdminPage() {
           <div className="flex items-center gap-2">
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setPage(1);
+              }}
               aria-label="Filter articles by publication status"
-              className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+              className="text-xs font-medium bg-background border border-input rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">All Statuses</option>
               <option value="PUBLISHED">Published Only</option>
@@ -521,28 +635,29 @@ export default function EditorialBlogAdminPage() {
       </div>
 
       {/* Main Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-xs overflow-hidden">
         {isLoading ? (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <RefreshCw className="w-8 h-8 text-[#98c22a] animate-spin mb-3" />
-            <p className="text-sm font-medium text-slate-600">Loading publications from database...</p>
+            <RefreshCw className="w-8 h-8 text-primary animate-spin mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">Loading publications from database...</p>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-3">
               <FileText className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900">No publications found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm">
+            <h3 className="text-base font-semibold text-foreground">No publications found</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
               {searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all'
                 ? 'Try adjusting your search filters or clearing the query.'
                 : 'Get started by creating your first technical publication.'}
             </p>
             <Button
               onClick={handleOpenCreate}
-              className="mt-4 bg-[#98c22a] hover:bg-[#86ad23] text-slate-950 font-semibold"
+              size="sm"
+              className="mt-4 gap-1.5 shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-1" />
               Create Article
             </Button>
           </div>
@@ -578,7 +693,7 @@ export default function EditorialBlogAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredPosts.map((post, index) => (
+                {paginatedPosts.map((post, index) => (
                   <tr
                     key={post.id}
                     className={`hover:bg-slate-50/80 transition-colors group ${
@@ -598,7 +713,7 @@ export default function EditorialBlogAdminPage() {
                       />
                     </td>
                     <td className="py-4 px-2 text-xs font-mono text-slate-400 text-center">
-                      {index + 1}
+                      {(page - 1) * pageSize + index + 1}
                     </td>
 
                     {/* Title & Cover Thumbnail */}
@@ -695,7 +810,7 @@ export default function EditorialBlogAdminPage() {
                       <div className="flex items-center justify-end gap-1">
                         {/* View on live site */}
                         <a
-                          href={`http://localhost:3000/blog/${post.slug}`}
+                          href={`${getSiteUrl()}/blog/${post.slug}`}
                           target="_blank"
                           rel="noreferrer"
                           title="Open live post"
@@ -729,17 +844,28 @@ export default function EditorialBlogAdminPage() {
             </table>
           </div>
         )}
+
+        {!isLoading && filteredPosts.length > 0 && (
+          <TablePagination
+            currentPage={page}
+            totalItems={filteredPosts.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="articles"
+          />
+        )}
       </div>
 
       {/* Create / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+        <DialogContent className="max-w-4xl lg:max-w-5xl max-h-[92vh] overflow-y-auto p-6 sm:p-8">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[#98c22a]" />
+            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
               {editingPost ? 'Edit Publication' : 'Draft New Engineering Article'}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500">
+            <DialogDescription className="text-sm text-muted-foreground">
               Configure publication metadata, content hierarchy, SEO route, and cover media.
             </DialogDescription>
           </DialogHeader>
@@ -747,36 +873,36 @@ export default function EditorialBlogAdminPage() {
           <form onSubmit={handleSave} className="space-y-6 mt-4">
             {/* Title */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Article Title <span className="text-rose-500">*</span>
+              <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5">
+                Article Title <span className="text-destructive">*</span>
               </label>
               <Input
                 value={formData.title}
                 onChange={handleTitleChange}
                 placeholder="e.g. Architecting High-Frequency Distributed Systems with Zero Drift"
                 required
-                className="font-medium text-slate-900 focus-visible:ring-[#98c22a]"
+                className="font-medium text-foreground focus-visible:ring-primary"
               />
             </div>
 
             {/* Slug & Auto-slug */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  URL Route Slug <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  URL Route Slug <span className="text-destructive">*</span>
                 </label>
-                <label className="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={autoSlug}
                     onChange={(e) => setAutoSlug(e.target.checked)}
-                    className="rounded border-slate-300 text-[#98c22a] focus:ring-[#98c22a]"
+                    className="rounded border-input text-primary focus:ring-primary"
                   />
                   <span>Auto-generate from title</span>
                 </label>
               </div>
-              <div className="flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 focus-within:ring-1 focus-within:ring-[#98c22a]">
-                <span className="text-xs font-mono text-slate-400 select-none">/blog/</span>
+              <div className="flex items-center rounded-md border border-input bg-muted/40 px-3 py-1.5 focus-within:ring-1 focus-within:ring-primary">
+                <span className="text-xs font-mono text-muted-foreground select-none">/blog/</span>
                 <input
                   type="text"
                   value={formData.slug}
@@ -786,7 +912,7 @@ export default function EditorialBlogAdminPage() {
                   }}
                   required
                   placeholder="architecting-high-frequency-distributed-systems"
-                  className="w-full bg-transparent text-xs font-mono text-slate-800 border-none outline-none focus:ring-0 ml-1"
+                  className="w-full bg-transparent text-xs font-mono text-foreground border-none outline-none focus:ring-0 ml-1"
                 />
               </div>
             </div>
@@ -794,15 +920,47 @@ export default function EditorialBlogAdminPage() {
             {/* Two-Column Grid: Category & Read Time */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Category <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                    Category <span className="text-destructive">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsQuickCategoryOpen((prev) => !prev)}
+                    className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>{isQuickCategoryOpen ? 'Cancel' : 'New Category'}</span>
+                  </button>
+                </div>
+
+                {isQuickCategoryOpen && (
+                  <div className="mb-2 p-2 rounded-lg bg-muted/60 border border-border flex items-center gap-2">
+                    <Input
+                      value={quickCategoryName}
+                      onChange={(e) => setQuickCategoryName(e.target.value)}
+                      placeholder="New category name..."
+                      className="text-xs h-8 bg-background"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleQuickCreateCategory}
+                      disabled={isCreatingCategory || !quickCategoryName.trim()}
+                      className="h-8 text-xs shrink-0 cursor-pointer"
+                    >
+                      {isCreatingCategory ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Save'}
+                    </Button>
+                  </div>
+                )}
+
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, categoryId: e.target.value }))}
                   required
                   aria-label="Select article category"
-                  className="w-full text-xs bg-white border border-slate-200 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+                  className="w-full text-xs bg-background border border-input rounded-md px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -813,7 +971,7 @@ export default function EditorialBlogAdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5">
                   Estimated Read Time (Minutes)
                 </label>
                 <Input
@@ -831,24 +989,57 @@ export default function EditorialBlogAdminPage() {
 
             {/* Cover Image URL & Live Preview */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Cover Image URL (Unsplash or CDN)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Cover Image (Upload or CDN URL)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => coverFileInputRef.current?.click()}
+                  className="text-xs text-primary font-medium hover:underline flex items-center gap-1"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Upload from Device
+                </button>
+              </div>
+              <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 10 * 1024 * 1024) {
+                    notify.error('File size exceeds 10MB limit.');
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const dataUrl = ev.target?.result as string;
+                    if (dataUrl) {
+                      setFormData((prev) => ({ ...prev, coverImage: dataUrl }));
+                      notify.success('Cover image uploaded.');
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
               <div className="flex gap-3 items-start">
                 <div className="grow">
                   <Input
                     value={formData.coverImage}
                     onChange={(e) => setFormData((prev) => ({ ...prev, coverImage: e.target.value }))}
-                    placeholder="https://images.unsplash.com/photo-..."
+                    placeholder="https://images.unsplash.com/photo-... or upload file"
                     className="font-mono text-xs"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Paste high-res Unsplash or uploaded asset URL. Recommended aspect ratio 16:9.
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Paste high-res Unsplash/CDN URL or click &quot;Upload from Device&quot;. Recommended aspect ratio 16:9.
                   </p>
                 </div>
 
                 {formData.coverImage && (
-                  <div className="w-24 h-14 rounded-md overflow-hidden border border-slate-200 shrink-0 bg-slate-100">
+                  <div className="w-24 h-14 rounded-md overflow-hidden border border-border shrink-0 bg-muted relative group">
                     <img
                       src={formData.coverImage}
                       alt="Cover preview"
@@ -858,6 +1049,14 @@ export default function EditorialBlogAdminPage() {
                           'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80';
                       }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, coverImage: '' }))}
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove cover"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -865,8 +1064,8 @@ export default function EditorialBlogAdminPage() {
 
             {/* Excerpt */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Executive Excerpt / Summary <span className="text-rose-500">*</span>
+              <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5">
+                Executive Excerpt / Summary <span className="text-destructive">*</span>
               </label>
               <textarea
                 value={formData.excerpt}
@@ -874,43 +1073,33 @@ export default function EditorialBlogAdminPage() {
                 rows={3}
                 required
                 placeholder="A concise, high-level summary of the architectural insights presented in this publication..."
-                className="w-full text-xs text-slate-800 bg-white border border-slate-200 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+                className="w-full text-xs text-foreground bg-background border border-input rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
-            {/* Main Content */}
+            {/* Article Content with Rich Text & Image Upload */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Article Body Content (Markdown Paragraphs)
-              </label>
-              <textarea
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Article Body & Media Content <span className="text-destructive">*</span>
+                </label>
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  Upload images, drag & drop files, or paste screenshots (Ctrl+V) directly
+                </span>
+              </div>
+              <RichTextEditor
                 value={formData.content}
-                onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
-                rows={8}
-                placeholder="Write or paste your article markdown content here. Separate paragraphs with double line breaks..."
-                className="w-full font-mono text-xs text-slate-800 bg-slate-50/50 border border-slate-200 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-[#98c22a]"
+                onChange={(content) => setFormData((prev) => ({ ...prev, content }))}
+                placeholder="Write your publication content in rich markdown. Upload images, use ## for sections, > for insights, and **bold** for emphasis..."
+                minHeight="380px"
               />
             </div>
 
-            {/* Status Switch */}
-            <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 border border-slate-200">
-              <div>
-                <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Publish Immediately
-                </div>
-                <div className="text-xs text-slate-500">
-                  {formData.status === 'PUBLISHED'
-                    ? 'Article will be publicly visible on /blog'
-                    : 'Article will be saved as draft and hidden from public'}
-                </div>
-              </div>
-              <Switch
-                checked={formData.status === 'PUBLISHED'}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, status: checked ? 'PUBLISHED' : 'DRAFT' }))
-                }
-              />
-            </div>
+            {/* Status Toggle Field */}
+            <StatusToggleField
+              value={formData.status}
+              onChange={(status) => setFormData((prev) => ({ ...prev, status: status as any }))}
+            />
 
             <DialogFooter className="gap-2">
               <Button
@@ -924,10 +1113,10 @@ export default function EditorialBlogAdminPage() {
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="bg-[#98c22a] hover:bg-[#86ad23] text-slate-950 font-semibold gap-2"
+                className="gap-2 shadow-xs cursor-pointer"
               >
                 {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
-                {editingPost ? 'Save Changes' : 'Publish Article'}
+                <span>{editingPost ? 'Save Changes' : 'Publish Article'}</span>
               </Button>
             </DialogFooter>
           </form>
@@ -1007,6 +1196,6 @@ export default function EditorialBlogAdminPage() {
         variant="destructive"
         onConfirm={handleBulkDelete}
       />
-    </div>
+    </AdminContentContainer>
   );
 }

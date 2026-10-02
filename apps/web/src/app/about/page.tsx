@@ -9,6 +9,8 @@ import { ClientsTrustedBySection } from '@/components/cms/clients-trusted-by-sec
 import { ScrollReveal } from '@/components/motion';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,23 +61,6 @@ const DEFAULT_PILLARS = [
   },
 ];
 
-const DEFAULT_TEAM = [
-  {
-    name: 'Mohammad Ali',
-    role: 'Founder & Principal Shopify Architect',
-    bio: '8+ years engineering high-scale Shopify Plus architectures and headless Hydrogen storefronts.',
-  },
-  {
-    name: 'Senior Liquid Engineer',
-    role: 'Lead Theme & Performance Specialist',
-    bio: 'Specializing in sub-second mobile page speed, checkout extensibility, and custom Liquid apps.',
-  },
-  {
-    name: 'E-Commerce CRO Lead',
-    role: 'Data & Conversion Strategist',
-    bio: 'Translating user behavioral heatmaps and analytics into high-converting checkout funnels.',
-  },
-];
 
 export default async function AboutPage() {
   const [aboutPage, homePage, clients, teamList] = await Promise.all([
@@ -153,7 +138,6 @@ export default async function AboutPage() {
         'We partner with ambitious enterprises and high-growth innovators to engineer scalable, high-performance digital platforms.',
       layout: {
         preset: '6/line',
-        desktopRows: [6, 4],
         mobileCols: 3,
         showMetricsBar: true,
       },
@@ -186,18 +170,32 @@ export default async function AboutPage() {
 
   const team =
     Array.isArray(teamList) && teamList.length > 0
-      ? teamList.map((m: any) => ({
-          name: m.name || `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'Team Member',
-          role: m.role || m.roleTitle || 'Senior Specialist',
-          bio: m.bio || '',
-          avatar: m.avatar || m.avatarUrl || null,
-        }))
-      : Array.isArray(teamPayload.teamMembers) && teamPayload.teamMembers.length > 0
-      ? teamPayload.teamMembers
-      : DEFAULT_TEAM;
+      ? teamList
+          .filter((m: any) => m.isActive !== false && m.status !== 'DRAFT')
+          .map((m: any) => ({
+            name: m.name || `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'Team Member',
+            role: m.role || m.roleTitle || 'Senior Specialist',
+            bio: m.bio || '',
+            avatar: m.avatar || m.avatarUrl || null,
+          }))
+      : [];
+
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'About Us', item: '/about' },
+  ]);
+
+  const aboutSchema = buildWebPageSchema({
+    name: 'About Gypsym Technology',
+    description: 'Learn about Gypsym Technology, our engineering-first philosophy, senior specialists, and client-proven track record building high-growth Shopify Plus storefronts.',
+    url: `${getSiteUrl()}/about`,
+    type: 'AboutPage',
+  });
 
   return (
     <div className="w-full">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={aboutSchema} />
       {/* ── 1. Hero Section ── */}
       <SubpageHero
         ariaLabel="About Hero"
@@ -276,6 +274,7 @@ export default async function AboutPage() {
       </section>
 
       {/* ── 3. Leadership & Specialists ── */}
+      {(rawTeam?.isActive !== false || team.length > 0) && (
       <section className="w-full py-8 sm:py-10 md:py-14 bg-transparent">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
           <ScrollReveal direction="up">
@@ -309,6 +308,8 @@ export default async function AboutPage() {
                     <img
                       src={mem.avatar}
                       alt={mem.name}
+                      loading="lazy"
+                      decoding="async"
                       className="h-12 w-12 rounded-xl object-cover border border-neutral-200/80 shadow-2xs"
                     />
                   ) : (
@@ -327,6 +328,7 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── 4. Clients / Trusted By Section (Matching Home Page) ── */}
       {clientsSectionToRender && (

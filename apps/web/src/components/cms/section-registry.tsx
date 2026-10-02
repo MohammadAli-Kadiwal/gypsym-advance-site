@@ -1,32 +1,76 @@
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { PageSectionDto } from '@/lib/cms-types';
 import { HeroSection } from './hero-section';
-import { VerifiedResultsSection } from './verified-results-section';
-import { RevenueExperimentSection } from './revenue-experiment-section';
-import { WhatWeChangeSection } from './what-we-change-section';
-import { DeliveryProcessSection } from './delivery-process-section';
-import { ClientTestimonialsSection } from './client-testimonials-section';
-import { PortfolioSection } from './portfolio-section';
-import { ClientsTrustedBySection } from './clients-trusted-by-section';
-import { PartnersSection } from './partners-section';
-import { ContactSection } from './contact-section';
-import { CtaSection } from './cta-section';
-import { CapabilitiesSection } from './capabilities-section';
-import { ClientOutcomesSection } from './client-outcomes-section';
-import { DirectContactSection } from './direct-contact-section';
-import { BookingCalendarSection } from './booking-calendar-section';
-
-export { CapabilitiesSection } from './capabilities-section';
-export { ClientOutcomesSection } from './client-outcomes-section';
-export { DirectContactSection } from './direct-contact-section';
-export { BookingCalendarSection } from './booking-calendar-section';
-export { BrandLogosSection } from './brand-logos-section';
-export { BrandLogoCard } from './shared/brand-logo-card';
-export { BrandLogosGrid } from './shared/brand-logos-grid';
 
 export interface SectionProps {
   section: PageSectionDto;
 }
+
+const VerifiedResultsSection = dynamic<SectionProps>(
+  () => import('./verified-results-section').then((mod) => mod.VerifiedResultsSection),
+  { ssr: true }
+);
+const RevenueExperimentSection = dynamic<SectionProps>(
+  () => import('./revenue-experiment-section').then((mod) => mod.RevenueExperimentSection),
+  { ssr: true }
+);
+const WhatWeChangeSection = dynamic<SectionProps>(
+  () => import('./what-we-change-section').then((mod) => mod.WhatWeChangeSection),
+  { ssr: true }
+);
+const ClientsTrustedBySection = dynamic<SectionProps>(
+  () => import('./clients-trusted-by-section').then((mod) => mod.ClientsTrustedBySection),
+  { ssr: true }
+);
+const PartnersSection = dynamic<SectionProps>(
+  () => import('./partners-section').then((mod) => mod.PartnersSection),
+  { ssr: true }
+);
+const CtaSection = dynamic<SectionProps>(
+  () => import('./cta-section').then((mod) => mod.CtaSection),
+  { ssr: true }
+);
+const CapabilitiesSection = dynamic<SectionProps>(
+  () => import('./capabilities-section').then((mod) => mod.CapabilitiesSection),
+  { ssr: true }
+);
+const ClientOutcomesSection = dynamic<SectionProps>(
+  () => import('./client-outcomes-section').then((mod) => mod.ClientOutcomesSection),
+  { ssr: true }
+);
+const DirectContactSection = dynamic<SectionProps>(
+  () => import('./direct-contact-section').then((mod) => mod.DirectContactSection),
+  { ssr: true }
+);
+const DeliveryProcessSection = dynamic<SectionProps>(
+  () => import('./delivery-process-section').then((mod) => mod.DeliveryProcessSection),
+  { ssr: true }
+);
+const ClientTestimonialsSection = dynamic<SectionProps>(
+  () => import('./client-testimonials-section').then((mod) => mod.ClientTestimonialsSection),
+  { ssr: true }
+);
+const PortfolioSection = dynamic<SectionProps>(
+  () => import('./portfolio-section').then((mod) => mod.PortfolioSection),
+  { ssr: true }
+);
+const ContactSection = dynamic<SectionProps>(
+  () => import('./contact-section').then((mod) => mod.ContactSection),
+  { ssr: true }
+);
+const BookingCalendarSection = dynamic<SectionProps>(
+  () => import('./booking-calendar-section').then((mod) => mod.BookingCalendarSection),
+  { ssr: true }
+);
+const RoiCalculatorSection = dynamic<SectionProps>(
+  () => import('./roi-calculator-section').then((mod) => mod.RoiCalculatorSection),
+  { ssr: true }
+);
+
+export { BrandLogosSection } from './brand-logos-section';
+export { BrandLogoCard } from './shared/brand-logo-card';
+export { BrandLogosGrid } from './shared/brand-logos-grid';
 
 /**
  * Section Component Registry Map.
@@ -77,6 +121,9 @@ export const sectionRegistry: Record<string, React.ComponentType<SectionProps>> 
   REACH_US_DIRECTLY: DirectContactSection,
   BOOKING_CALENDAR: BookingCalendarSection,
   DISCOVERY_BOOKING: BookingCalendarSection,
+  ROI_CALCULATOR: RoiCalculatorSection,
+  REVENUE_UPLIFT_CALCULATOR: RoiCalculatorSection,
+  REVENUE_CALCULATOR: RoiCalculatorSection,
 };
 
 /**

@@ -4,7 +4,17 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
+    /* Layout Tokens */
+    --admin-header-height: 4rem;
+    --admin-sidebar-width: 17rem;
+    --admin-sidebar-collapsed-width: 4.5rem;
+    --admin-content-max-width: 1440px;
+    --admin-content-max-width-wide: 1680px;
+    --admin-content-padding: 1.5rem;
+    --admin-page-gap: 1.5rem;
+
+    /* Theme Tokens - Light Mode (Matches Website Warm Alabaster #f4f3ef) */
+    --background: 48 18% 95%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -13,72 +23,73 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 53%;
+    --primary: 217 91% 54%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 14% 96%;
+    --secondary: 48 14% 91%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 48 14% 91%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 221 83% 53%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
-
-    --radius: 0.85rem;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 224 76% 96%;
-    --sidebar-accent-foreground: 221 83% 53%;
-    --sidebar-border: 220 13% 92%;
-  }
-
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 217 33% 14%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 217 33% 14%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 20%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 91% 60%;
+    --accent: 217 91% 54%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+    --border: 214.3 31.8% 90%;
+    --input: 214.3 31.8% 90%;
+    --ring: 217 91% 54%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 54%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 48 14% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214.3 31.8% 90%;
+  }
+
+  .dark {
+    /* Theme Tokens - Dark Mode (Matches Website Obsidian #030712) */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 224 71% 4%;
+
+    --secondary: 217.2 32.6% 12%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 12%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 15%;
+    --input: 217.2 32.6% 15%;
     --ring: 217 91% 60%;
 
-    --sidebar-background: 222 47% 9%;
-    --sidebar-foreground: 215 20% 80%;
+    --sidebar-background: 224 71% 5%;
+    --sidebar-foreground: 215 20.2% 80%;
     --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 15%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 217.2 32.6% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 16%;
+    --sidebar-border: 217.2 32.6% 15%;
   }
 }
 
@@ -91,6 +102,31 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+
+  /* ── Global interactive cursor fixes ─────────────────────────────── */
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='switch'],
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'],
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  /* ─────────────────────────────────────────────────────────────────── */
 }
 
 /* Custom High-Density Scrollbars */
@@ -106,5 +142,5 @@
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: hsl(var(--muted-foreground) / 0.5);
 }

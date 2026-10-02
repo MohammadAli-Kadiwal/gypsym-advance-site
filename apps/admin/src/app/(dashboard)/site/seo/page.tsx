@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService } from '@/services/seo.service';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 
 import { SeoDashboardTab } from './_components/seo-dashboard-tab';
 import { GlobalSeoTab } from './_components/global-seo-tab';
@@ -183,40 +184,31 @@ export default function SeoManagementPage() {
   const isWarning = healthScore >= 50 && healthScore < 80;
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-5">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-              <Globe className="h-6 w-6 text-primary" />
-              SEO & Discoverability
-            </h1>
-            <Badge
-              variant="outline"
-              className={
-                isHealthy
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                  : isWarning
-                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
-              }
-            >
-              Audit Score: {healthScore}%
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Enterprise SEO, Answer Engine Optimization (AEO), and Generative Engine Optimization (GEO) management.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={refreshAll} disabled={loadingDashboard}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loadingDashboard ? 'animate-spin' : ''}`} />
-            Refresh Data
+    <AdminContentContainer variant="wide">
+      <AdminPageHeader
+        title="SEO & Discoverability"
+        description="Enterprise SEO, Answer Engine Optimization (AEO), and Generative Engine Optimization (GEO) management."
+        status={
+          <Badge
+            variant="outline"
+            className={
+              isHealthy
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                : isWarning
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+            }
+          >
+            Audit Score: {healthScore}%
+          </Badge>
+        }
+        actions={
+          <Button variant="outline" size="sm" onClick={refreshAll} disabled={loadingDashboard} className="gap-2 cursor-pointer">
+            <RefreshCw className={`h-4 w-4 ${loadingDashboard ? 'animate-spin' : ''}`} />
+            <span>Refresh Data</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -373,6 +365,6 @@ export default function SeoManagementPage() {
           setIsEditDialogOpen(true);
         }}
       />
-    </div>
+    </AdminContentContainer>
   );
 }

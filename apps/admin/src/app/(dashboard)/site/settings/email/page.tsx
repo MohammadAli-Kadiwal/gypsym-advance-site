@@ -16,8 +16,10 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+
 const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
-  <label className={`block text-xs font-semibold text-slate-700 ${className}`} {...props} />
+  <label className={`block text-xs font-semibold text-foreground ${className}`} {...props} />
 );
 
 import {
@@ -253,63 +255,58 @@ export default function EmailSmtpSettingsPage() {
 
   if (loading) {
     return (
-      <div className="w-full py-6 space-y-4">
-        <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-64 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
-      </div>
+      <AdminContentContainer variant="standard" className="space-y-6 pb-24">
+        <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
+        <div className="h-64 bg-card rounded-2xl border border-border animate-pulse" />
+      </AdminContentContainer>
     );
   }
 
   return (
-    <div className="space-y-6 w-full pb-24">
+    <AdminContentContainer variant="standard" className="space-y-6 pb-24">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div>
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Email & SMTP Configuration
-            </h1>
-            {settings.isConfigured ? (
-              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-semibold gap-1.5 py-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Gateway Active
-              </Badge>
-            ) : (
-              <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs font-semibold gap-1.5 py-0.5">
-                <AlertCircle className="w-3.5 h-3.5" />
-                Not Configured
-              </Badge>
-            )}
+      <AdminPageHeader
+        title="Email & SMTP Configuration"
+        description="Configure global SMTP transport, multiple admin notification recipients, and automated reply pipelines."
+        status={
+          settings.isConfigured ? (
+            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs font-semibold gap-1.5 py-0.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Gateway Active
+            </Badge>
+          ) : (
+            <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs font-semibold gap-1.5 py-0.5">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Not Configured
+            </Badge>
+          )
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTestModal(true)}
+              className="rounded-xl h-9 px-4 text-xs font-semibold gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5 text-primary" />
+              Send Test Email
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-9 px-4 text-xs font-semibold shadow-xs gap-1.5"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Save Settings
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Configure global SMTP transport, multiple admin notification recipients, and automated reply pipelines.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTestModal(true)}
-            className="rounded-xl h-9 px-4 text-xs font-semibold border-slate-200 hover:bg-slate-50 gap-1.5"
-          >
-            <Send className="w-3.5 h-3.5 text-blue-600" />
-            Send Test Email
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-xs gap-1.5"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Save Settings
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* ── SMTP Server Details ─────────────────────────────────────────── */}
@@ -811,6 +808,6 @@ export default function EmailSmtpSettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminContentContainer>
   );
 }

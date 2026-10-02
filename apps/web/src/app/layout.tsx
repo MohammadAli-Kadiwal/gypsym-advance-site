@@ -1,14 +1,20 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import './globals.css';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
-import { SearchModal } from '@/components/search-modal';
 import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
+
+const SearchModal = dynamic(
+  () => import('@/components/search-modal').then((mod) => mod.SearchModal),
+  { ssr: false }
+);
 import { DynamicBrandStyleTag } from '@/components/branding-provider';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
 import { GlobalWebsiteLoader, RouteProgressBar } from '@/components/motion';
 import { getHeaderData, getScriptSettings, getPublicGlobalSeo } from '@/lib/api';
 import { ScriptInjector } from '@/components/script-injector';
+import { getSiteUrl } from '@/lib/site-url';
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getPublicGlobalSeo().catch(() => null);
@@ -18,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const template = seo?.metaTitleTemplate || `%s | ${siteName}`;
   const description = seo?.defaultDescription || undefined;
   const keywords = seo?.defaultKeywords || [];
-  const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || 'https://gypsym.com';
+  const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || getSiteUrl();
   const ogImage = seo?.defaultOgImage || seo?.ogDefaultImage ? [{ url: seo.defaultOgImage || seo.ogDefaultImage }] : undefined;
   const twitterCard = (seo?.twitterCard as any) || 'summary_large_image';
 
@@ -82,7 +88,7 @@ export default async function RootLayout({
   ]);
 
   const companyName = globalSeo?.organizationName || headerData.branding?.companyName || 'Gypsym Technology';
-  const siteUrl = globalSeo?.siteUrl || 'https://gypsym.com';
+  const siteUrl = globalSeo?.siteUrl || getSiteUrl();
   const logoUrl = globalSeo?.organizationLogo || headerData.branding?.logoLight || `${siteUrl}/logo.svg`;
   const socialProfiles = (globalSeo?.socialProfiles || []).map((s) => s.url).filter(Boolean);
 

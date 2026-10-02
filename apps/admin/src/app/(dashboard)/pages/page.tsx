@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
+import { AdminContentContainer } from '@/components/layout/admin-page';
 import { PagesTable } from './_components/pages-table';
 import type { PageData } from './_components/types';
 
@@ -60,15 +61,17 @@ export default function PagesManagementPage() {
 
   if (!mounted) {
     return (
-      <div className="w-full py-6 space-y-4">
-        <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
-      </div>
+      <AdminContentContainer variant="wide">
+        <div className="w-full py-6 space-y-4">
+          <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
+          <div className="h-32 bg-card rounded-2xl border border-border animate-pulse" />
+        </div>
+      </AdminContentContainer>
     );
   }
 
   return (
-    <div className="w-full space-y-6 pb-24">
+    <AdminContentContainer variant="wide">
       <React.Suspense fallback={null}>
         <PagesTable
           pages={allPages}
@@ -77,6 +80,6 @@ export default function PagesManagementPage() {
           onCreatePage={handleCreatePage}
         />
       </React.Suspense>
-    </div>
+    </AdminContentContainer>
   );
 }

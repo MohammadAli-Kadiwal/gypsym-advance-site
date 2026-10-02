@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatDateTime } from '@/lib/utils';
+import { AdminContentContainer } from '@/components/layout/admin-page';
 
 interface Revision {
   id: string;
@@ -85,7 +86,7 @@ export default function PageRevisionsView() {
   };
 
   return (
-    <div className="space-y-6">
+    <AdminContentContainer variant="wide" className="pb-24">
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-border/50 pb-4">
         <div className="flex items-center space-x-3">
@@ -254,6 +255,6 @@ export default function PageRevisionsView() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminContentContainer>
   );
 }

@@ -10,7 +10,8 @@ const API_BASE_URL = API_CONFIG.baseURL;
 export async function getPageBySlug(slug: string): Promise<PageDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/pages/${slug}`, {
-      next: { tags: [`page-${slug}`, 'pages'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: [`page-${slug}`, 'pages'], revalidate: 0 },
     });
     if (!res.ok) {
       return null;
@@ -28,7 +29,8 @@ export async function getPageBySlug(slug: string): Promise<PageDto | null> {
 export async function getNavigation(key: string): Promise<NavigationDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/navigation/${key}`, {
-      next: { tags: [`nav-${key}`], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: [`nav-${key}`], revalidate: 0 },
     });
     if (!res.ok) {
       return null;
@@ -46,7 +48,8 @@ export async function getNavigation(key: string): Promise<NavigationDto | null> 
 export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/branding`, {
-      next: { tags: ['brand-settings'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['brand-settings'], revalidate: 0 },
     });
     if (!res.ok) {
       return null;
@@ -64,7 +67,8 @@ export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
 export async function getSiteSettings(): Promise<Record<string, any>> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings`, {
-      next: { tags: ['site-settings'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['site-settings'], revalidate: 0 },
     });
     if (!res.ok) {
       return {};
@@ -82,7 +86,8 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
 export async function getScriptSettings(): Promise<any | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings/scripts`, {
-      next: { tags: ['scripts-configuration'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['scripts-configuration'], revalidate: 0 },
     });
     if (!res.ok) {
       return null;
@@ -100,7 +105,8 @@ export async function getScriptSettings(): Promise<any | null> {
 export async function getHeaderData(): Promise<HeaderDataDto> {
   try {
     const res = await fetch(`${API_BASE_URL}/header`, {
-      next: { tags: ['header-all'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['header-all'], revalidate: 0 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -124,7 +130,8 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
 export async function getFooterData(): Promise<FooterDataDto> {
   try {
     const res = await fetch(`${API_BASE_URL}/footer`, {
-      next: { tags: ['footer-all'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['footer-all'], revalidate: 0 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -176,12 +183,14 @@ export interface PortfolioProjectItemDto {
 export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/portfolio/categories`, {
-      next: { tags: ['portfolio-categories'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['portfolio-categories'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
     const data = json?.data ?? json;
-    return Array.isArray(data) ? data : [];
+    const array = Array.isArray(data) ? data : [];
+    return array.filter((c: any) => c.status === 'PUBLISHED');
   } catch {
     return [];
   }
@@ -194,12 +203,14 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
       url.searchParams.set('category', categorySlug);
     }
     const res = await fetch(url.toString(), {
-      next: { tags: ['portfolio-projects'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['portfolio-projects'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
     const list = json?.data?.projects ?? json?.projects ?? (Array.isArray(json?.data) ? json.data : []);
-    return Array.isArray(list) ? list : [];
+    const array = Array.isArray(list) ? list : [];
+    return array.filter((p: any) => p.status === 'PUBLISHED');
   } catch {
     return [];
   }
@@ -249,13 +260,15 @@ export interface ServiceItemDto {
 
 export async function getServices(): Promise<ServiceItemDto[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/services`, {
-      next: { tags: ['services'], revalidate: 60 },
+    const res = await fetch(`${API_BASE_URL}/services?status=PUBLISHED`, {
+      cache: 'no-store',
+      next: { tags: ['services'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
     const list = json?.data ?? json;
-    return Array.isArray(list) ? list : [];
+    const array = Array.isArray(list) ? list : [];
+    return array.filter((s: any) => s.status === 'PUBLISHED');
   } catch {
     return [];
   }
@@ -263,12 +276,15 @@ export async function getServices(): Promise<ServiceItemDto[]> {
 
 export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/services/${slug}`, {
-      next: { tags: [`service-${slug}`], revalidate: 60 },
+    const res = await fetch(`${API_BASE_URL}/services/${slug}?status=PUBLISHED`, {
+      cache: 'no-store',
+      next: { tags: [`service-${slug}`], revalidate: 0 },
     });
     if (!res.ok) return null;
     const json = await res.json();
-    return (json?.data ?? json) || null;
+    const item = (json?.data ?? json) || null;
+    if (item && item.status !== 'PUBLISHED') return null;
+    return item;
   } catch {
     return null;
   }
@@ -284,7 +300,8 @@ export interface CmsPageSummary {
 export async function getPublishedPages(): Promise<CmsPageSummary[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/pages`, {
-      next: { tags: ['cms-pages'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['cms-pages'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -300,13 +317,15 @@ export async function getPublishedPages(): Promise<CmsPageSummary[]> {
 
 export async function getClients(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/clients`, {
-      next: { tags: ['clients'], revalidate: 60 },
+    const res = await fetch(`${API_BASE_URL}/clients?status=PUBLISHED`, {
+      cache: 'no-store',
+      next: { tags: ['clients'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
     const list = json?.data ?? json;
-    return Array.isArray(list) ? list : [];
+    const array = Array.isArray(list) ? list : [];
+    return array.filter((c: any) => c.status !== 'DRAFT' && c.isFeatured !== false && c.isActive !== false);
   } catch {
     return [];
   }
@@ -314,21 +333,24 @@ export async function getClients(): Promise<any[]> {
 
 export async function getTeamMembers(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/cms/collections/team`, {
-      next: { tags: ['team'], revalidate: 60 },
+    const res = await fetch(`${API_BASE_URL}/team`, {
+      cache: 'no-store',
+      next: { tags: ['team'], revalidate: 0 },
     });
     if (!res.ok) {
-      const fallback = await fetch(`${API_BASE_URL}/team`, { next: { tags: ['team'], revalidate: 60 } }).catch(() => null);
+      const fallback = await fetch(`${API_BASE_URL}/cms/collections/team`, { cache: 'no-store', next: { tags: ['team'], revalidate: 0 } }).catch(() => null);
       if (fallback?.ok) {
         const fj = await fallback.json();
         const flist = fj?.data ?? fj;
-        return Array.isArray(flist) ? flist : [];
+        const array = Array.isArray(flist) ? flist : [];
+        return array.filter((m: any) => m.isActive !== false && m.status !== 'DRAFT');
       }
       return [];
     }
     const json = await res.json();
     const list = json?.data ?? json;
-    return Array.isArray(list) ? list : [];
+    const array = Array.isArray(list) ? list : [];
+    return array.filter((m: any) => m.isActive !== false && m.status !== 'DRAFT');
   } catch {
     return [];
   }
@@ -402,7 +424,8 @@ export interface BlogPostDetailDto extends BlogPostItemDto {
 export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/blog/categories`, {
-      next: { tags: ['blog-categories'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['blog-categories'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -432,7 +455,8 @@ export async function getBlogPosts(options?: {
 
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await fetch(`${API_BASE_URL}/blog${qs}`, {
-      next: { tags: ['blog-posts'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['blog-posts'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -446,7 +470,8 @@ export async function getBlogPosts(options?: {
 export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/blog/${slug}`, {
-      next: { tags: [`blog-${slug}`], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: [`blog-${slug}`], revalidate: 0 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -476,7 +501,8 @@ export interface SeoDefaultsDto {
 export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/settings/seo`, {
-      next: { tags: ['seo-settings'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-settings'], revalidate: 0 },
     });
     if (!res.ok) return null;
     const json = await res.json();

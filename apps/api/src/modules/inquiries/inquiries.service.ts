@@ -247,4 +247,14 @@ export class InquiriesService {
     await this.prisma.contactSubmission.delete({ where: { id } });
     return { success: true };
   }
+
+  /**
+   * Admin: Bulk delete submissions.
+   */
+  async bulkDeleteInquiries(ids: string[]): Promise<{ count: number }> {
+    if (!ids || ids.length === 0) return { count: 0 };
+    return this.prisma.contactSubmission.deleteMany({
+      where: { id: { in: ids } },
+    });
+  }
 }

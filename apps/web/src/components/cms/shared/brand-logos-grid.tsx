@@ -7,27 +7,40 @@ export interface BrandLogosGridProps {
   items: BrandLogoItem[];
   displayMode?: 'cards' | 'marquee';
   desktopRows?: number[];
+  desktopCols?: number;
   logoStyle?: 'original' | 'muted' | 'grayscale' | 'monochrome';
   logoSize?: 'small' | 'medium' | 'large';
   hoverEffect?: boolean;
   mobileCols?: 2 | 3;
 }
 
-// Maps column count to Tailwind grid-cols and proportional max-w to ensure 180px card slots
-const COL_WIDTH_CONFIG: Record<number, { gridClass: string; maxWClass: string }> = {
-  2: { gridClass: 'grid-cols-2', maxWClass: 'max-w-[360px]' },
-  3: { gridClass: 'grid-cols-3', maxWClass: 'max-w-[540px]' },
-  4: { gridClass: 'grid-cols-4', maxWClass: 'max-w-[720px]' },
-  5: { gridClass: 'grid-cols-5', maxWClass: 'max-w-[900px]' },
-  6: { gridClass: 'grid-cols-6', maxWClass: 'max-w-[1080px]' },
-  7: { gridClass: 'grid-cols-7', maxWClass: 'max-w-[1260px]' },
-  8: { gridClass: 'grid-cols-8', maxWClass: 'max-w-[1440px]' },
-};
+// Maps column count to responsive classes
+function getDesktopColClass(itemCount: number, explicitCols?: number): string {
+  if (explicitCols === 4) return 'lg:grid-cols-4';
+  if (explicitCols === 5) return 'lg:grid-cols-5';
+  if (explicitCols === 6) return 'lg:grid-cols-6';
+  if (explicitCols === 7) return 'lg:grid-cols-7';
+  if (explicitCols === 8) return 'lg:grid-cols-8';
+
+  // Even division matching item counts to eliminate trailing/empty spaces:
+  // 14 items (e.g. current client list): 7 cols = 2 perfect rows of 7
+  if (itemCount >= 13 && itemCount <= 14) return 'lg:grid-cols-7';
+  if (itemCount % 7 === 0 && itemCount >= 14) return 'lg:grid-cols-7';
+  // 12, 18, 24 items: 6 cols
+  if (itemCount % 6 === 0 || itemCount === 11 || itemCount === 12) return 'lg:grid-cols-6';
+  // 10, 15, 20 items: 5 cols
+  if (itemCount === 10 || itemCount === 15 || itemCount % 5 === 0) return 'lg:grid-cols-5';
+  // 8 or fewer: 4 cols
+  if (itemCount <= 8) return 'lg:grid-cols-4';
+  // Default for larger lists: 7 cols
+  return 'lg:grid-cols-7';
+}
 
 export function BrandLogosGrid({
   items,
   displayMode = 'cards',
-  desktopRows,
+  desktopRows: _desktopRows,
+  desktopCols,
   logoStyle = 'original',
   logoSize = 'medium',
   hoverEffect = true,
@@ -42,34 +55,6 @@ export function BrandLogosGrid({
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
-
-  // Determine row slicing:
-  // If desktopRows is provided, use it.
-  // Otherwise, if 10 items (like Trusted By default), default to [6, 4]
-  // If 18+ items (like Partners default), default to [8, 6, 4]
-  // Otherwise, default to [6, 6]
-  const rows = React.useMemo(() => {
-    if (desktopRows && desktopRows.length > 0) return desktopRows;
-    if (items.length <= 10) return [6, 4];
-    if (items.length <= 14) return [6, 4, 4];
-    return [8, 6, 4];
-  }, [desktopRows, items.length]);
-
-  // Slice items into rows
-  const { rowSlices, overflowItems } = React.useMemo(() => {
-    const slices: { count: number; items: BrandLogoItem[] }[] = [];
-    let currentIndex = 0;
-
-    for (const count of rows) {
-      if (currentIndex >= items.length) break;
-      const sliceItems = items.slice(currentIndex, currentIndex + count);
-      slices.push({ count, items: sliceItems });
-      currentIndex += count;
-    }
-
-    const overflow = items.slice(currentIndex);
-    return { rowSlices: slices, overflowItems: overflow };
-  }, [items, rows]);
 
   if (items.length === 0) return null;
 
@@ -97,75 +82,27 @@ export function BrandLogosGrid({
     );
   }
 
-  // ── Cards Display Mode: Centered Cascading Rows on Desktop, Responsive Grid on Mobile ─
-  const mobileColClass = mobileCols === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3';
+  // ── Cards Display Mode: Continuous Line-by-Line Grid without Empty Space ────
+  // In mobile: show strictly 3 per row (grid-cols-3)
+  const mobileColClass = mobileCols === 2 ? 'grid-cols-2' : 'grid-cols-3';
+  const desktopColClass = getDesktopColClass(items.length, desktopCols);
 
   return (
     <div className="w-full">
-      {/* Desktop Cascading Centered Rows */}
-      <div className="hidden md:block space-y-3 sm:space-y-4">
-        {rowSlices.map(({ count, items: sliceItems }, rowIdx) => {
-          if (sliceItems.length === 0) return null;
-          const conf = COL_WIDTH_CONFIG[count] || {
-            gridClass: `grid-cols-${count}`,
-            maxWClass: 'max-w-[1440px]',
-          };
-
-          return (
-            <div
-              key={rowIdx}
-              className={`grid ${conf.gridClass} gap-3 sm:gap-3.5 md:gap-4 w-full ${conf.maxWClass} mx-auto`}
-            >
-              {sliceItems.map((item) => (
-                <BrandLogoCard
-                  key={item.id}
-                  item={item}
-                  displayMode="cards"
-                  logoStyle={logoStyle}
-                  logoSize={logoSize}
-                  hoverEffect={hoverEffect}
-                  prefersReducedMotion={prefersReducedMotion}
-                />
-              ))}
-            </div>
-          );
-        })}
-
-        {/* Overflow items if any */}
-        {overflowItems.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-[1080px] mx-auto pt-2">
-            {overflowItems.map((item) => (
-              <div key={item.id} className="w-[170px]">
-                <BrandLogoCard
-                  item={item}
-                  displayMode="cards"
-                  logoStyle={logoStyle}
-                  logoSize={logoSize}
-                  hoverEffect={hoverEffect}
-                  prefersReducedMotion={prefersReducedMotion}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Responsive Grid */}
-      <div className="md:hidden">
-        <div className={`grid ${mobileColClass} gap-2.5 sm:gap-3`}>
-          {items.map((item) => (
-            <div key={item.id} className="w-full">
-              <BrandLogoCard
-                item={item}
-                displayMode="cards"
-                logoStyle={logoStyle}
-                logoSize={logoSize}
-                hoverEffect={hoverEffect}
-                prefersReducedMotion={prefersReducedMotion}
-              />
-            </div>
-          ))}
-        </div>
+      <div
+        className={`grid ${mobileColClass} sm:grid-cols-4 md:grid-cols-5 ${desktopColClass} gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 w-full`}
+      >
+        {items.map((item) => (
+          <BrandLogoCard
+            key={item.id}
+            item={item}
+            displayMode="cards"
+            logoStyle={logoStyle}
+            logoSize={logoSize}
+            hoverEffect={hoverEffect}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+        ))}
       </div>
     </div>
   );

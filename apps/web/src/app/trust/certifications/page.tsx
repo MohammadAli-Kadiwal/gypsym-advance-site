@@ -2,6 +2,8 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock, CheckCircle2, Server, Globe } from 'lucide-react';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
   title: 'Security, Trust & Certifications | Gypsym Technology',
@@ -10,6 +12,19 @@ export const metadata: Metadata = {
 
 export default function TrustAndCertificationsPage() {
   const auditDate = 'Q3 2026';
+  const siteUrl = getSiteUrl();
+
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: siteUrl },
+    { name: 'Security & Certifications', item: `${siteUrl}/trust/certifications` },
+  ]);
+
+  const webPageSchema = buildWebPageSchema({
+    name: 'Security, Trust & Certifications | Gypsym Technology',
+    description: 'Enterprise Security Posture, ISO 27001 Certification, SOC 2 Type II Audit, and Zero-Trust Compliance Standards of Gypsym Technology.',
+    url: `${siteUrl}/trust/certifications`,
+    type: 'AboutPage',
+  });
 
   const certifications = [
     {
@@ -44,6 +59,8 @@ export default function TrustAndCertificationsPage() {
 
   return (
     <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={webPageSchema} />
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumb */}
         <div className="mb-8">

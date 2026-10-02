@@ -88,6 +88,16 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
   );
   const [pillars, setPillars] = React.useState<PillarItem[]>(defaultPillars);
 
+  // ── Team Section State ──
+  const [teamId, setTeamId] = React.useState<string | null>(null);
+  const [teamActive, setTeamActive] = React.useState(true);
+  const [teamEyebrow, setTeamEyebrow] = React.useState('DIRECT ACCESS');
+  const [teamTitle, setTeamTitle] = React.useState('Direct Access to Senior Technical Minds');
+  const [teamTitleHighlight, setTeamTitleHighlight] = React.useState('Technical Minds');
+  const [teamDescription, setTeamDescription] = React.useState(
+    'No account executives filtering your requirements. Direct collaboration with experienced specialists.'
+  );
+
   // ── CTA State ──
   const [ctaId, setCtaId] = React.useState<string | null>(null);
   const [ctaActive, setCtaActive] = React.useState(true);
@@ -177,6 +187,20 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
           if (p.title) setStoryTitle(p.title);
           if (p.description) setStoryDescription(p.description);
           if (Array.isArray(p.pillars) && p.pillars.length > 0) setPillars(p.pillars);
+        }
+
+        // Team Section
+        const rawTeam = page.sections?.find(
+          (s) => s.sectionIdentifier === 'about-team'
+        );
+        if (rawTeam) {
+          setTeamId(rawTeam.id);
+          setTeamActive(rawTeam.isActive);
+          const p = (rawTeam.contentPayload as any) || {};
+          if (p.eyebrow) setTeamEyebrow(p.eyebrow);
+          if (p.title) setTeamTitle(p.title);
+          if (p.titleHighlight) setTeamTitleHighlight(p.titleHighlight);
+          if (p.description) setTeamDescription(p.description);
         }
 
         // CTA Section
@@ -290,7 +314,37 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
         if (created?.id) setStoryId(created.id);
       }
 
-      // 4. Save CTA Section
+      // 4. Save Team Section metadata
+      const teamPayload = {
+        eyebrow: teamEyebrow,
+        title: teamTitle,
+        titleHighlight: teamTitleHighlight,
+        description: teamDescription,
+      };
+
+      if (teamId && !teamId.startsWith('local-')) {
+        await fetchApi(`/sections/${teamId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            contentPayload: teamPayload,
+            isActive: teamActive,
+          }),
+        });
+      } else {
+        const created = await fetchApi<any>('/pages/about/sections', {
+          method: 'POST',
+          body: JSON.stringify({
+            sectionIdentifier: 'about-team',
+            componentType: 'TEAM',
+            displayOrder: 3,
+            contentPayload: teamPayload,
+            isActive: teamActive,
+          }),
+        });
+        if (created?.id) setTeamId(created.id);
+      }
+
+      // 5. Save CTA Section
       const ctaPayload = {
         eyebrow: ctaEyebrow,
         title: ctaTitle,
@@ -313,7 +367,7 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
           body: JSON.stringify({
             sectionIdentifier: 'about-cta',
             componentType: 'CTA',
-            displayOrder: 3,
+            displayOrder: 4,
             contentPayload: ctaPayload,
             isActive: ctaActive,
           }),
@@ -329,14 +383,28 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
     }
   };
 
+  const handleStatusChange = async (newStatus: 'PUBLISHED' | 'DRAFT') => {
+    try {
+      await fetchApi('/pages/about', {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setPageData((prev) => (prev ? { ...prev, status: newStatus } : null));
+      notify.success(`About page status updated to ${newStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update page status.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24 w-full">
       <SectionsHeader
         pageTitle="About"
         pageRoute="/about"
         layoutLabel="AGENCY PROFILE"
-        sectionCount={3}
+        sectionCount={4}
         status={pageData?.status || 'PUBLISHED'}
+        onStatusChange={handleStatusChange}
         saving={saving}
         loading={loading}
         onBack={onBack || (() => {})}
@@ -384,16 +452,22 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
             2. Mission & Pillars
           </TabsTrigger>
           <TabsTrigger
+            value="team"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
+          >
+            3. Team Section
+          </TabsTrigger>
+          <TabsTrigger
             value="cta"
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
-            3. Conversion CTA
+            4. Conversion CTA
           </TabsTrigger>
           <TabsTrigger
             value="seo"
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
-            4. SEO & OpenGraph
+            5. SEO & OpenGraph
           </TabsTrigger>
         </TabsList>
 
@@ -605,7 +679,82 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 3: CTA ── */}
+        {/* ── TAB 3: TEAM SECTION ── */}
+        <TabsContent value="team" className="space-y-6">
+          <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white overflow-hidden">
+            <CardHeader className="p-6 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-900">Team Section Heading</CardTitle>
+                <CardDescription className="text-xs text-slate-500 mt-0.5">
+                  Eyebrow, title, and description shown above the team member cards on the About page.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">Active</span>
+                <Switch checked={teamActive} onCheckedChange={setTeamActive} />
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <Label>Eyebrow</Label>
+                  <Input
+                    value={teamEyebrow}
+                    onChange={(e) => setTeamEyebrow(e.target.value)}
+                    placeholder="DIRECT ACCESS"
+                    className="h-10 text-xs rounded-xl border-slate-200/90"
+                  />
+                </div>
+                <div>
+                  <Label>Title Highlight Word</Label>
+                  <Input
+                    value={teamTitleHighlight}
+                    onChange={(e) => setTeamTitleHighlight(e.target.value)}
+                    placeholder="Technical Minds"
+                    className="h-10 text-xs rounded-xl border-slate-200/90"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Section Title</Label>
+                <Input
+                  value={teamTitle}
+                  onChange={(e) => setTeamTitle(e.target.value)}
+                  placeholder="Direct Access to Senior Technical Minds"
+                  className="h-10 text-xs rounded-xl border-slate-200/90"
+                />
+              </div>
+
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={teamDescription}
+                  onChange={(e) => setTeamDescription(e.target.value)}
+                  rows={3}
+                  placeholder="No account executives filtering your requirements..."
+                  className="text-xs rounded-xl border-slate-200/90"
+                />
+              </div>
+
+              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-100 flex items-start gap-3">
+                <Users className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-blue-900">Team Member Profiles</p>
+                  <p className="text-[11px] text-blue-700/80 mt-0.5">
+                    Individual team member cards (photo, name, role, bio, social links) are managed separately in the
+                    Team Profiles workspace.
+                  </p>
+                  <Link href="/content/team" className="text-[11px] text-blue-600 font-semibold hover:underline mt-1 inline-block">
+                    → Go to Team Profiles
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB 4: CTA ── */}
         <TabsContent value="cta" className="space-y-6">
           <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white overflow-hidden">
             <CardHeader className="p-6 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">

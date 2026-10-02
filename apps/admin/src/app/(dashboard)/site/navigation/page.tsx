@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import {
   Save,
   Plus,
@@ -22,6 +23,9 @@ import {
   Sliders,
   Menu,
   Loader2,
+  Palette,
+  Check,
+  Eye,
 } from 'lucide-react';
 
 interface MegaMenuItem {
@@ -69,6 +73,11 @@ interface HeaderConfig {
   maxWidth: string;
   showThemeToggle: boolean;
   showSearchBar: boolean;
+  headerBgColor?: string;
+  headerBgPureWhite?: boolean;
+  activeLinkColor?: string;
+  activeLinkBgColor?: string;
+  activeLinkStyle?: 'pill' | 'solid' | 'tint' | 'border' | 'dot';
   cta: {
     enabled: boolean;
     label: string;
@@ -80,7 +89,7 @@ interface HeaderConfig {
 
 const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   sticky: true,
-  transparentOverHero: true,
+  transparentOverHero: false,
   blur: true,
   rounded: 'full',
   border: true,
@@ -88,6 +97,11 @@ const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   maxWidth: '7xl',
   showThemeToggle: false,
   showSearchBar: false,
+  headerBgColor: '#ffffff',
+  headerBgPureWhite: true,
+  activeLinkColor: '#09090b',
+  activeLinkBgColor: '#f4f4f5',
+  activeLinkStyle: 'pill',
   cta: {
     enabled: true,
     label: 'Book Call',
@@ -284,36 +298,31 @@ export default function NavigationBuilderPage() {
   }
 
   return (
-    <div className="space-y-6 w-full pb-24">
-      {/* Standard Header (No Breadcrumbs) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Navigation & Header
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage navigation links, dropdown mega-menus, and floating header action buttons.
-          </p>
-        </div>
-
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-5 text-xs font-semibold shadow-sm transition-colors shrink-0"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              <span>Save Changes</span>
-            </>
-          )}
-        </Button>
-      </div>
+    <AdminContentContainer variant="standard">
+      <AdminPageHeader
+        title="Navigation & Header"
+        description="Manage navigation links, dropdown mega-menus, and floating header action buttons."
+        actions={
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            size="sm"
+            className="gap-2 shadow-xs cursor-pointer"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-3.5 w-3.5" />
+                <span>Save Changes</span>
+              </>
+            )}
+          </Button>
+        }
+      />
 
       <Tabs defaultValue="navigation" className="space-y-6">
         <TabsList className="bg-card border border-border/40 p-1">
@@ -820,8 +829,305 @@ export default function NavigationBuilderPage() {
               )}
             </div>
           </Card>
+
+          {/* CARD 2: HEADER BACKGROUND & ACTIVE PAGE LINK COLOR SETTINGS */}
+          <Card className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-primary" />
+                  <span>Header Background & Active Page Colors</span>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Ensure any active page is prominently highlighted in the header navigation, and configure pure white header background.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-[11px] font-mono text-primary bg-primary/10 border-primary/20">
+                Live Navbar Theme
+              </Badge>
+            </div>
+
+            {/* Header Background Mode */}
+            <div className="p-4 rounded-xl border border-border/70 bg-card space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-foreground">Pure White Header Background</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Set header background to crisp, solid pure white (#ffffff) without translucent tinting
+                  </div>
+                </div>
+                <Switch
+                  checked={headerConfig.headerBgPureWhite ?? true}
+                  onCheckedChange={(val) =>
+                    setHeaderConfig({
+                      ...headerConfig,
+                      headerBgPureWhite: val,
+                      headerBgColor: val ? '#ffffff' : (headerConfig.headerBgColor || '#ffffff'),
+                      transparentOverHero: !val,
+                    })
+                  }
+                />
+              </div>
+
+              {!headerConfig.headerBgPureWhite && (
+                <div className="pt-2 border-t border-border/50 flex items-center gap-3">
+                  <label className="text-xs text-muted-foreground font-medium">Custom Header Color:</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={headerConfig.headerBgColor || '#ffffff'}
+                      onChange={(e) =>
+                        setHeaderConfig({ ...headerConfig, headerBgColor: e.target.value })
+                      }
+                      className="h-7 w-7 rounded border border-input cursor-pointer p-0"
+                    />
+                    <Input
+                      value={headerConfig.headerBgColor || '#ffffff'}
+                      onChange={(e) =>
+                        setHeaderConfig({ ...headerConfig, headerBgColor: e.target.value })
+                      }
+                      className="h-7 w-28 font-mono text-xs"
+                      placeholder="#ffffff"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Active Navigation Link Color Settings */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Active Page Indicator & Link Colors
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Active Link Text Color */}
+                <div className="p-4 rounded-xl border border-border/70 bg-card space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                      <span>Active Link Text Color</span>
+                      <span
+                        className="inline-block w-3 h-3 rounded-full border border-black/10 shadow-xs"
+                        style={{ backgroundColor: headerConfig.activeLinkColor || '#09090b' }}
+                      />
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Font color for whichever page is currently active.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={headerConfig.activeLinkColor || '#09090b'}
+                      onChange={(e) =>
+                        setHeaderConfig({ ...headerConfig, activeLinkColor: e.target.value })
+                      }
+                      className="h-8 w-8 rounded-lg border border-input cursor-pointer p-0"
+                    />
+                    <Input
+                      value={headerConfig.activeLinkColor || '#09090b'}
+                      onChange={(e) =>
+                        setHeaderConfig({ ...headerConfig, activeLinkColor: e.target.value })
+                      }
+                      placeholder="#09090b"
+                      className="h-8 font-mono text-xs flex-1"
+                    />
+                  </div>
+
+                  {/* Preset Swatches */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      Quick Swatches
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: 'Obsidian', hex: '#09090b' },
+                        { label: 'Gypsym Lime', hex: '#9ae625' },
+                        { label: 'Sapphire', hex: '#2563eb' },
+                        { label: 'Indigo', hex: '#6366f1' },
+                        { label: 'Emerald', hex: '#10b981' },
+                        { label: 'Coral', hex: '#f43f5e' },
+                        { label: 'Amber', hex: '#f59e0b' },
+                      ].map((preset) => {
+                        const isSelected = (headerConfig.activeLinkColor || '#09090b').toLowerCase() === preset.hex.toLowerCase();
+                        return (
+                          <button
+                            key={preset.hex}
+                            type="button"
+                            onClick={() =>
+                              setHeaderConfig({ ...headerConfig, activeLinkColor: preset.hex })
+                            }
+                            className={`px-2 py-1 rounded-md text-[11px] font-mono flex items-center gap-1.5 border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
+                                : 'border-border/60 hover:border-border text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-black/10"
+                              style={{ backgroundColor: preset.hex }}
+                            />
+                            <span>{preset.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Link Pill Style & Background */}
+                <div className="p-4 rounded-xl border border-border/70 bg-card space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-foreground">
+                      Active Link Pill Style
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Visual container badge behind the active navigation item.
+                    </p>
+                  </div>
+
+                  <select
+                    value={headerConfig.activeLinkStyle || 'pill'}
+                    onChange={(e) =>
+                      setHeaderConfig({
+                        ...headerConfig,
+                        activeLinkStyle: e.target.value as any,
+                      })
+                    }
+                    className="w-full h-8 rounded border border-input bg-background px-2 text-xs text-foreground"
+                  >
+                    <option value="pill">Soft Neutral Pill (#f4f4f5)</option>
+                    <option value="tint">Subtle 10% Color Tint</option>
+                    <option value="solid">Solid Inverted Pill</option>
+                    <option value="border">Crisp Border Outline</option>
+                    <option value="dot">Minimalist Dot Only</option>
+                  </select>
+
+                  <div className="space-y-1 pt-1">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                      <span>Custom Active Background</span>
+                      <span
+                        className="inline-block w-3 h-3 rounded-full border border-black/10 shadow-xs"
+                        style={{ backgroundColor: headerConfig.activeLinkBgColor || '#f4f4f5' }}
+                      />
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={headerConfig.activeLinkBgColor || '#f4f4f5'}
+                        onChange={(e) =>
+                          setHeaderConfig({ ...headerConfig, activeLinkBgColor: e.target.value })
+                        }
+                        className="h-8 w-8 rounded-lg border border-input cursor-pointer p-0"
+                      />
+                      <Input
+                        value={headerConfig.activeLinkBgColor || '#f4f4f5'}
+                        onChange={(e) =>
+                          setHeaderConfig({ ...headerConfig, activeLinkBgColor: e.target.value })
+                        }
+                        placeholder="#f4f4f5"
+                        className="h-8 font-mono text-xs flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* LIVE HEADER PREVIEW MOCKUP */}
+            <div className="p-4 rounded-xl border border-border/80 bg-muted/40 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5 text-primary" />
+                  <span>Live Interactive Preview</span>
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Shows how the pure white header and active link appear to visitors
+                </span>
+              </div>
+
+              {/* Simulated Floating Header Bar */}
+              <div
+                className="w-full rounded-2xl border border-neutral-200 px-4 py-3 flex items-center justify-between shadow-xs transition-colors"
+                style={{
+                  backgroundColor: headerConfig.headerBgColor || '#ffffff',
+                }}
+              >
+                {/* Simulated Logo */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#9ae625] text-neutral-950 font-bold text-xs">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                  </div>
+                  <span className="font-bold text-sm text-neutral-900 tracking-tight">Gypsym</span>
+                </div>
+
+                {/* Simulated Navigation Links */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-xs text-neutral-600 px-2.5 py-1">Home</span>
+                  <span className="text-xs text-neutral-600 px-2.5 py-1">Services</span>
+
+                  {/* ACTIVE ITEM MOCKUP */}
+                  {(() => {
+                    const activeCol = headerConfig.activeLinkColor || '#09090b';
+                    const activeBgCol = headerConfig.activeLinkBgColor || '#f4f4f5';
+                    const styleType = headerConfig.activeLinkStyle || 'pill';
+
+                    const bg =
+                      styleType === 'solid'
+                        ? activeCol
+                        : styleType === 'tint'
+                        ? `${activeCol}15`
+                        : styleType === 'border' || styleType === 'dot'
+                        ? 'transparent'
+                        : activeBgCol;
+
+                    const textCol =
+                      styleType === 'solid' && (activeCol === '#09090b' || activeCol === '#000000')
+                        ? '#ffffff'
+                        : activeCol;
+
+                    const borderStyle =
+                      styleType === 'border'
+                        ? `1.5px solid ${activeCol}`
+                        : styleType === 'pill'
+                        ? '1px solid rgba(0,0,0,0.08)'
+                        : undefined;
+
+                    return (
+                      <span
+                        className="text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-xs transition-all"
+                        style={{
+                          backgroundColor: bg,
+                          color: textCol,
+                          border: borderStyle,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{
+                            backgroundColor: styleType === 'solid' ? '#ffffff' : activeCol,
+                          }}
+                        />
+                        <span>ROI Calculator</span>
+                      </span>
+                    );
+                  })()}
+
+                  <span className="text-xs text-neutral-600 px-2.5 py-1">Portfolio</span>
+                  <span className="text-xs text-neutral-600 px-2.5 py-1">Blog</span>
+                  <span className="text-xs text-neutral-600 px-2.5 py-1">Contact</span>
+                </div>
+
+                {/* Simulated CTA button */}
+                <div className="px-3.5 py-1.5 rounded-full bg-neutral-950 text-white text-xs font-medium shrink-0">
+                  {headerConfig.cta?.label || 'Book Call'}
+                </div>
+              </div>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </AdminContentContainer>
   );
 }

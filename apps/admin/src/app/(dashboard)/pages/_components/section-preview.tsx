@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Monitor, Tablet, Smartphone, ExternalLink, Eye, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { getSiteUrl } from '@/lib/site-url';
 import type {
   HeroPayload,
   MetricsPayload,
@@ -210,7 +211,7 @@ export function SectionPreview({
             <Smartphone className="h-3.5 w-3.5" />
           </button>
           <a
-            href="http://localhost:3000"
+            href={getSiteUrl()}
             target="_blank"
             rel="noopener noreferrer"
             title="Open Live Website"

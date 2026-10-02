@@ -81,7 +81,8 @@ export interface PublicAeoItem {
 export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/seo/public/global`, {
-      next: { tags: ['seo-global'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-global'], revalidate: 0 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -94,7 +95,8 @@ export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
 export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/seo/public/sitemap-urls`, {
-      next: { tags: ['seo-sitemap'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-sitemap'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -107,7 +109,8 @@ export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
 export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/seo/public/robots-rules`, {
-      next: { tags: ['seo-robots'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-robots'], revalidate: 0 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -120,7 +123,8 @@ export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null>
 export async function getPublicRedirects(): Promise<PublicRedirectItem[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/seo/public/redirects`, {
-      next: { tags: ['seo-redirects'], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-redirects'], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -136,7 +140,8 @@ export async function getPublicAeo(pageSlug?: string): Promise<PublicAeoItem[]> 
       ? `${API_BASE_URL}/seo/public/aeo?pageSlug=${encodeURIComponent(pageSlug)}`
       : `${API_BASE_URL}/seo/public/aeo`;
     const res = await fetch(url, {
-      next: { tags: ['seo-aeo', `seo-aeo-${pageSlug || 'all'}`], revalidate: 60 },
+      cache: 'no-store',
+      next: { tags: ['seo-aeo', `seo-aeo-${pageSlug || 'all'}`], revalidate: 0 },
     });
     if (!res.ok) return [];
     const json = await res.json();

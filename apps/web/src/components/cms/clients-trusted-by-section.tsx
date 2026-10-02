@@ -62,9 +62,6 @@ export function ClientsTrustedBySection({ section }: ClientsTrustedBySectionProp
   const animation = p.animation || {};
   const showMetricsBar = layout.showMetricsBar !== false;
 
-  // 10 clients arranged cleanly as 6 on row 1, 4 on row 2 centered!
-  const desktopRows = layout.desktopRows || [6, 4];
-
   const metricsRibbon = showMetricsBar ? (
     <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-neutral-200/70 dark:border-neutral-800/80">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto">
@@ -92,10 +89,12 @@ export function ClientsTrustedBySection({ section }: ClientsTrustedBySectionProp
       titleHighlight={titleHighlight}
       description={description}
       cta={cta}
-      items={p.clients || []}
+      items={(p.clients || []).filter(
+        (item: any) => item.status !== 'DRAFT' && item.isFeatured !== false && item.isActive !== false
+      )}
       layout={{
         displayMode: layout.displayMode || 'cards',
-        desktopRows,
+        desktopRows: layout.desktopRows,
         logoStyle: layout.logoStyle || 'original',
         logoSize: layout.logoSize || 'medium',
         mobileCols: layout.mobileCols || 3,

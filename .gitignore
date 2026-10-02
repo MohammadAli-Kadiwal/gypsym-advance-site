@@ -18,6 +18,8 @@ out/
 **/.turbo/
 .cache/
 **/.cache/
+# deploy-setup.sh
+deploy-gypsym.zip
 
 # Environment Files
 .env

@@ -101,6 +101,11 @@ export interface HeaderConfigDto {
   maxWidth?: string;
   showThemeToggle?: boolean;
   showSearchBar?: boolean;
+  headerBgColor?: string;
+  headerBgPureWhite?: boolean;
+  activeLinkColor?: string;
+  activeLinkBgColor?: string;
+  activeLinkStyle?: 'pill' | 'solid' | 'tint' | 'border' | 'dot';
   cta?: {
     enabled?: boolean;
     label?: string;

@@ -16,13 +16,14 @@ import { DataTable, ColumnDef } from '@/components/crud/data-table';
 import { BaseRecord, ItemStatus } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface ClientRecord extends BaseRecord {
   name: string;
-  logoUrl?: string;
-  websiteUrl?: string;
+  logoUrl?: string | null;
+  websiteUrl?: string | null;
   isActive: boolean;
 }
 
@@ -30,9 +31,10 @@ interface ClientFormState {
   name: string;
   logoUrl: string;
   websiteUrl: string;
+  status: ItemStatus;
 }
 
-const EMPTY_FORM: ClientFormState = { name: '', logoUrl: '', websiteUrl: '' };
+const EMPTY_FORM: ClientFormState = { name: '', logoUrl: '', websiteUrl: '', status: 'PUBLISHED' };
 
 // ─── Create / Edit Dialog ─────────────────────────────────────────────────────
 interface ClientDialogProps {
@@ -45,27 +47,29 @@ interface ClientDialogProps {
 }
 
 function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSubmit }: ClientDialogProps) {
-  const [form, setForm] = React.useState<ClientFormState>(initial);
+  const [form, setForm] = React.useState<ClientFormState>(() => initial);
   const [logoError, setLogoError] = React.useState(false);
-  const [tab, setTab] = React.useState<'upload' | 'url'>('upload');
+  const [tab, setTab] = React.useState<'upload' | 'url'>(() => (initial.logoUrl?.startsWith('http') ? 'url' : 'upload'));
   const [fileName, setFileName] = React.useState<string>('');
   const [fileSize, setFileSize] = React.useState<string>('');
   const [dragActive, setDragActive] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    setForm(initial);
-    setLogoError(false);
-    setFileName('');
-    setFileSize('');
-    if (initial.logoUrl?.startsWith('http')) {
-      setTab('url');
-    } else {
-      setTab('upload');
+    if (open) {
+      setForm(initial);
+      setLogoError(false);
+      setFileName('');
+      setFileSize('');
+      if (initial.logoUrl?.startsWith('http')) {
+        setTab('url');
+      } else {
+        setTab('upload');
+      }
     }
-  }, [initial, open]);
+  }, [open, initial]);
 
-  function patch(key: keyof ClientFormState, value: string) {
+  function patch(key: keyof ClientFormState, value: any) {
     setForm((f) => ({ ...f, [key]: value }));
     if (key === 'logoUrl') setLogoError(false);
   }
@@ -326,6 +330,12 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
             />
           </div>
 
+          {/* Publication Status: Draft vs Public */}
+          <StatusToggleField
+            value={form.status}
+            onChange={(status) => patch('status', status)}
+          />
+
           {/* Footer Actions */}
           <DialogFooter className="pt-2 gap-2 flex-row justify-end">
             <Button
@@ -404,17 +414,19 @@ export default function ClientsPage() {
           name: form.name.trim(),
           logoUrl: form.logoUrl.trim() || null,
           websiteUrl: form.websiteUrl.trim() || null,
-          isActive: true,
+          status: form.status,
+          isActive: form.status === 'PUBLISHED',
         }),
       });
+      const resolvedStatus = (created.status || form.status) as ItemStatus;
       setClients((prev) => [
-        { ...created, status: (created.status || 'PUBLISHED') as ItemStatus },
+        { ...created, status: resolvedStatus, isActive: resolvedStatus === 'PUBLISHED' },
         ...prev,
       ]);
       setCreateOpen(false);
       notify.success(`Client "${created.name}" created successfully.`);
-    } catch {
-      notify.error('Could not create client. Please check your input and try again.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not create client. Please check your input and try again.');
     } finally {
       setSaving(false);
     }
@@ -423,33 +435,79 @@ export default function ClientsPage() {
   // ── Close Edit ─────────────────────────────────────────────────────────────
   function handleCloseEdit() {
     setEditOpen(false);
-    setEditTarget(null);
+    // Keep editTarget during exit transition so form fields do not flash blank while animating out
+    setTimeout(() => {
+      setEditTarget(null);
+    }, 300);
   }
 
   // ── Update ─────────────────────────────────────────────────────────────────
   async function handleUpdate(form: ClientFormState) {
     if (!editTarget) return;
+    const targetId = editTarget.id;
+    const clientName = form.name.trim();
+    const clientLogoUrl = form.logoUrl.trim() || null;
+    const clientWebsiteUrl = form.websiteUrl.trim() || null;
+    const clientStatus = form.status;
+    const isActive = clientStatus === 'PUBLISHED';
+
     setSaving(true);
+
+    // 1. Instantly update the client in local state so the front-end table NEVER loses the value
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === targetId
+          ? {
+              ...c,
+              name: clientName,
+              logoUrl: clientLogoUrl || c.logoUrl,
+              websiteUrl: clientWebsiteUrl,
+              status: clientStatus,
+              isActive,
+            }
+          : c
+      )
+    );
+
     try {
-      const updated = await fetchApi<ClientRecord>(`/clients/${editTarget.id}`, {
+      const raw = await fetchApi<any>(`/clients/${targetId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: form.name.trim(),
-          logoUrl: form.logoUrl.trim() || null,
-          websiteUrl: form.websiteUrl.trim() || null,
+          name: clientName,
+          logoUrl: clientLogoUrl,
+          websiteUrl: clientWebsiteUrl,
+          status: clientStatus,
+          isActive,
         }),
       });
+
+      const updated = (raw && typeof raw === 'object' && 'data' in raw) ? raw.data : (raw || {});
+      const resolvedStatus = (updated.status || clientStatus) as ItemStatus;
+
+      // 2. Merge server-confirmed response fields
       setClients((prev) =>
         prev.map((c) =>
-          c.id === updated.id
-            ? { ...updated, status: (updated.status || (updated.isActive ? 'PUBLISHED' : 'DRAFT')) as ItemStatus }
+          c.id === targetId
+            ? {
+                ...c,
+                ...updated,
+                name: updated.name || clientName,
+                logoUrl: updated.logoUrl ?? clientLogoUrl ?? c.logoUrl,
+                websiteUrl: updated.websiteUrl ?? clientWebsiteUrl,
+                status: resolvedStatus,
+                isActive: resolvedStatus === 'PUBLISHED',
+              }
             : c
         )
       );
+
       handleCloseEdit();
-      notify.success(`Client "${updated.name}" updated.`);
-    } catch {
-      notify.error('Could not update client. Please try again.');
+      notify.success(`Client "${clientName}" updated.`);
+
+      // 3. Re-verify with API in background
+      loadClients().catch(() => {});
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not update client. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -457,46 +515,32 @@ export default function ClientsPage() {
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
-    try {
-      await fetchApi(`/clients/${id}`, { method: 'DELETE' });
-      setClients((prev) => prev.filter((c) => c.id !== id));
-      notify.success('Client deleted successfully.');
-    } catch {
-      notify.error('Could not delete client. Please try again.');
-    }
+    setClients((prev) => prev.filter((c) => c.id !== id));
+    await fetchApi(`/clients/${id}`, { method: 'DELETE' });
+    loadClients().catch(() => {});
   }
 
   // ── Bulk Delete ─────────────────────────────────────────────────────────────
   async function handleBulkDelete(ids: string[]) {
-    try {
-      await Promise.all(ids.map((id) => fetchApi(`/clients/${id}`, { method: 'DELETE' })));
-      setClients((prev) => prev.filter((c) => !ids.includes(c.id)));
-      notify.success(`${ids.length} clients deleted successfully.`);
-    } catch {
-      notify.error('Unable to delete selected clients.');
-    }
+    setClients((prev) => prev.filter((c) => !ids.includes(c.id)));
+    await fetchApi('/clients/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+    loadClients().catch(() => {});
   }
 
   // ── Bulk Status Change ──────────────────────────────────────────────────────
   async function handleBulkStatus(ids: string[], status: ItemStatus) {
-    try {
-      const isActive = status === 'PUBLISHED';
-      await Promise.all(
-        ids.map((id) =>
-          fetchApi(`/clients/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ isActive }),
-          })
-        )
-      );
-      setClients((prev) =>
-        prev.map((c) => (ids.includes(c.id) ? { ...c, status, isActive } : c))
-      );
-      const label = status === 'PUBLISHED' ? 'published' : status === 'DRAFT' ? 'moved to draft' : 'archived';
-      notify.success(`${ids.length} clients ${label} successfully.`);
-    } catch {
-      notify.error('Unable to update status for selected clients.');
-    }
+    const isActive = status === 'PUBLISHED';
+    setClients((prev) =>
+      prev.map((c) => (ids.includes(c.id) ? { ...c, status, isActive } : c))
+    );
+    await fetchApi('/clients/bulk-status', {
+      method: 'PUT',
+      body: JSON.stringify({ ids, status }),
+    });
+    loadClients().catch(() => {});
   }
 
   const columns: ColumnDef<ClientRecord>[] = [
@@ -610,6 +654,7 @@ export default function ClientsPage() {
 
       {/* ── Dialogs ────────────────────────────────────────────────────────── */}
       <ClientDialog
+        key={createOpen ? 'create-client' : 'create-closed'}
         open={createOpen}
         mode="create"
         saving={saving}
@@ -618,6 +663,7 @@ export default function ClientsPage() {
       />
 
       <ClientDialog
+        key={editTarget?.id || 'edit-client'}
         open={editOpen}
         mode="edit"
         initial={
@@ -626,6 +672,7 @@ export default function ClientsPage() {
                 name: editTarget.name,
                 logoUrl: editTarget.logoUrl || '',
                 websiteUrl: editTarget.websiteUrl || '',
+                status: (editTarget.status || (editTarget.isActive ? 'PUBLISHED' : 'DRAFT')) as ItemStatus,
               }
             : EMPTY_FORM
         }

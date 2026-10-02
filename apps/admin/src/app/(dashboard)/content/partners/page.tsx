@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
@@ -42,7 +44,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -142,7 +145,7 @@ function getStatusBadge(status: PartnerStatus) {
     case 'PUBLISHED':
       return (
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          PUBLISHED
+          PUBLIC
         </span>
       );
     case 'DRAFT':
@@ -172,13 +175,15 @@ interface PartnerDialogProps {
 }
 
 function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSubmit }: PartnerDialogProps) {
-  const [form, setForm] = React.useState<PartnerFormState>(initial);
+  const [form, setForm] = React.useState<PartnerFormState>(() => initial);
   const [activeTab, setActiveTab] = React.useState<'general' | 'branding' | 'details'>('general');
 
   React.useEffect(() => {
-    setForm(initial);
-    setActiveTab('general');
-  }, [initial, open]);
+    if (open) {
+      setForm(initial);
+      setActiveTab('general');
+    }
+  }, [open, initial]);
 
   function patch<K extends keyof PartnerFormState>(key: K, value: PartnerFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -367,6 +372,12 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
                   className="text-xs font-mono rounded-xl"
                 />
               </div>
+
+              {/* Publication Status: Draft vs Public */}
+              <StatusToggleField
+                value={form.status}
+                onChange={(status) => patch('status', status as PartnerStatus)}
+              />
 
               {/* Homepage Visibility & Display Order Row */}
               <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -658,6 +669,14 @@ export default function PartnersPage() {
     });
   }, [partners, searchQuery, statusFilter, homepageFilter, tierFilter]);
 
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  const paginatedPartners = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPartners.slice(start, start + pageSize);
+  }, [filteredPartners, page, pageSize]);
+
   // ── Create Partner ─────────────────────────────────────────────────────────
   async function handleCreate(form: PartnerFormState) {
     setSaving(true);
@@ -684,22 +703,57 @@ export default function PartnersPage() {
       setPartners((prev) => [...prev, created].sort((a, b) => a.displayOrder - b.displayOrder));
       setCreateOpen(false);
       notify.success(`Partner "${created.name}" created successfully.`);
-    } catch {
-      notify.error('Could not create partner. Please check inputs.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not create partner. Please check inputs.');
     } finally {
       setSaving(false);
     }
   }
 
+  function handleCloseEdit() {
+    // Delay clearing editTarget during exit transition so form fields do not flash blank while animating out
+    setTimeout(() => {
+      setEditTarget(null);
+    }, 300);
+  }
+
   // ── Update Partner ─────────────────────────────────────────────────────────
   async function handleUpdate(form: PartnerFormState) {
     if (!editTarget) return;
+    const targetId = editTarget.id;
+    const partnerName = form.name.trim();
+
     setSaving(true);
+
+    // 1. Instantly & optimistically update local state so table never loses the value
+    setPartners((prev) =>
+      prev.map((p) =>
+        p.id === targetId
+          ? {
+              ...p,
+              name: partnerName,
+              slug: form.slug.trim() || p.slug,
+              tier: form.tier,
+              logoUrl: form.logoUrl.trim() || p.logoUrl,
+              logoDarkUrl: form.logoDarkUrl.trim() || p.logoDarkUrl,
+              shortDescription: form.shortDescription.trim() || null,
+              description: form.description.trim() || null,
+              websiteUrl: form.websiteUrl.trim() || null,
+              partnerType: form.partnerType.trim() || null,
+              industry: form.industry.trim() || null,
+              displayOrder: form.displayOrder,
+              status: form.status,
+              showOnHomepage: form.showOnHomepage,
+            }
+          : p
+      ).sort((a, b) => a.displayOrder - b.displayOrder)
+    );
+
     try {
-      const updated = await fetchApi<Partner>(`/partners/${editTarget.id}`, {
+      const raw = await fetchApi<any>(`/partners/${targetId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: form.name.trim(),
+          name: partnerName,
           slug: form.slug.trim() || undefined,
           tier: form.tier,
           logoUrl: form.logoUrl.trim() || undefined,
@@ -715,13 +769,25 @@ export default function PartnersPage() {
         }),
       });
 
+      const updated: Partner = (raw && typeof raw === 'object' && 'data' in raw) ? raw.data : (raw || {});
+
       setPartners((prev) =>
-        prev.map((p) => (p.id === updated.id ? updated : p)).sort((a, b) => a.displayOrder - b.displayOrder),
+        prev.map((p) =>
+          p.id === targetId
+            ? {
+                ...p,
+                ...updated,
+                name: updated.name || partnerName,
+              }
+            : p
+        ).sort((a, b) => a.displayOrder - b.displayOrder)
       );
-      setEditTarget(null);
-      notify.success(`Partner "${updated.name}" updated successfully.`);
-    } catch {
-      notify.error('Could not update partner.');
+
+      handleCloseEdit();
+      notify.success(`Partner "${partnerName}" updated successfully.`);
+      loadPartners().catch(() => {});
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err) || 'Could not update partner.');
     } finally {
       setSaving(false);
     }
@@ -854,6 +920,22 @@ export default function PartnersPage() {
     }
   }
 
+  async function handleTogglePartnerStatus(partner: Partner) {
+    const nextStatus: PartnerStatus = partner.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    try {
+      await fetchApi('/partners/bulk-status', {
+        method: 'PUT',
+        body: JSON.stringify({ ids: [partner.id], status: nextStatus }),
+      });
+      setPartners((prev) =>
+        prev.map((p) => (p.id === partner.id ? { ...p, status: nextStatus } : p))
+      );
+      notify.success(`Partner status updated to ${nextStatus === 'PUBLISHED' ? 'Public' : 'Draft'}.`);
+    } catch {
+      notify.error('Failed to update partner status.');
+    }
+  }
+
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return;
     setIsBulkProcessing(true);
@@ -887,61 +969,59 @@ export default function PartnersPage() {
   const homepageCount = partners.filter((p) => p.showOnHomepage && p.status === 'PUBLISHED').length;
 
   return (
-    <div className="w-full space-y-6 pb-24">
-      {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2.5">
-            <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Handshake className="h-5 w-5" />
-            </div>
-            <span>Partners & Alliances</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage strategic technology alliances, cloud providers, and enterprise integrations.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2 shrink-0">
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />}
-          <Badge
-            variant="outline"
-            className="text-xs font-mono bg-blue-50/60 text-blue-700 border-blue-200"
-          >
-            {partners.length} Total
-          </Badge>
-          <Badge
-            variant="outline"
-            className="text-xs font-mono bg-emerald-50/60 text-emerald-700 border-emerald-200 hidden sm:inline-flex"
-          >
-            {homepageCount} on Homepage
-          </Badge>
+    <AdminContentContainer variant="wide">
+      {/* ── Standardized Header (Strictly No Breadcrumbs) ─────────── */}
+      <AdminPageHeader
+        title="Partners & Alliances"
+        description="Manage strategic technology alliances, cloud providers, and enterprise integrations."
+        status={
+          <div className="flex items-center gap-2">
+            {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+            <Badge variant="outline" className="text-xs font-mono">
+              {partners.length} Total
+            </Badge>
+            <Badge
+              variant="outline"
+              className="text-xs font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hidden sm:inline-flex"
+            >
+              {homepageCount} on Homepage
+            </Badge>
+          </div>
+        }
+        actions={
           <Button
             onClick={() => setCreateOpen(true)}
-            className="h-9 px-4 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
+            size="sm"
+            className="gap-1.5 shadow-xs cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Partner
+            <Plus className="h-4 w-4" />
+            <span>Add Partner</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Controls & Filter Bar ────────────────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs p-3.5 space-y-3">
+      <Card className="rounded-2xl border-border bg-card shadow-xs p-3.5 space-y-3">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search */}
           <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search by name, type, industry..."
-              className="pl-9 h-9 text-xs rounded-xl border-slate-200"
+              className="pl-9 h-9 text-xs rounded-xl"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                onClick={() => {
+                  setSearchQuery('');
+                  setPage(1);
+                }}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -953,8 +1033,11 @@ export default function PartnersPage() {
             {/* Status Filter */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-xl border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               <option value="PUBLISHED">Published Only</option>
@@ -965,8 +1048,11 @@ export default function PartnersPage() {
             {/* Homepage Filter */}
             <select
               value={homepageFilter}
-              onChange={(e) => setHomepageFilter(e.target.value)}
-              className="h-9 rounded-xl border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={(e) => {
+                setHomepageFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
             >
               <option value="ALL">All Placements</option>
               <option value="HOMEPAGE_ONLY">On Homepage Only</option>
@@ -976,8 +1062,11 @@ export default function PartnersPage() {
             {/* Tier Filter */}
             <select
               value={tierFilter}
-              onChange={(e) => setTierFilter(e.target.value)}
-              className="h-9 rounded-xl border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={(e) => {
+                setTierFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
             >
               <option value="ALL">All Tiers</option>
               <option value="GLOBAL_ALLIANCE">Global Alliance</option>
@@ -990,13 +1079,13 @@ export default function PartnersPage() {
       </Card>
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+      <Card className="rounded-2xl border-border bg-card shadow-xs overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border/60 flex items-center justify-between bg-muted/30">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Partners Directory
           </span>
-          <span className="text-[11px] text-slate-400 font-mono">
-            {loading ? 'Syncing…' : `${filteredPartners.length} of ${partners.length} displayed`}
+          <span className="text-[11px] text-muted-foreground font-mono">
+            {loading ? 'Syncing…' : `Showing ${paginatedPartners.length} of ${filteredPartners.length} partners`}
           </span>
         </div>
 
@@ -1029,9 +1118,10 @@ export default function PartnersPage() {
             )}
           </div>
         ) : (
-          <Table>
-            <TableHeader className="bg-slate-50/60">
-              <TableRow className="border-b border-slate-100">
+          <>
+            <Table>
+            <TableHeader className="bg-muted/40">
+              <TableRow className="border-b border-border/60">
                 <TableHead className="w-[40px] text-center">
                   <Checkbox
                     checked={allFilteredSelected}
@@ -1039,24 +1129,24 @@ export default function PartnersPage() {
                     aria-label="Select all"
                   />
                 </TableHead>
-                <TableHead className="w-[80px] text-xs font-bold text-slate-600">Order</TableHead>
-                <TableHead className="w-[70px] text-xs font-bold text-slate-600">Logo</TableHead>
-                <TableHead className="text-xs font-bold text-slate-600">Partner</TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 hidden md:table-cell">Tier</TableHead>
-                <TableHead className="text-xs font-bold text-slate-600 hidden lg:table-cell">Type & Industry</TableHead>
-                <TableHead className="w-[150px] text-xs font-bold text-slate-600 text-center">
+                <TableHead className="w-[80px] text-xs font-bold text-muted-foreground">Order</TableHead>
+                <TableHead className="w-[70px] text-xs font-bold text-muted-foreground">Logo</TableHead>
+                <TableHead className="text-xs font-bold text-muted-foreground">Partner</TableHead>
+                <TableHead className="text-xs font-bold text-muted-foreground hidden md:table-cell">Tier</TableHead>
+                <TableHead className="text-xs font-bold text-muted-foreground hidden lg:table-cell">Type & Industry</TableHead>
+                <TableHead className="w-[150px] text-xs font-bold text-muted-foreground text-center">
                   Homepage Grid
                 </TableHead>
-                <TableHead className="w-[90px] text-xs font-bold text-slate-600 text-center">Status</TableHead>
-                <TableHead className="w-[100px] text-right text-xs font-bold text-slate-600">Actions</TableHead>
+                <TableHead className="w-[90px] text-xs font-bold text-muted-foreground text-center">Status</TableHead>
+                <TableHead className="w-[100px] text-right text-xs font-bold text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPartners.map((partner, idx) => (
+              {paginatedPartners.map((partner, idx) => (
                 <TableRow
                   key={partner.id}
-                  className={`hover:bg-slate-50/60 transition-colors group ${
-                    selectedIds.has(partner.id) ? 'bg-blue-50/30' : ''
+                  className={`hover:bg-muted/40 transition-colors group ${
+                    selectedIds.has(partner.id) ? 'bg-primary/5' : ''
                   }`}
                 >
                   {/* Select Checkbox */}
@@ -1070,8 +1160,8 @@ export default function PartnersPage() {
 
                   {/* Order with Quick Reorder Up/Down */}
                   <TableCell className="py-3">
-                    <div className="flex items-center space-x-1 font-mono text-xs text-slate-500">
-                      <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
+                    <div className="flex items-center space-x-1 font-mono text-xs text-muted-foreground">
+                      <span className="font-bold text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px]">
                         {formatOrder(partner.displayOrder)}
                       </span>
                       <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1079,7 +1169,7 @@ export default function PartnersPage() {
                           type="button"
                           onClick={() => handleMoveOrder(partner, 'up')}
                           disabled={idx === 0}
-                          className="hover:text-blue-600 disabled:opacity-20 p-0.5"
+                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer"
                           title="Move Up"
                         >
                           <ChevronUp className="h-3 w-3" />
@@ -1088,7 +1178,7 @@ export default function PartnersPage() {
                           type="button"
                           onClick={() => handleMoveOrder(partner, 'down')}
                           disabled={idx === filteredPartners.length - 1}
-                          className="hover:text-blue-600 disabled:opacity-20 p-0.5"
+                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer"
                           title="Move Down"
                         >
                           <ChevronDown className="h-3 w-3" />
@@ -1099,7 +1189,7 @@ export default function PartnersPage() {
 
                   {/* Logo Preview */}
                   <TableCell className="py-3">
-                    <div className="h-10 w-10 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
+                    <div className="h-10 w-10 rounded-lg border border-border bg-card flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
                       {partner.logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -1111,7 +1201,7 @@ export default function PartnersPage() {
                           }}
                         />
                       ) : (
-                        <Handshake className="h-4 w-4 text-slate-300" />
+                        <Handshake className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
                   </TableCell>
@@ -1120,23 +1210,23 @@ export default function PartnersPage() {
                   <TableCell className="py-3">
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-xs text-slate-900">{partner.name}</span>
+                        <span className="font-semibold text-xs text-foreground">{partner.name}</span>
                         {partner.websiteUrl && (
                           <a
                             href={partner.websiteUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-slate-400 hover:text-blue-600"
+                            className="text-muted-foreground hover:text-primary"
                             title={`Open ${partner.name} website`}
                           >
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2 text-[11px] text-slate-400 font-mono mt-0.5">
+                      <div className="flex items-center space-x-2 text-[11px] text-muted-foreground font-mono mt-0.5">
                         {partner.slug ? <span>/{partner.slug}</span> : <span className="italic">no slug</span>}
                         {partner.shortDescription && (
-                          <span className="text-slate-500 font-sans truncate max-w-[200px] hidden sm:inline">
+                          <span className="text-muted-foreground font-sans truncate max-w-[200px] hidden sm:inline">
                             · {partner.shortDescription}
                           </span>
                         )}
@@ -1151,11 +1241,11 @@ export default function PartnersPage() {
 
                   {/* Type & Industry */}
                   <TableCell className="py-3 hidden lg:table-cell">
-                    <div className="text-xs text-slate-700">
-                      {partner.partnerType || <span className="text-slate-300">—</span>}
+                    <div className="text-xs text-foreground">
+                      {partner.partnerType || <span className="text-muted-foreground">—</span>}
                     </div>
                     {partner.industry && (
-                      <div className="text-[11px] text-slate-400 truncate max-w-[180px]">
+                      <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
                         {partner.industry}
                       </div>
                     )}
@@ -1171,7 +1261,7 @@ export default function PartnersPage() {
                       />
                       <span
                         className={`text-[11px] font-bold ${
-                          partner.showOnHomepage ? 'text-blue-600' : 'text-slate-400'
+                          partner.showOnHomepage ? 'text-primary' : 'text-muted-foreground'
                         }`}
                       >
                         {partner.showOnHomepage ? 'ACTIVE' : 'OFF'}
@@ -1181,7 +1271,18 @@ export default function PartnersPage() {
 
                   {/* Status */}
                   <TableCell className="py-3 text-center">
-                    {getStatusBadge(partner.status)}
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePartnerStatus(partner)}
+                      title={
+                        partner.status === 'PUBLISHED'
+                          ? 'Public: Click to switch to Draft'
+                          : 'Draft: Click to publish Public'
+                      }
+                      className="cursor-pointer transition-transform hover:scale-105 active:scale-95 inline-block"
+                    >
+                      {getStatusBadge(partner.status)}
+                    </button>
                   </TableCell>
 
                   {/* Actions */}
@@ -1191,7 +1292,7 @@ export default function PartnersPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditTarget(partner)}
-                        className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                        className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                         title="Edit partner"
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -1200,7 +1301,7 @@ export default function PartnersPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeleteTarget(partner)}
-                        className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                        className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                         title="Delete partner"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1211,11 +1312,24 @@ export default function PartnersPage() {
               ))}
             </TableBody>
           </Table>
+
+          {filteredPartners.length > 0 && (
+            <TablePagination
+              currentPage={page}
+              totalItems={filteredPartners.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="partners"
+            />
+          )}
+          </>
         )}
       </Card>
 
       {/* ── Dialogs ────────────────────────────────────────────────────────── */}
       <PartnerDialog
+        key={createOpen ? 'create-partner' : 'create-closed'}
         open={createOpen}
         mode="create"
         saving={saving}
@@ -1224,6 +1338,7 @@ export default function PartnersPage() {
       />
 
       <PartnerDialog
+        key={editTarget?.id || 'edit-partner'}
         open={!!editTarget}
         mode="edit"
         initial={
@@ -1246,7 +1361,7 @@ export default function PartnersPage() {
             : EMPTY_FORM
         }
         saving={saving}
-        onClose={() => setEditTarget(null)}
+        onClose={handleCloseEdit}
         onSubmit={handleUpdate}
       />
 
@@ -1326,6 +1441,6 @@ export default function PartnersPage() {
         variant="destructive"
         onConfirm={handleBulkDelete}
       />
-    </div>
+    </AdminContentContainer>
   );
 }

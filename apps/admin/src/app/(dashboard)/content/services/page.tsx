@@ -42,6 +42,7 @@ import { BaseRecord, ItemStatus } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
+import { StatusToggleField } from '@/components/crud/status-toggle-field';
 
 export interface ServiceProcessStep {
   step: string;
@@ -424,28 +425,17 @@ export default function ServicesAdminPage() {
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
-    const target = services.find((s) => s.id === id);
-    try {
-      await fetchApi(`/services/${id}`, { method: 'DELETE' });
-      setServices((prev) => prev.filter((s) => s.id !== id));
-      notify.success(`Service "${target?.title || 'item'}" deleted.`);
-    } catch {
-      notify.error('Failed to delete service. Please try again.');
-    }
+    await fetchApi(`/services/${id}`, { method: 'DELETE' });
+    setServices((prev) => prev.filter((s) => s.id !== id));
   }
 
   // ── Bulk Delete ─────────────────────────────────────────────────────────────
   async function handleBulkDelete(ids: string[]) {
-    try {
-      await fetchApi('/services/bulk-delete', {
-        method: 'POST',
-        body: JSON.stringify({ ids }),
-      });
-      setServices((prev) => prev.filter((s) => !ids.includes(s.id)));
-      notify.success(`${ids.length} services deleted.`);
-    } catch {
-      notify.error('Failed to delete selected services.');
-    }
+    await fetchApi('/services/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+    setServices((prev) => prev.filter((s) => !ids.includes(s.id)));
   }
 
   // ── Bulk Status ─────────────────────────────────────────────────────────────
@@ -862,8 +852,8 @@ export default function ServicesAdminPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-1.5">
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-1.5 max-w-xs">
                     <label className="text-xs font-semibold text-slate-700">Display Order</label>
                     <Input
                       type="number"
@@ -875,29 +865,11 @@ export default function ServicesAdminPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Publication Status</label>
-                    <div className="flex gap-2">
-                      {(['PUBLISHED', 'DRAFT', 'ARCHIVED'] as ItemStatus[]).map((st) => (
-                        <button
-                          key={st}
-                          type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, status: st }))}
-                          className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                            form.status === st
-                              ? st === 'PUBLISHED'
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                : st === 'DRAFT'
-                                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                                : 'bg-slate-800 text-white border-slate-800'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          {st}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Publication Status: Draft vs Public */}
+                  <StatusToggleField
+                    value={form.status}
+                    onChange={(status) => setForm((prev) => ({ ...prev, status }))}
+                  />
                 </div>
               </TabsContent>
 

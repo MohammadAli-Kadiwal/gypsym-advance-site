@@ -2,6 +2,8 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Gypsym Technology',
@@ -11,8 +13,21 @@ export const metadata: Metadata = {
 export default function PrivacyPolicyPage() {
   const lastUpdated = 'September 22, 2026';
 
+  const breadcrumbs = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Privacy Policy', item: '/privacy' },
+  ]);
+
+  const webPageSchema = buildWebPageSchema({
+    name: 'Privacy Policy & Data Sovereignty | Gypsym Technology',
+    description: 'Enterprise Data Protection, GDPR Compliance, and Global Sovereignty Governance for Gypsym Technology clients.',
+    url: `${getSiteUrl()}/privacy`,
+  });
+
   return (
     <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20">
+      <JsonLd data={breadcrumbs} />
+      <JsonLd data={webPageSchema} />
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumb */}
         <div className="mb-8">

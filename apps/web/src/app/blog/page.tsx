@@ -9,22 +9,27 @@ import { ContactSection } from '@/components/cms/contact-section';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
+import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
-  description:
-    'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering from the Gypsym Technology engineering team.',
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
+  return {
     title: 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
     description:
-      'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering.',
-    url: 'https://gypsym.com/blog',
-    siteName: 'Gypsym Technology',
-    type: 'website',
-  },
-};
+      'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering from the Gypsym Technology engineering team.',
+    openGraph: {
+      title: 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+      description:
+        'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering.',
+      url: `${siteUrl}/blog`,
+      siteName: 'Gypsym Technology',
+      type: 'website',
+    },
+  };
+}
 
 export default async function BlogPage() {
   const [posts, categories, homePage] = await Promise.all([
@@ -91,8 +96,37 @@ export default async function BlogPage() {
     { label: 'Technical Signal', value: '100% Free', sub: 'Zero paywalls or sales gates' },
   ];
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Publications', item: '/blog' },
+  ]);
+
+  const siteUrl = getSiteUrl();
+
+  const blogCatalogSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Gypsym Technology Systems Architecture Publications',
+    description: 'Peer-reviewed systems architecture, headless commerce topologies, and sovereign AI infrastructure.',
+    url: `${siteUrl}/blog`,
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description: post.excerpt,
+      url: `${siteUrl}/blog/${post.slug}`,
+      datePublished: post.publishedAt,
+      image: post.coverImage,
+      author: {
+        '@type': 'Person',
+        name: post.author?.name || 'Gypsym Technology',
+      },
+    })),
+  };
+
   return (
     <div className="w-full">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={blogCatalogSchema} />
       {/* ── 1. Editorial Image-Based Hero Section (Exact Site Identity) ── */}
       <SubpageHero
         ariaLabel="Editorial Architecture Hero"

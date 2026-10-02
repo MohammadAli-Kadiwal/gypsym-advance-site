@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
+import { JsonLd, buildOrganizationSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,8 +36,27 @@ export default async function HomePage() {
     notFound();
   }
 
+  const siteUrl = getSiteUrl();
+
+  const homePageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: page.title || 'Gypsym Technology',
+    description: page.description || page.seoMetadata?.metaDescription,
+    url: siteUrl,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Gypsym Technology',
+      url: siteUrl,
+    },
+  };
+
+  const orgSchema = buildOrganizationSchema();
+
   return (
     <div className="w-full">
+      <JsonLd data={orgSchema} />
+      <JsonLd data={homePageSchema} />
       <SectionRenderer sections={page.sections} />
     </div>
   );

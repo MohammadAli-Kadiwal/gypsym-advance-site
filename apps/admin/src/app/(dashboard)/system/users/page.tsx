@@ -29,6 +29,8 @@ import { usersService } from '@/services/users.service';
 import { notify } from '@/lib/notifications';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateTime } from '@/lib/utils';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 interface UserRecord {
   id: string;
@@ -60,6 +62,8 @@ export default function UsersAdminPage() {
   const [users, setUsers] = React.useState<UserRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
 
   // Modals state
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
@@ -127,6 +131,11 @@ export default function UsersAdminPage() {
         u.role.toLowerCase().includes(q)
     );
   }, [users, searchQuery]);
+
+  const paginatedUsers = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, page, pageSize]);
 
   // Open Edit Modal
   const handleOpenEdit = (user: UserRecord) => {
@@ -290,83 +299,88 @@ export default function UsersAdminPage() {
   };
 
   return (
-    <div className="space-y-6 w-full pb-24">
-      {/* ── Top Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
-        <div>
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Identity & Access Management (IAM)
-            </h1>
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold gap-1.5 py-0.5">
-              <Shield className="w-3.5 h-3.5" />
-              {users.length} Provisioned Accounts
-            </Badge>
+    <AdminContentContainer variant="wide">
+      {/* ── Unified Admin Page Header ────────────────────────────────────────── */}
+      <AdminPageHeader
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Users className="h-4 w-4" />
+            </div>
+            <span>Identity & Access Management (IAM)</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Enterprise user governance, role assignments, secure credentials management, and active session termination.
-          </p>
-        </div>
+        }
+        status={
+          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-xs font-semibold gap-1.5 py-0.5">
+            <Shield className="w-3.5 h-3.5" />
+            {users.length} Provisioned Accounts
+          </Badge>
+        }
+        description="Enterprise user governance, role assignments, secure credentials management, and active session termination."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={loadUsers}
+              disabled={loading}
+              className="gap-1.5 cursor-pointer"
+              title="Refresh user records"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
+              <span>Refresh</span>
+            </Button>
 
-        <div className="flex items-center gap-2.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={loadUsers}
-            disabled={loading}
-            className="rounded-xl h-9 px-3 text-xs font-semibold border-slate-200 hover:bg-slate-50 gap-1.5"
-            title="Refresh user records"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
-            Refresh
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setCreateModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-xs gap-1.5 cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            Create User
-          </Button>
-        </div>
-      </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              className="gap-1.5 shadow-xs cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Create User</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* ── Search & Filter Bar ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or role..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="pl-10 h-10 text-xs rounded-xl border-border bg-card shadow-2xs"
           />
         </div>
       </div>
 
       {/* ── Users Table Card ──────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         {loading && users.length === 0 ? (
           <div className="flex items-center justify-center p-16">
-            <div className="flex flex-col items-center gap-3 text-slate-400">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
               <span className="text-xs font-medium">Loading IAM User Directory...</span>
             </div>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-16 px-4">
-            <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-slate-700">No users found</p>
-            <p className="text-xs text-slate-400 mt-1">Try refining your search filter or invite a new user.</p>
+            <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-foreground">No users found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try refining your search filter or invite a new user.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3.5 px-6">User Account</th>
                   <th className="py-3.5 px-6">Assigned Role</th>
                   <th className="py-3.5 px-6">Status</th>
@@ -375,8 +389,8 @@ export default function UsersAdminPage() {
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((item) => {
+              <tbody className="divide-y divide-border">
+                {paginatedUsers.map((item) => {
                   const roleConfig = ROLE_LABELS[item.role] || {
                     label: item.role,
                     color: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -474,6 +488,17 @@ export default function UsersAdminPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {!loading && filteredUsers.length > 0 && (
+          <TablePagination
+            currentPage={page}
+            totalItems={filteredUsers.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="users"
+          />
         )}
       </div>
 
@@ -828,6 +853,6 @@ export default function UsersAdminPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminContentContainer>
   );
 }

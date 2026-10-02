@@ -83,9 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedTheme = localStorage.getItem('gypsym_admin_theme') as 'dark' | 'light' | null;
     if (savedTheme) {
       setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     } else {
-      document.documentElement.classList.remove('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
     }
   }, []);
 
@@ -93,7 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark';
       localStorage.setItem('gypsym_admin_theme', next);
-      document.documentElement.classList.toggle('dark', next === 'dark');
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      window.dispatchEvent(new Event('gypsym_theme_changed'));
       return next;
     });
   }, []);

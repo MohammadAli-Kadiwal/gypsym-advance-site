@@ -9,6 +9,8 @@ import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
+import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,8 +151,32 @@ export default async function ServicesPage() {
       ? advantagePayload.comparisonPoints
       : COMPARISON_POINTS;
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Services', item: '/services' },
+  ]);
+
+  const serviceCatalogSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Shopify Plus & E-Commerce Engineering Services',
+    description: 'Comprehensive suite of Shopify Plus design, engineering, optimization, and retainer services.',
+    itemListElement: services.map((s, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      item: {
+        '@type': 'Service',
+        name: s.title,
+        description: s.tagline || s.shortDescription,
+        url: `${getSiteUrl()}/services/${s.slug}`,
+      },
+    })),
+  };
+
   return (
     <div className="w-full bg-[#f4f3ef] min-h-screen">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={serviceCatalogSchema} />
       {/* ── 1. Unified Subpage Hero Component ── */}
       <SubpageHero
         ariaLabel="Services Hero"

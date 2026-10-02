@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 
 export interface BrandLogoItem {
@@ -38,6 +37,17 @@ export function BrandLogoCard({
 }: BrandLogoCardProps) {
   const [imageError, setImageError] = React.useState(false);
 
+  const resolvedLogoUrl = React.useMemo(() => {
+    if (!item.logoUrl) return null;
+    const trimmed = item.logoUrl.trim();
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    return trimmed;
+  }, [item.logoUrl]);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [resolvedLogoUrl]);
+
   const CardWrapper = item.websiteUrl ? 'a' : 'div';
   const wrapperProps = item.websiteUrl
     ? {
@@ -59,10 +69,10 @@ export function BrandLogoCard({
 
   const logoMaxHeight =
     logoSize === 'small'
-      ? 'max-h-8 sm:max-h-9 md:max-h-10'
+      ? 'max-h-5 sm:max-h-6 md:max-h-7'
       : logoSize === 'large'
-      ? 'max-h-11 sm:max-h-13 md:max-h-15'
-      : 'max-h-9 sm:max-h-11 md:max-h-12';
+      ? 'max-h-7 sm:max-h-8 md:max-h-9'
+      : 'max-h-6 sm:max-h-7 md:max-h-8';
 
   const isCard = displayMode !== 'minimal';
 
@@ -71,35 +81,35 @@ export function BrandLogoCard({
       {...(wrapperProps as any)}
       className={`group relative flex items-center justify-center transition-all duration-300 ${
         isCard
-          ? 'w-full h-[84px] sm:h-[98px] md:h-[108px] px-4 sm:px-5 py-3 rounded-2xl bg-white/80 dark:bg-neutral-800/50 backdrop-blur-xs border border-neutral-200/80 dark:border-neutral-700/60 shadow-2xs hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 hover:border-[#d9287c]/30 hover:bg-white dark:hover:bg-neutral-800/90 text-neutral-900 dark:text-white'
-          : 'w-full h-12 sm:h-14 md:h-16 px-2'
+          ? 'w-full h-[56px] sm:h-[64px] md:h-[70px] px-2 sm:px-3.5 py-1.5 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-neutral-800/60 backdrop-blur-xs border border-neutral-200/80 dark:border-neutral-700/60 shadow-2xs hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 hover:border-[#d9287c]/30 hover:bg-white dark:hover:bg-neutral-800/90 text-neutral-900 dark:text-white'
+          : 'w-full h-10 sm:h-12 md:h-14 px-1.5'
       } ${
         hoverEffect && !prefersReducedMotion ? 'hover:-translate-y-1' : ''
       }`}
     >
       {/* Corner link indicator if websiteUrl exists and in card mode */}
       {isCard && item.websiteUrl && (
-        <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-neutral-100/80 dark:bg-neutral-700/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 text-neutral-400 group-hover:text-[#d9287c]">
-          <ArrowUpRight className="w-3 h-3" />
+        <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-neutral-100/80 dark:bg-neutral-700/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 text-neutral-400 group-hover:text-[#d9287c]">
+          <ArrowUpRight className="w-2 sm:w-2.5 h-2 sm:h-2.5" />
         </span>
       )}
 
-      {item.logoUrl && !imageError ? (
-        <div className="relative flex items-center justify-center w-full h-full">
-          <Image
-            src={item.logoUrl}
+      {resolvedLogoUrl && !imageError ? (
+        <div className="relative flex items-center justify-center w-full h-full p-0.5">
+          <img
+            src={resolvedLogoUrl}
             alt={item.name}
-            width={220}
-            height={70}
-            className={`w-auto h-auto ${logoMaxHeight} max-w-[85%] object-contain select-none transition-all duration-300 [mix-blend-mode:multiply] dark:[mix-blend-mode:screen] ${logoFilterClass} ${
+            className={`w-auto h-auto ${logoMaxHeight} max-w-[88%] object-contain select-none transition-all duration-300 [mix-blend-mode:multiply] dark:[mix-blend-mode:screen] ${logoFilterClass} ${
               hoverEffect && !prefersReducedMotion ? 'group-hover:scale-105' : ''
             }`}
-            unoptimized={item.logoUrl.endsWith('.svg')}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
             onError={() => setImageError(true)}
           />
         </div>
       ) : (
-        <span className="text-xs sm:text-sm font-semibold tracking-tight text-neutral-700 dark:text-neutral-300 truncate max-w-[130px] text-center px-1">
+        <span className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-tight text-neutral-700 dark:text-neutral-300 truncate max-w-[85px] sm:max-w-[130px] text-center px-1">
           {item.name}
         </span>
       )}

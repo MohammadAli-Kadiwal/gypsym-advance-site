@@ -2,6 +2,8 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Cookie } from 'lucide-react';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
   title: 'Cookie Declaration & Tracking Policy | Gypsym Technology',
@@ -10,6 +12,17 @@ export const metadata: Metadata = {
 
 export default function CookieDeclarationPage() {
   const lastUpdated = 'September 22, 2026';
+
+  const breadcrumbs = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Cookie Policy', item: '/cookies' },
+  ]);
+
+  const webPageSchema = buildWebPageSchema({
+    name: 'Cookie Declaration & Tracking Policy | Gypsym Technology',
+    description: 'Learn how Gypsym Technology utilizes cookies, analytics telemetry, and browser storage tokens in accordance with GDPR and ePrivacy directives.',
+    url: `${getSiteUrl()}/cookies`,
+  });
 
   const cookieCategories = [
     {
@@ -44,6 +57,8 @@ export default function CookieDeclarationPage() {
 
   return (
     <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20">
+      <JsonLd data={breadcrumbs} />
+      <JsonLd data={webPageSchema} />
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumb */}
         <div className="mb-8">

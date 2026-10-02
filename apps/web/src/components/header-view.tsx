@@ -149,6 +149,29 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
       }
     }
 
+    // Ensure /roi-calculator is present in navigation
+    const hasRoi = items.some(
+      (i) => i.url === '/roi-calculator' || i.label.toLowerCase().includes('calculator')
+    );
+    if (!hasRoi) {
+      const roiItem = {
+        id: 'nav-roi-calc',
+        navigationId: 'nav-auto',
+        label: 'ROI Calculator',
+        url: '/roi-calculator',
+        isExternal: false,
+        displayOrder: 820,
+        isActive: true,
+        megaMenuConfig: null,
+      };
+      const blogIdx = items.findIndex((i) => i.url === '/blog');
+      if (blogIdx !== -1) {
+        items = [...items.slice(0, blogIdx), roiItem, ...items.slice(blogIdx)];
+      } else {
+        items = [...items, roiItem];
+      }
+    }
+
     if (!services || services.length === 0) return items;
 
     const SERVICE_ICONS: Record<string, string> = {
@@ -269,6 +292,25 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
     setMobileExpanded((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
+  // Active styling & color tokens from Admin configuration
+  const activeColor = config?.activeLinkColor || '#09090b';
+  const activeBg = config?.activeLinkBgColor || '#f4f4f5';
+  const activeStyle = config?.activeLinkStyle || 'pill';
+  const headerBg = config?.headerBgColor || '#ffffff';
+
+  const isItemActive = React.useCallback(
+    (itemUrl: string) => {
+      if (!itemUrl) return false;
+      const current = pathname ? pathname.replace(/\/+$/, '') || '/' : '/';
+      const target = itemUrl.replace(/\/+$/, '') || '/';
+      if (target === '/') {
+        return current === '/';
+      }
+      return current === target || current.startsWith(`${target}/`);
+    },
+    [pathname]
+  );
+
   return (
     <>
       {/* Mobile Dimmed Backdrop Overlay */}
@@ -291,12 +333,15 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
         }}
       >
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-5 md:px-6">
-          {/* Floating Header Shell */}
+          {/* Floating Header Shell — Pure White Background */}
           <header
             onMouseLeave={handleMouseLeave}
-            className={`pointer-events-auto relative w-full rounded-[16px] sm:rounded-[18px] bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md text-neutral-900 dark:text-neutral-100 border border-neutral-200/80 dark:border-neutral-800 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col ${
+            className={`pointer-events-auto relative w-full rounded-[16px] sm:rounded-[18px] bg-white text-neutral-900 border border-neutral-200 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col ${
               mobileMenuOpen ? 'h-auto pb-4 overflow-hidden shadow-2xl ring-1 ring-black/5' : 'h-[56px] sm:h-[62px] lg:h-[70px]'
             }`}
+            style={{
+              backgroundColor: headerBg,
+            }}
           >
             {/* Top Bar Row */}
             <div className="w-full h-[56px] sm:h-[62px] lg:h-[70px] pl-4 sm:pl-5 lg:pl-6 pr-2 sm:pr-3 flex items-center justify-between shrink-0">
@@ -328,12 +373,36 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
                 )}
               </Link>
 
-              {/* Desktop Center Navigation matching reference */}
-              <nav className="hidden lg:flex items-center space-x-6 xl:space-x-7.5 relative" aria-label="Main">
+              {/* Desktop Center Navigation — with dynamic active highlight */}
+              <nav className="hidden lg:flex items-center space-x-2 xl:space-x-3 relative" aria-label="Main">
                 {navItems.map((item) => {
                   const hasMega = Boolean(item.megaMenuConfig?.enabled);
                   const isMenuOpen = activeMegaMenu === item.id;
-                  const isActive = pathname === item.url || (item.url !== '/' && pathname.startsWith(item.url));
+                  const isActive = isItemActive(item.url);
+
+                  const linkBg = isActive
+                    ? activeStyle === 'solid'
+                      ? activeColor
+                      : activeStyle === 'tint'
+                      ? `${activeColor}15`
+                      : activeStyle === 'border' || activeStyle === 'dot'
+                      ? 'transparent'
+                      : activeBg
+                    : undefined;
+
+                  const linkTextColor = isActive
+                    ? activeStyle === 'solid' && (activeColor === '#09090b' || activeColor === '#000000' || activeColor === '#18181b')
+                      ? '#ffffff'
+                      : activeColor
+                    : undefined;
+
+                  const linkBorder = isActive
+                    ? activeStyle === 'border'
+                      ? `1.5px solid ${activeColor}`
+                      : activeStyle === 'pill'
+                      ? '1px solid rgba(0,0,0,0.07)'
+                      : undefined
+                    : undefined;
 
                   return (
                     <div
@@ -347,18 +416,38 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
                         onClick={() => {
                           setActiveMegaMenu(null);
                         }}
-                        className={`text-[14px] lg:text-[15px] font-normal transition-colors inline-flex items-center gap-1.5 py-2 px-3 rounded-lg ${
-                          isMenuOpen || isActive
-                            ? 'text-neutral-950 dark:text-white font-medium'
-                            : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
+                        className={`text-[13.5px] lg:text-[14.5px] transition-all inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full ${
+                          isActive
+                            ? 'font-semibold shadow-xs'
+                            : isMenuOpen
+                            ? 'text-neutral-950 font-medium bg-black/[0.04]'
+                            : 'text-neutral-600 hover:text-neutral-950 hover:bg-black/[0.04] font-normal'
                         }`}
+                        style={{
+                          backgroundColor: linkBg,
+                          color: linkTextColor,
+                          border: linkBorder,
+                        }}
                       >
+                        {/* Active Indicator dot */}
+                        {isActive && (
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                activeStyle === 'solid' ? '#ffffff' : activeColor,
+                            }}
+                          />
+                        )}
                         <span>{item.label}</span>
                         {hasMega && (
                           <ChevronDown
-                            className={`h-2.5 w-2.5 text-neutral-400 group-hover:text-neutral-800 transition-transform duration-200 ${
-                              isMenuOpen ? 'rotate-180 text-neutral-900' : ''
+                            className={`h-2.5 w-2.5 transition-transform duration-200 ${
+                              isMenuOpen ? 'rotate-180' : ''
                             }`}
+                            style={{
+                              color: isActive ? linkTextColor : undefined,
+                            }}
                           />
                         )}
                       </Link>
@@ -436,35 +525,59 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
 
             {/* Mobile Drawer Navigation Panel */}
             {mobileMenuOpen && (
-              <div className="lg:hidden w-full px-4 pt-3 pb-2 border-t border-neutral-200/70 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="lg:hidden w-full px-4 pt-3 pb-2 border-t border-neutral-200/80 bg-white rounded-b-[18px] animate-in fade-in slide-in-from-top-2 duration-200">
                 <nav className="flex flex-col space-y-2 max-h-[72vh] overflow-y-auto pr-1">
                   {navItems.map((item) => {
                     const hasMega = Boolean(item.megaMenuConfig?.enabled);
                     const isExpanded = mobileExpanded[item.id];
-                    const isActive = pathname === item.url || (item.url !== '/' && pathname.startsWith(item.url));
+                    const isActive = isItemActive(item.url);
 
                     return (
                       <div
                         key={item.id}
                         className={`rounded-xl border transition-all ${
                           isActive
-                            ? 'border-[#d9287c]/35 bg-[#d9287c]/[0.06]'
-                            : 'border-neutral-200/70 bg-[#f4f3ef]/80 hover:bg-[#f4f3ef]'
+                            ? 'border-neutral-300 shadow-xs'
+                            : 'border-neutral-200/70 bg-neutral-50/70 hover:bg-neutral-100'
                         }`}
+                        style={
+                          isActive
+                            ? {
+                                backgroundColor:
+                                  activeStyle === 'tint'
+                                    ? `${activeColor}12`
+                                    : activeBg,
+                                borderColor: `${activeColor}40`,
+                              }
+                            : undefined
+                        }
                       >
                         <div className="flex items-center justify-between p-1.5 sm:p-2">
                           <Link
                             href={item.url}
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`font-semibold text-sm py-2 px-3 rounded-lg flex-1 flex items-center justify-between transition-colors ${
-                              isActive
-                                ? 'text-[#d9287c] font-bold'
-                                : 'text-neutral-800 hover:text-[#d9287c]'
-                            }`}
+                            className="font-semibold text-sm py-2 px-3 rounded-lg flex-1 flex items-center justify-between transition-colors"
+                            style={isActive ? { color: activeColor } : undefined}
                           >
-                            <span>{item.label}</span>
+                            <span className="flex items-center gap-2">
+                              {isActive && (
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: activeColor }}
+                                />
+                              )}
+                              <span>{item.label}</span>
+                            </span>
                             {isActive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#d9287c]" />
+                              <span
+                                className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                                style={{
+                                  backgroundColor: `${activeColor}15`,
+                                  color: activeColor,
+                                }}
+                              >
+                                Active
+                              </span>
                             )}
                           </Link>
                           {hasMega && (
@@ -476,8 +589,9 @@ export function HeaderView({ navigation, brand, config, services, cmsPages }: He
                             >
                               <ChevronDown
                                 className={`h-4 w-4 transition-transform duration-200 ${
-                                  isExpanded ? 'rotate-180 text-[#d9287c]' : ''
+                                  isExpanded ? 'rotate-180' : ''
                                 }`}
+                                style={isActive ? { color: activeColor } : undefined}
                               />
                             </button>
                           )}

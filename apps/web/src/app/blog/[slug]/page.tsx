@@ -17,6 +17,8 @@ import { BlogSidebar } from './blog-sidebar';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
+import { JsonLd, buildBreadcrumbsSchema, buildArticleSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,8 +105,27 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     },
   };
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Architecture Publications', item: '/blog' },
+    { name: post.title, item: `/blog/${post.slug}` },
+  ]);
+
+  const articleSchema = buildArticleSchema({
+    title: post.title,
+    description: post.excerpt,
+    url: `${getSiteUrl()}/blog/${post.slug}`,
+    image: post.coverImage,
+    datePublished: post.publishedAt,
+    authorName: post.author?.name,
+    keywords: post.tags,
+    articleSection: post.category?.name,
+  });
+
   return (
     <div className="w-full bg-[#f4f3ef] dark:bg-background pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={articleSchema} />
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Main Reading Area (Left Side) */}
@@ -157,6 +178,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 shrink-0"
                 />
               )}
@@ -179,6 +202,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <img
                 src={post.coverImage}
                 alt={post.title}
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -200,14 +224,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   </h3>
                 )}
 
-                {section.paragraphs?.map((p: string, pIdx: number) => (
-                  <p
-                    key={pIdx}
-                    className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed"
-                  >
-                    {p}
-                  </p>
-                ))}
+                {section.paragraphs?.map((p: string, pIdx: number) =>
+                  renderParagraphContent(p, pIdx)
+                )}
 
                 {/* Quotation Callout */}
                 {section.quote && (
@@ -290,6 +309,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <img
                 src={post.author.avatar}
                 alt={post.author.name}
+                loading="lazy"
+                decoding="async"
                 className="w-16 h-16 rounded-full object-cover border-2 border-neutral-300 shrink-0"
               />
             )}
@@ -362,6 +383,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       <img
                         src={rel.coverImage}
                         alt={rel.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 left-2.5">
@@ -400,4 +423,121 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </section>
     </div>
   );
+}
+
+/**
+ * Renders structured paragraph content including embedded images, blockquotes, lists, and inline styles
+ */
+function renderParagraphContent(text: string, pIdx: number) {
+  const trimmed = text.trim();
+
+  // 1. Markdown Image: ![Alt text](url)
+  const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
+  if (imgMatch) {
+    const [, alt, src] = imgMatch;
+    return (
+      <figure
+        key={pIdx}
+        className="my-8 rounded-[20px] sm:rounded-[24px] overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/60 shadow-sm"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt || 'Article illustration'}
+          className="w-full max-h-[550px] object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+        {alt && alt !== 'Article illustration' && (
+          <figcaption className="p-3 text-center text-xs text-neutral-500 italic bg-neutral-50 dark:bg-neutral-900/90 border-t border-neutral-200/60 dark:border-neutral-800">
+            {alt}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
+  // 2. Blockquote: > Quote
+  if (trimmed.startsWith('> ')) {
+    return (
+      <blockquote
+        key={pIdx}
+        className="my-6 pl-5 py-3 border-l-4 border-[#d9287c] bg-[#fce7ec]/40 dark:bg-neutral-800/40 rounded-r-xl text-base sm:text-lg italic text-neutral-800 dark:text-neutral-200 leading-relaxed font-serif"
+      >
+        {renderInlineMarkdown(trimmed.replace(/^>\s+/, ''))}
+      </blockquote>
+    );
+  }
+
+  // 3. Bullet List: - item
+  if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+    return (
+      <div key={pIdx} className="flex items-start gap-3 my-2 text-base sm:text-lg text-neutral-700 dark:text-neutral-300">
+        <span className="w-2 h-2 rounded-full bg-[#d9287c] mt-2.5 shrink-0" />
+        <span>{renderInlineMarkdown(trimmed.replace(/^[-*]\s+/, ''))}</span>
+      </div>
+    );
+  }
+
+  // 4. Standard Paragraph with inline formatting (bold, italic, code, links)
+  return (
+    <p
+      key={pIdx}
+      className="text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed"
+    >
+      {renderInlineMarkdown(trimmed)}
+    </p>
+  );
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const linkRegex = /\[(.*?)\]\((.*?)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(renderInlineStyles(text.substring(lastIndex, match.index)));
+    }
+    const [, label, href] = match;
+    parts.push(
+      <a
+        key={match.index}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#d9287c] underline font-medium hover:opacity-80 transition-opacity"
+      >
+        {label}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(renderInlineStyles(text.substring(lastIndex)));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
+function renderInlineStyles(text: string): React.ReactNode {
+  const tokens = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+  return tokens.map((token, i) => {
+    if (token.startsWith('**') && token.endsWith('**')) {
+      return <strong key={i} className="font-bold text-neutral-900 dark:text-white">{token.slice(2, -2)}</strong>;
+    }
+    if (token.startsWith('*') && token.endsWith('*')) {
+      return <em key={i} className="italic">{token.slice(1, -1)}</em>;
+    }
+    if (token.startsWith('`') && token.endsWith('`')) {
+      return (
+        <code key={i} className="px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 font-mono text-xs sm:text-sm text-[#d9287c]">
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    return token;
+  });
 }

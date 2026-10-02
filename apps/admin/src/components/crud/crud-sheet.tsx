@@ -24,6 +24,7 @@ import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { Loader2 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api-client';
+import { StatusToggleField } from './status-toggle-field';
 
 export interface FieldConfig {
   name: string;
@@ -46,6 +47,7 @@ interface CrudSheetProps {
   onSubmit: (formData: Record<string, any>) => Promise<void> | void;
   submitLabel?: string;
   successMessage?: string;
+  showStatusField?: boolean;
 }
 
 export function CrudSheet({
@@ -58,6 +60,7 @@ export function CrudSheet({
   onSubmit,
   submitLabel,
   successMessage,
+  showStatusField = true,
 }: CrudSheetProps) {
   const [formData, setFormData] = React.useState<Record<string, any>>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -69,9 +72,16 @@ export function CrudSheet({
   React.useEffect(() => {
     if (open) {
       if (initialData) {
-        setFormData({ ...initialData });
+        setFormData({
+          status: initialData.status || (initialData.isActive !== false ? 'PUBLISHED' : 'DRAFT'),
+          isActive: initialData.status ? initialData.status === 'PUBLISHED' : initialData.isActive !== false,
+          ...initialData,
+        });
       } else {
-        const defaults: Record<string, any> = {};
+        const defaults: Record<string, any> = {
+          status: 'PUBLISHED',
+          isActive: true,
+        };
         fields.forEach((f) => {
           defaults[f.name] = f.type === 'switch' ? false : '';
         });
@@ -159,6 +169,16 @@ export function CrudSheet({
 
           {/* Form Fields Body */}
           <div className="flex-1 space-y-6 px-6 py-6 overflow-y-auto">
+            {showStatusField !== false && (
+              <StatusToggleField
+                value={formData.status ?? (formData.isActive !== false ? 'PUBLISHED' : 'DRAFT')}
+                onChange={(status, isActive) => {
+                  handleChange('status', status);
+                  handleChange('isActive', isActive);
+                }}
+              />
+            )}
+
             {sectionKeys.map((sectionName) => (
               <div key={sectionName} className="space-y-4">
                 {hasMultipleSections && (

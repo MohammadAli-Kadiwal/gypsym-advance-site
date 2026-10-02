@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 
 export default function NotificationsAdminPage() {
   const router = useRouter();
@@ -110,53 +111,48 @@ export default function NotificationsAdminPage() {
   );
 
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto pb-24">
-      {/* Top Banner / Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              System Notification Center
-            </h1>
-            {unreadCount > 0 ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white animate-pulse">
-                {unreadCount} unread
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                All caught up
-              </span>
+    <AdminContentContainer variant="wide" className="space-y-6 pb-24">
+      {/* ── Top Header (Strictly No Breadcrumbs) ── */}
+      <AdminPageHeader
+        title="System Notification Center"
+        description="Real-time inbound inquiries, discovery bookings, and operational security signals."
+        status={
+          unreadCount > 0 ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground animate-pulse">
+              {unreadCount} unread
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              All caught up
+            </span>
+          )
+        }
+        actions={
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing}
+              className="h-9 px-3 text-xs shadow-2xs"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
+
+            {unreadCount > 0 && (
+              <Button
+                onClick={markAllAsRead}
+                size="sm"
+                className="h-9 px-3.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs font-semibold"
+              >
+                <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+                <span>Mark All Read</span>
+              </Button>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time inbound inquiries, discovery bookings, and operational security signals.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            size="sm"
-            disabled={isRefreshing}
-            className="h-9 px-3 text-xs text-slate-600 hover:text-slate-900 border-slate-200 shadow-2xs"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </Button>
-
-          {unreadCount > 0 && (
-            <Button
-              onClick={markAllAsRead}
-              size="sm"
-              className="h-9 px-3.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-2xs font-semibold"
-            >
-              <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
-              <span>Mark All Read</span>
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -165,19 +161,19 @@ export default function NotificationsAdminPage() {
           onClick={() => setActiveTab('unread')}
           className={`cursor-pointer transition-all border p-4 ${
             activeTab === 'unread'
-              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
-              : 'border-slate-200/80 bg-white hover:border-slate-300'
+              ? 'border-primary bg-primary/10 ring-1 ring-primary'
+              : 'border-border bg-card hover:border-primary/50'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Unread Signals</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <span className="text-xs font-medium text-muted-foreground">Unread Signals</span>
+            <div className="p-2 rounded-xl bg-primary/10 text-primary">
               <Bell className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{unreadCount}</span>
-            <span className="text-[11px] text-slate-400">awaiting review</span>
+            <span className="text-2xl font-bold text-foreground">{unreadCount}</span>
+            <span className="text-[11px] text-muted-foreground">awaiting review</span>
           </div>
         </Card>
 
@@ -186,20 +182,20 @@ export default function NotificationsAdminPage() {
           onClick={() => setActiveTab('inquiries')}
           className={`cursor-pointer transition-all border p-4 ${
             activeTab === 'inquiries'
-              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
-              : 'border-slate-200/80 bg-white hover:border-slate-300'
+              ? 'border-primary bg-primary/10 ring-1 ring-primary'
+              : 'border-border bg-card hover:border-primary/50'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Client Inquiries</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <span className="text-xs font-medium text-muted-foreground">Client Inquiries</span>
+            <div className="p-2 rounded-xl bg-primary/10 text-primary">
               <Mail className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{inquiriesCount}</span>
+            <span className="text-2xl font-bold text-foreground">{inquiriesCount}</span>
             {unreadInquiriesCount > 0 && (
-              <span className="text-[11px] font-bold text-blue-600">
+              <span className="text-[11px] font-bold text-primary">
                 {unreadInquiriesCount} new
               </span>
             )}
@@ -211,20 +207,20 @@ export default function NotificationsAdminPage() {
           onClick={() => setActiveTab('bookings')}
           className={`cursor-pointer transition-all border p-4 ${
             activeTab === 'bookings'
-              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
-              : 'border-slate-200/80 bg-white hover:border-slate-300'
+              ? 'border-primary bg-primary/10 ring-1 ring-primary'
+              : 'border-border bg-card hover:border-primary/50'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Discovery Calls</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <span className="text-xs font-medium text-muted-foreground">Discovery Calls</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CalendarCheck className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{bookingsCount}</span>
+            <span className="text-2xl font-bold text-foreground">{bookingsCount}</span>
             {unreadBookingsCount > 0 && (
-              <span className="text-[11px] font-bold text-emerald-600">
+              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                 {unreadBookingsCount} new
               </span>
             )}
@@ -236,20 +232,20 @@ export default function NotificationsAdminPage() {
           onClick={() => setActiveTab('system')}
           className={`cursor-pointer transition-all border p-4 ${
             activeTab === 'system'
-              ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500'
-              : 'border-slate-200/80 bg-white hover:border-slate-300'
+              ? 'border-primary bg-primary/10 ring-1 ring-primary'
+              : 'border-border bg-card hover:border-primary/50'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Security & SEO</span>
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+            <span className="text-xs font-medium text-muted-foreground">Security & SEO</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <ShieldCheck className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{systemCount}</span>
+            <span className="text-2xl font-bold text-foreground">{systemCount}</span>
             {unreadSystemCount > 0 && (
-              <span className="text-[11px] font-bold text-amber-600">
+              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
                 {unreadSystemCount} new
               </span>
             )}
@@ -258,7 +254,7 @@ export default function NotificationsAdminPage() {
       </div>
 
       {/* Tabs and Search Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-2 rounded-2xl border border-border shadow-2xs">
         {/* Filter Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {[
@@ -273,18 +269,18 @@ export default function NotificationsAdminPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-foreground text-background shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                   activeTab === tab.id
-                    ? 'bg-slate-800 text-slate-200'
+                    ? 'bg-background/20 text-background'
                     : tab.highlight
-                    ? 'bg-blue-100 text-blue-700 font-bold'
-                    : 'bg-slate-100 text-slate-500'
+                    ? 'bg-primary/10 text-primary font-bold'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {tab.count}
@@ -295,17 +291,17 @@ export default function NotificationsAdminPage() {
 
         {/* Live Search */}
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search messages, names..."
-            className="pl-8 h-9 text-xs rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white"
+            className="pl-8 h-9 text-xs rounded-xl"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -316,9 +312,9 @@ export default function NotificationsAdminPage() {
       {/* Notifications List */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-            <RefreshCw className="h-6 w-6 mx-auto animate-spin text-blue-600 mb-2" />
-            <p className="text-xs font-semibold text-slate-600">Syncing live messages & notifications...</p>
+          <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-border">
+            <RefreshCw className="h-6 w-6 mx-auto animate-spin text-primary mb-2" />
+            <p className="text-xs font-semibold text-foreground">Syncing live messages & notifications...</p>
           </div>
         ) : filteredNotifications.length > 0 ? (
           filteredNotifications.map((notif) => {
@@ -328,12 +324,12 @@ export default function NotificationsAdminPage() {
                 key={notif.id}
                 className={`p-4 transition-all rounded-2xl border relative overflow-hidden ${
                   isUnread
-                    ? 'bg-blue-50/20 border-blue-200/90 shadow-2xs'
-                    : 'bg-white border-slate-200/80 hover:border-slate-300'
+                    ? 'bg-primary/5 border-primary/30 shadow-2xs'
+                    : 'bg-card border-border hover:border-primary/40'
                 }`}
               >
                 {isUnread && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-2xl" />
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
                 )}
 
                 <div className="flex items-start gap-3.5 pl-1">
@@ -341,12 +337,12 @@ export default function NotificationsAdminPage() {
                   <div
                     className={`rounded-2xl p-2.5 shrink-0 ${
                       notif.category === 'SECURITY'
-                        ? 'bg-amber-50 text-amber-600 border border-amber-200/60'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                         : notif.category === 'INQUIRY'
-                        ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
                         : notif.category === 'BOOKING'
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
-                        : 'bg-violet-50 text-violet-600 border border-violet-200/60'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20'
                     }`}
                   >
                     {notif.category === 'SECURITY' ? (
@@ -367,7 +363,7 @@ export default function NotificationsAdminPage() {
                         <h4
                           onClick={() => setInspectItem(notif)}
                           className={`text-sm cursor-pointer hover:underline ${
-                            isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'
+                            isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/80'
                           }`}
                         >
                           {notif.title}
@@ -376,52 +372,52 @@ export default function NotificationsAdminPage() {
                         <span
                           className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                             notif.category === 'SECURITY'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                               : notif.category === 'INQUIRY'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              ? 'bg-primary/10 text-primary border-primary/20'
                               : notif.category === 'BOOKING'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-violet-50 text-violet-700 border-violet-200'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
                           }`}
                         >
                           {notif.category}
                         </span>
 
                         {isUnread && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-100/60 px-2 py-0.5 rounded-full">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                             New
                           </span>
                         )}
                       </div>
 
-                      <span className="font-mono text-[11px] text-slate-400 shrink-0">
+                      <span className="font-mono text-[11px] text-muted-foreground shrink-0">
                         {notif.timestamp}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                    <p className="text-xs text-muted-foreground leading-relaxed font-normal">
                       {notif.message}
                     </p>
 
                     {/* Sender Details Pills */}
                     {(notif.senderName || notif.senderEmail || notif.companyName) && (
-                      <div className="flex items-center gap-2 pt-1 flex-wrap text-[11px] text-slate-500">
+                      <div className="flex items-center gap-2 pt-1 flex-wrap text-[11px] text-muted-foreground">
                         {notif.senderEmail && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px]">
-                            <Mail className="h-3 w-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-foreground font-mono text-[10px]">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
                             {notif.senderEmail}
                           </span>
                         )}
                         {notif.companyName && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px]">
-                            <Building2 className="h-3 w-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-foreground text-[10px]">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
                             {notif.companyName}
                           </span>
                         )}
                         {notif.senderPhone && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px]">
-                            <Phone className="h-3 w-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-foreground font-mono text-[10px]">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
                             {notif.senderPhone}
                           </span>
                         )}
@@ -429,12 +425,12 @@ export default function NotificationsAdminPage() {
                     )}
 
                     {/* Action Bar */}
-                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-2">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-border/50 mt-2">
                       <div className="flex items-center gap-2">
                         {isUnread ? (
                           <button
                             onClick={() => markAsRead(notif.id)}
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium transition-colors cursor-pointer"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             <span>Mark as read</span>
@@ -442,17 +438,17 @@ export default function NotificationsAdminPage() {
                         ) : (
                           <button
                             onClick={() => markAsUnread(notif.id)}
-                            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
                           >
                             <span>Mark as unread</span>
                           </button>
                         )}
 
-                        <span className="text-slate-200">•</span>
+                        <span className="text-border">•</span>
 
                         <button
                           onClick={() => setInspectItem(notif)}
-                          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 font-medium transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           <span>View Details</span>
@@ -463,7 +459,7 @@ export default function NotificationsAdminPage() {
                         {notif.link && (
                           <Link
                             href={notif.link}
-                            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-blue-600 font-medium transition-colors"
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
                           >
                             <span>Open in Studio</span>
                             <ExternalLink className="h-3 w-3" />
@@ -472,7 +468,7 @@ export default function NotificationsAdminPage() {
 
                         <button
                           onClick={() => deleteNotification(notif.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                           title="Dismiss notification"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -485,12 +481,12 @@ export default function NotificationsAdminPage() {
             );
           })
         ) : (
-          <div className="p-16 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
-            <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+          <div className="p-16 text-center bg-card rounded-3xl border border-border space-y-3">
+            <div className="h-12 w-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mx-auto">
               <Bell className="h-6 w-6 stroke-[1.5]" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">No notifications found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <h3 className="text-sm font-bold text-foreground">No notifications found</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               {searchQuery
                 ? `No notifications match your search "${searchQuery}".`
                 : activeTab === 'unread'
@@ -517,66 +513,66 @@ export default function NotificationsAdminPage() {
       {/* Inspect Detail Modal */}
       {inspectItem && (
         <Dialog open={!!inspectItem} onOpenChange={(open) => !open && setInspectItem(null)}>
-          <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <DialogContent className="sm:max-w-lg rounded-2xl bg-card border border-border p-6 shadow-2xl">
             <DialogHeader className="space-y-2">
               <div className="flex items-center gap-2">
                 <span
                   className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
                     inspectItem.category === 'SECURITY'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                       : inspectItem.category === 'INQUIRY'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      ? 'bg-primary/10 text-primary border-primary/20'
                       : inspectItem.category === 'BOOKING'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-violet-50 text-violet-700 border-violet-200'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
                   }`}
                 >
                   {inspectItem.category}
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-muted-foreground font-mono">
                   {inspectItem.timestamp}
                 </span>
               </div>
-              <DialogTitle className="text-base font-bold text-slate-900">
+              <DialogTitle className="text-base font-bold text-foreground">
                 {inspectItem.title}
               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4 py-2 text-xs">
               {/* Message Payload */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 leading-relaxed font-normal">
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border text-foreground leading-relaxed font-normal">
                 {inspectItem.message}
               </div>
 
               {/* Client Information */}
               {(inspectItem.senderName || inspectItem.senderEmail) && (
-                <div className="space-y-2 border-t border-slate-100 pt-3">
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="space-y-2 border-t border-border/50 pt-3">
+                  <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Contact Details
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     {inspectItem.senderName && (
-                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="text-[10px] text-slate-400 block">Full Name</span>
-                        <span className="font-semibold text-slate-900">{inspectItem.senderName}</span>
+                      <div className="p-2 rounded-lg bg-muted/40 border border-border/60">
+                        <span className="text-[10px] text-muted-foreground block">Full Name</span>
+                        <span className="font-semibold text-foreground">{inspectItem.senderName}</span>
                       </div>
                     )}
                     {inspectItem.senderEmail && (
-                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="text-[10px] text-slate-400 block">Email</span>
-                        <span className="font-mono text-slate-900 break-all">{inspectItem.senderEmail}</span>
+                      <div className="p-2 rounded-lg bg-muted/40 border border-border/60">
+                        <span className="text-[10px] text-muted-foreground block">Email</span>
+                        <span className="font-mono text-foreground break-all">{inspectItem.senderEmail}</span>
                       </div>
                     )}
                     {inspectItem.companyName && (
-                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="text-[10px] text-slate-400 block">Company</span>
-                        <span className="font-semibold text-slate-900">{inspectItem.companyName}</span>
+                      <div className="p-2 rounded-lg bg-muted/40 border border-border/60">
+                        <span className="text-[10px] text-muted-foreground block">Company</span>
+                        <span className="font-semibold text-foreground">{inspectItem.companyName}</span>
                       </div>
                     )}
                     {inspectItem.senderPhone && (
-                      <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                        <span className="text-[10px] text-slate-400 block">Phone</span>
-                        <span className="font-mono text-slate-900">{inspectItem.senderPhone}</span>
+                      <div className="p-2 rounded-lg bg-muted/40 border border-border/60">
+                        <span className="text-[10px] text-muted-foreground block">Phone</span>
+                        <span className="font-mono text-foreground">{inspectItem.senderPhone}</span>
                       </div>
                     )}
                   </div>
@@ -585,28 +581,28 @@ export default function NotificationsAdminPage() {
 
               {/* Extra Metadata if present */}
               {inspectItem.rawDetails && (
-                <div className="space-y-1.5 border-t border-slate-100 pt-3">
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="space-y-1.5 border-t border-border/50 pt-3">
+                  <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Operational Metadata
                   </h4>
-                  <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-slate-600">
+                  <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-muted-foreground">
                     {inspectItem.rawDetails.budgetRange && (
-                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                      <span className="px-2 py-0.5 rounded bg-muted">
                         Budget: {inspectItem.rawDetails.budgetRange}
                       </span>
                     )}
                     {inspectItem.rawDetails.timeline && (
-                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                      <span className="px-2 py-0.5 rounded bg-muted">
                         Timeline: {inspectItem.rawDetails.timeline}
                       </span>
                     )}
                     {inspectItem.rawDetails.storeUrl && (
-                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                      <span className="px-2 py-0.5 rounded bg-muted">
                         Store: {inspectItem.rawDetails.storeUrl}
                       </span>
                     )}
                     {inspectItem.rawDetails.slotTime && (
-                      <span className="px-2 py-0.5 rounded bg-slate-100">
+                      <span className="px-2 py-0.5 rounded bg-muted">
                         Time: {inspectItem.rawDetails.date} @ {inspectItem.rawDetails.slotTime} ({inspectItem.rawDetails.timezone})
                       </span>
                     )}
@@ -615,12 +611,12 @@ export default function NotificationsAdminPage() {
               )}
             </div>
 
-            <DialogFooter className="flex items-center justify-between sm:justify-between border-t border-slate-100 pt-4">
+            <DialogFooter className="flex items-center justify-between sm:justify-between border-t border-border/50 pt-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setInspectItem(null)}
-                className="text-xs text-slate-500"
+                className="text-xs text-muted-foreground"
               >
                 Close
               </Button>
@@ -632,7 +628,7 @@ export default function NotificationsAdminPage() {
                     onClick={() => {
                       window.location.href = `mailto:${inspectItem.senderEmail}?subject=Regarding your Gypsym inquiry`;
                     }}
-                    className="text-xs bg-slate-900 text-white gap-1.5"
+                    className="text-xs bg-foreground text-background hover:bg-foreground/90 gap-1.5"
                   >
                     <Send className="h-3 w-3" />
                     <span>Email Client</span>
@@ -646,7 +642,7 @@ export default function NotificationsAdminPage() {
                       setInspectItem(null);
                       router.push(inspectItem.link!);
                     }}
-                    className="text-xs bg-blue-600 text-white gap-1.5"
+                    className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
                   >
                     <span>Open in Studio</span>
                     <ExternalLink className="h-3 w-3" />
@@ -657,6 +653,6 @@ export default function NotificationsAdminPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </AdminContentContainer>
   );
 }

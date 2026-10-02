@@ -21,9 +21,13 @@ import {
   Archive,
   UserCheck,
   CheckCheck,
+  Printer,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
+import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { ExecutiveBriefingDossier, type BriefingData } from '@/components/briefing/executive-briefing-dossier';
 
 interface SubmissionItem {
   id: string;
@@ -60,11 +64,14 @@ export default function ContactSubmissionsPage() {
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('ALL');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
   const [selectedSubmission, setSelectedSubmission] = React.useState<SubmissionItem | null>(null);
   const [totalCount, setTotalCount] = React.useState(0);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
   const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
+  const [dossierTarget, setDossierTarget] = React.useState<BriefingData | null>(null);
 
   const loadSubmissions = React.useCallback(async () => {
     setLoading(true);
@@ -72,7 +79,8 @@ export default function ContactSubmissionsPage() {
       const params = new URLSearchParams();
       if (search.trim()) params.set('search', search.trim());
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
-      params.set('limit', '50');
+      params.set('page', page.toString());
+      params.set('limit', pageSize.toString());
 
       const res = await fetchApi<{ items: SubmissionItem[]; total: number }>(`/inquiries?${params.toString()}`);
       if (res && Array.isArray(res.items)) {
@@ -84,7 +92,7 @@ export default function ContactSubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [search, statusFilter, page, pageSize]);
 
   React.useEffect(() => {
     loadSubmissions();
@@ -196,7 +204,10 @@ export default function ContactSubmissionsPage() {
     setIsBulkProcessing(true);
     const ids = Array.from(selectedIds);
     try {
-      await Promise.all(ids.map((id) => fetchApi(`/inquiries/${id}`, { method: 'DELETE' })));
+      await fetchApi('/inquiries/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      });
       setItems((prev) => prev.filter((item) => !selectedIds.has(item.id)));
       setTotalCount((c) => Math.max(0, c - ids.length));
       if (selectedSubmission && selectedIds.has(selectedSubmission.id)) {
@@ -213,44 +224,49 @@ export default function ContactSubmissionsPage() {
   };
 
   return (
-    <div className="space-y-6 w-full pb-24">
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div>
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Contact Submissions
-            </h1>
-            <Badge variant="outline" className="text-xs font-mono bg-blue-50 text-blue-700 border-blue-200">
-              {totalCount} Total Inquiries
-            </Badge>
+    <AdminContentContainer variant="wide">
+      {/* ── Unified Admin Page Header ────────────────────────────────────────── */}
+      <AdminPageHeader
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4" />
+            </div>
+            <span>Contact Submissions</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Enterprise leads, inquiries, and inbound messages captured via homepage contact forms.
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={loadSubmissions}
-          className="rounded-xl h-9 px-3 text-xs font-semibold border-slate-200 hover:bg-slate-50 gap-1.5 self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
+        }
+        status={
+          <Badge variant="outline" className="text-xs font-mono bg-primary/5 text-primary border-primary/20">
+            {totalCount} Total Inquiries
+          </Badge>
+        }
+        description="Enterprise leads, inquiries, and inbound messages captured via homepage contact forms."
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={loadSubmissions}
+            className="gap-1.5 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+        }
+      />
 
       {/* ── Filter Bar ────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by full name, email, or company..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-xl border-slate-200 bg-white"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-9 h-9 text-xs rounded-xl border-border bg-card"
           />
         </div>
 
@@ -260,11 +276,14 @@ export default function ContactSubmissionsPage() {
             <button
               key={st}
               type="button"
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              onClick={() => {
+                setStatusFilter(st);
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === st
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  ? 'bg-primary text-primary-foreground shadow-2xs'
+                  : 'bg-card text-muted-foreground border border-border hover:bg-muted'
               }`}
             >
               {st === 'ALL' ? 'All' : STATUS_CONFIG[st]?.label || st}
@@ -274,16 +293,16 @@ export default function ContactSubmissionsPage() {
       </div>
 
       {/* ── Submissions Table ─────────────────────────────────────────────── */}
-      <Card className="rounded-2xl border-slate-200/90 shadow-xs bg-white overflow-hidden">
+      <Card className="rounded-2xl border-border shadow-xs bg-card overflow-hidden">
         <CardContent className="p-0">
           {items.length === 0 ? (
             <div className="py-16 text-center space-y-3">
-              <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <div className="h-12 w-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
                 <Inbox className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-800">No contact submissions found</p>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                <p className="text-sm font-semibold text-foreground">No contact submissions found</p>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                   {search ? 'Try adjusting your search keywords or status filter.' : 'Inbound inquiries from the homepage contact form will appear here.'}
                 </p>
               </div>
@@ -292,7 +311,7 @@ export default function ContactSubmissionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
+                  <tr className="border-b border-border bg-muted/40 text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">
                     <th className="py-3 px-3 w-10 text-center">
                       <Checkbox
                         checked={isAllSelected}
@@ -308,7 +327,7 @@ export default function ContactSubmissionsPage() {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {items.map((sub) => {
                     const stConf = STATUS_CONFIG[sub.status] ?? {
                       label: sub.status,
@@ -383,8 +402,28 @@ export default function ContactSubmissionsPage() {
                               type="button"
                               variant="ghost"
                               size="sm"
+                              onClick={() => {
+                                setDossierTarget({
+                                  clientName: sub.fullName,
+                                  email: sub.businessEmail,
+                                  phone: sub.phone,
+                                  company: sub.companyName,
+                                  inquiryMessage: sub.projectDescription,
+                                  source: sub.source,
+                                  status: sub.status,
+                                });
+                              }}
+                              className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                              title="1-Click Executive Dossier (PDF / Print)"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-primary" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleOpenDetail(sub)}
-                              className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
@@ -394,7 +433,7 @@ export default function ContactSubmissionsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(sub.id)}
-                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              className="h-8 w-8 p-0 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                               title="Delete Submission"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -407,6 +446,17 @@ export default function ContactSubmissionsPage() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {!loading && totalCount > 0 && (
+            <TablePagination
+              currentPage={page}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="submissions"
+            />
           )}
         </CardContent>
       </Card>
@@ -651,16 +701,39 @@ export default function ContactSubmissionsPage() {
 
             {/* Modal Footer */}
             <div className="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50/70 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleDelete(selectedSubmission.id)}
-                className="rounded-xl h-9 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete Submission
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(selectedSubmission.id)}
+                  className="rounded-xl h-9 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete Submission
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setDossierTarget({
+                      clientName: selectedSubmission.fullName,
+                      email: selectedSubmission.businessEmail,
+                      phone: selectedSubmission.phone,
+                      company: selectedSubmission.companyName,
+                      inquiryMessage: selectedSubmission.projectDescription,
+                      source: selectedSubmission.source,
+                      status: selectedSubmission.status,
+                    });
+                  }}
+                  className="rounded-xl h-9 text-xs font-semibold gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-primary" />
+                  <span>Dossier (PDF)</span>
+                </Button>
+              </div>
 
               <div className="flex items-center gap-2 justify-end">
                 <Button
@@ -668,14 +741,14 @@ export default function ContactSubmissionsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedSubmission(null)}
-                  className="rounded-xl h-9 text-xs font-medium text-slate-500 hover:text-slate-800"
+                  className="rounded-xl h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   Close
                 </Button>
 
                 <a
                   href={`mailto:${selectedSubmission.businessEmail}?subject=Re: Enterprise Inquiry - Gypsym Technology`}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Reply via Email
@@ -685,6 +758,15 @@ export default function ContactSubmissionsPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* ── 1-Click Executive PDF Briefing Dossier Modal ──────────── */}
+      <ExecutiveBriefingDossier
+        open={Boolean(dossierTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDossierTarget(null);
+        }}
+        data={dossierTarget}
+      />
+    </AdminContentContainer>
   );
 }

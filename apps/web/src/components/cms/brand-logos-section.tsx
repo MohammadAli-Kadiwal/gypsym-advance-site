@@ -25,6 +25,7 @@ export interface BrandLogosSectionProps {
   layout?: {
     displayMode?: 'cards' | 'marquee';
     desktopRows?: number[];
+    desktopCols?: number;
     logoStyle?: 'original' | 'muted' | 'grayscale' | 'monochrome';
     logoSize?: 'small' | 'medium' | 'large';
     mobileCols?: 2 | 3;
@@ -148,6 +149,7 @@ export function BrandLogosSection({
             items={uniqueItems}
             displayMode={displayMode}
             desktopRows={layout.desktopRows}
+            desktopCols={layout.desktopCols}
             logoStyle={logoStyle}
             logoSize={logoSize}
             hoverEffect={hoverEffect}

@@ -134,6 +134,8 @@ export function CtaSection({ section }: CtaSectionProps) {
               <img
                 src={appearance.backgroundImageUrl}
                 alt="Call to action backdrop"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               <div

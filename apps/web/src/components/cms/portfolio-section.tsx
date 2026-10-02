@@ -126,7 +126,7 @@ export function PortfolioSection({
 
   // Source projects
   const sourceProjects: PortfolioProject[] = overrideProjects || (Array.isArray(p.projects) ? p.projects : []);
-  const validProjects = sourceProjects.filter((pr) => pr && pr.title);
+  const validProjects = sourceProjects.filter((pr: any) => pr && pr.title && pr.status !== 'DRAFT');
 
   // Filter projects by category
   const filteredProjects = React.useMemo(() => {

@@ -8,6 +8,8 @@ import { DirectContactSection } from '@/components/cms/direct-contact-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { SubpageHero } from '@/components/ui/subpage-hero';
+import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,8 +193,22 @@ export default async function ContactPage() {
     },
   };
 
+  const breadcrumbSchema = buildBreadcrumbsSchema([
+    { name: 'Home', item: '/' },
+    { name: 'Contact Us', item: '/contact' },
+  ]);
+
+  const contactSchema = buildWebPageSchema({
+    name: 'Contact Gypsym Technology',
+    description: 'Reach out to Gypsym Technology for Shopify Plus development, custom theme engineering, D2C strategy, and e-commerce partnerships.',
+    url: `${getSiteUrl()}/contact`,
+    type: 'ContactPage',
+  });
+
   return (
     <div className="w-full">
+      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={contactSchema} />
       <SubpageHero
         ariaLabel="Contact Hero"
         backgroundImageUrl={heroPayload.backgroundImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2200&auto=format&fit=crop"}
