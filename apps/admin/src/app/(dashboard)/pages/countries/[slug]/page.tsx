@@ -14,6 +14,8 @@ import {
   Monitor,
   Smartphone,
   Loader2,
+  Coins,
+  Clock,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,53 @@ import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admi
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../../_components/types';
+
+const CURRENCY_OPTIONS = [
+  { code: 'USD', symbol: '$', label: 'US Dollar' },
+  { code: 'EUR', symbol: '€', label: 'Euro' },
+  { code: 'GBP', symbol: '£', label: 'British Pound' },
+  { code: 'AED', symbol: 'د.إ', label: 'UAE Dirham' },
+  { code: 'SAR', symbol: '﷼', label: 'Saudi Riyal' },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
+  { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
+  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
+  { code: 'OMR', symbol: 'ر.ع.', label: 'Omani Rial' },
+  { code: 'QAR', symbol: 'ر.ق', label: 'Qatari Riyal' },
+  { code: 'KWD', symbol: 'د.ك', label: 'Kuwaiti Dinar' },
+  { code: 'BHD', symbol: '.د.ب', label: 'Bahraini Dinar' },
+  { code: 'CHF', symbol: 'CHF', label: 'Swiss Franc' },
+  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+  { code: 'NZD', symbol: 'NZ$', label: 'New Zealand Dollar' },
+  { code: 'ZAR', symbol: 'R', label: 'South African Rand' },
+  { code: 'SEK', symbol: 'kr', label: 'Swedish Krona' },
+  { code: 'NOK', symbol: 'kr', label: 'Norwegian Krone' },
+  { code: 'DKK', symbol: 'kr', label: 'Danish Krone' },
+  { code: 'HKD', symbol: 'HK$', label: 'Hong Kong Dollar' },
+];
+
+const TIMEZONE_OPTIONS = [
+  { tz: 'America/New_York', offset: 'UTC-05:00', label: 'Eastern Time (US & Canada)' },
+  { tz: 'America/Chicago', offset: 'UTC-06:00', label: 'Central Time (US & Canada)' },
+  { tz: 'America/Denver', offset: 'UTC-07:00', label: 'Mountain Time (US & Canada)' },
+  { tz: 'America/Los_Angeles', offset: 'UTC-08:00', label: 'Pacific Time (US & Canada)' },
+  { tz: 'America/Toronto', offset: 'UTC-05:00', label: 'Eastern Time (Toronto, Montreal)' },
+  { tz: 'America/Vancouver', offset: 'UTC-08:00', label: 'Pacific Time (Vancouver)' },
+  { tz: 'Europe/London', offset: 'UTC+00:00', label: 'London, Dublin, Edinburgh' },
+  { tz: 'Europe/Paris', offset: 'UTC+01:00', label: 'Paris, Rome, Madrid, Amsterdam' },
+  { tz: 'Europe/Berlin', offset: 'UTC+01:00', label: 'Berlin, Frankfurt, Munich' },
+  { tz: 'Europe/Zurich', offset: 'UTC+01:00', label: 'Zurich, Geneva' },
+  { tz: 'Asia/Dubai', offset: 'UTC+04:00', label: 'Dubai, Abu Dhabi, Muscat' },
+  { tz: 'Asia/Riyadh', offset: 'UTC+03:00', label: 'Riyadh, Jeddah, Kuwait, Doha' },
+  { tz: 'Asia/Kolkata', offset: 'UTC+05:30', label: 'India (New Delhi, Mumbai, Bangalore)' },
+  { tz: 'Asia/Singapore', offset: 'UTC+08:00', label: 'Singapore, Kuala Lumpur' },
+  { tz: 'Asia/Tokyo', offset: 'UTC+09:00', label: 'Tokyo, Osaka' },
+  { tz: 'Australia/Sydney', offset: 'UTC+10:00', label: 'Sydney, Melbourne, Canberra' },
+  { tz: 'Australia/Perth', offset: 'UTC+08:00', label: 'Perth (Western Australia)' },
+  { tz: 'Pacific/Auckland', offset: 'UTC+12:00', label: 'Auckland, Wellington' },
+  { tz: 'Africa/Johannesburg', offset: 'UTC+02:00', label: 'Johannesburg, Cape Town' },
+  { tz: 'UTC', offset: 'UTC+00:00', label: 'UTC (Universal Coordinated Time)' },
+];
 
 const EIGHT_SECTIONS_SPEC = [
   { id: 'hero-banner',              type: 'HERO',               label: '1. Hero Section',          desc: 'Localized headline, subtext, background image & CTA' },
@@ -54,6 +103,8 @@ export default function CountryStudioPage() {
   const [heroTitle, setHeroTitle] = React.useState('');
   const [heroTitleHighlight, setHeroTitleHighlight] = React.useState('');
   const [heroDescription, setHeroDescription] = React.useState('');
+  const [heroCurrency, setHeroCurrency] = React.useState('USD');
+  const [heroTimezone, setHeroTimezone] = React.useState('America/New_York');
   const [heroBgImage, setHeroBgImage] = React.useState('');
   const [heroOverlayOpacity, setHeroOverlayOpacity] = React.useState(0.38);
   const [heroCtaLabel, setHeroCtaLabel] = React.useState('');
@@ -91,6 +142,8 @@ export default function CountryStudioPage() {
           setHeroTitle(headlineStr || data.title || '');
           setHeroTitleHighlight(p.titleHighlight || '');
           setHeroDescription(p.description?.content || data.description || '');
+          setHeroCurrency(p.country?.currency || 'USD');
+          setHeroTimezone(p.country?.timezone || 'America/New_York');
           setHeroBgImage(p.backgroundMedia?.desktopImageUrl || `/images/countries/${slug}.jpg`);
           setHeroOverlayOpacity(p.backgroundMedia?.overlayOpacity ?? 0.38);
           setHeroCtaLabel(p.primaryCta?.label || 'Schedule an Architectural Briefing');
@@ -137,6 +190,11 @@ export default function CountryStudioPage() {
         const curPayload = (heroSection.contentPayload as Record<string, any>) || {};
         const updatedPayload = {
           ...curPayload,
+          country: {
+            ...curPayload.country,
+            currency: heroCurrency,
+            timezone: heroTimezone,
+          },
           headline: {
             ...curPayload.headline,
             segments: [
@@ -316,6 +374,44 @@ export default function CountryStudioPage() {
                     placeholder="Detailed localized value proposition and engineering capability..."
                     className="rounded-xl text-xs leading-relaxed resize-none"
                   />
+                </div>
+
+                {/* Localization: Currency & Timezone */}
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <Coins className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Market Currency</span>
+                    </label>
+                    <select
+                      value={heroCurrency}
+                      onChange={(e) => setHeroCurrency(e.target.value)}
+                      className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {CURRENCY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} ({c.symbol}) — {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-sky-500" />
+                      <span>Business Timezone</span>
+                    </label>
+                    <select
+                      value={heroTimezone}
+                      onChange={(e) => setHeroTimezone(e.target.value)}
+                      className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {TIMEZONE_OPTIONS.map((t) => (
+                        <option key={t.tz} value={t.tz}>
+                          {t.label} ({t.offset})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">

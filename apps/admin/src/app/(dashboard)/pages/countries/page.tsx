@@ -19,6 +19,8 @@ import {
   LayoutGrid,
   List,
   MapPin,
+  Coins,
+  Clock,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,37 +44,109 @@ import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../_components/types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types & Localized Datasets ──────────────────────────────────────────────
 
 interface CountryMeta {
   name: string;
   flag: string;
   currency: string;
+  currencySymbol?: string;
+  timezone: string;
   region: string;
 }
 
+const CURRENCY_OPTIONS = [
+  { code: 'USD', symbol: '$', label: 'US Dollar' },
+  { code: 'EUR', symbol: '€', label: 'Euro' },
+  { code: 'GBP', symbol: '£', label: 'British Pound' },
+  { code: 'AED', symbol: 'د.إ', label: 'UAE Dirham' },
+  { code: 'SAR', symbol: '﷼', label: 'Saudi Riyal' },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
+  { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
+  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
+  { code: 'OMR', symbol: 'ر.ع.', label: 'Omani Rial' },
+  { code: 'QAR', symbol: 'ر.ق', label: 'Qatari Riyal' },
+  { code: 'KWD', symbol: 'د.ك', label: 'Kuwaiti Dinar' },
+  { code: 'BHD', symbol: '.د.ب', label: 'Bahraini Dinar' },
+  { code: 'CHF', symbol: 'CHF', label: 'Swiss Franc' },
+  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+  { code: 'NZD', symbol: 'NZ$', label: 'New Zealand Dollar' },
+  { code: 'ZAR', symbol: 'R', label: 'South African Rand' },
+  { code: 'SEK', symbol: 'kr', label: 'Swedish Krona' },
+  { code: 'NOK', symbol: 'kr', label: 'Norwegian Krone' },
+  { code: 'DKK', symbol: 'kr', label: 'Danish Krone' },
+  { code: 'HKD', symbol: 'HK$', label: 'Hong Kong Dollar' },
+];
+
+const TIMEZONE_OPTIONS = [
+  { tz: 'America/New_York', offset: 'UTC-05:00', label: 'Eastern Time (US & Canada)' },
+  { tz: 'America/Chicago', offset: 'UTC-06:00', label: 'Central Time (US & Canada)' },
+  { tz: 'America/Denver', offset: 'UTC-07:00', label: 'Mountain Time (US & Canada)' },
+  { tz: 'America/Los_Angeles', offset: 'UTC-08:00', label: 'Pacific Time (US & Canada)' },
+  { tz: 'America/Toronto', offset: 'UTC-05:00', label: 'Eastern Time (Toronto, Montreal)' },
+  { tz: 'America/Vancouver', offset: 'UTC-08:00', label: 'Pacific Time (Vancouver)' },
+  { tz: 'Europe/London', offset: 'UTC+00:00', label: 'London, Dublin, Edinburgh' },
+  { tz: 'Europe/Paris', offset: 'UTC+01:00', label: 'Paris, Rome, Madrid, Amsterdam' },
+  { tz: 'Europe/Berlin', offset: 'UTC+01:00', label: 'Berlin, Frankfurt, Munich' },
+  { tz: 'Europe/Zurich', offset: 'UTC+01:00', label: 'Zurich, Geneva' },
+  { tz: 'Asia/Dubai', offset: 'UTC+04:00', label: 'Dubai, Abu Dhabi, Muscat' },
+  { tz: 'Asia/Riyadh', offset: 'UTC+03:00', label: 'Riyadh, Jeddah, Kuwait, Doha' },
+  { tz: 'Asia/Kolkata', offset: 'UTC+05:30', label: 'India (New Delhi, Mumbai, Bangalore)' },
+  { tz: 'Asia/Singapore', offset: 'UTC+08:00', label: 'Singapore, Kuala Lumpur' },
+  { tz: 'Asia/Tokyo', offset: 'UTC+09:00', label: 'Tokyo, Osaka' },
+  { tz: 'Australia/Sydney', offset: 'UTC+10:00', label: 'Sydney, Melbourne, Canberra' },
+  { tz: 'Australia/Perth', offset: 'UTC+08:00', label: 'Perth (Western Australia)' },
+  { tz: 'Pacific/Auckland', offset: 'UTC+12:00', label: 'Auckland, Wellington' },
+  { tz: 'Africa/Johannesburg', offset: 'UTC+02:00', label: 'Johannesburg, Cape Town' },
+  { tz: 'UTC', offset: 'UTC+00:00', label: 'UTC (Universal Coordinated Time)' },
+];
+
 const KNOWN_COUNTRIES: Record<string, CountryMeta> = {
-  'united-states': { name: 'United States', flag: '🇺🇸', currency: 'USD', region: 'North America' },
-  us: { name: 'United States', flag: '🇺🇸', currency: 'USD', region: 'North America' },
-  uk: { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', region: 'Europe / UK' },
-  'united-kingdom': { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', region: 'Europe / UK' },
-  'saudi-arabia': { name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', region: 'Middle East / GCC' },
-  sa: { name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', region: 'Middle East / GCC' },
-  'united-arab-emirates': { name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', region: 'Middle East / GCC' },
-  uae: { name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', region: 'Middle East / GCC' },
-  australia: { name: 'Australia', flag: '🇦🇺', currency: 'AUD', region: 'Asia Pacific / Oceania' },
-  au: { name: 'Australia', flag: '🇦🇺', currency: 'AUD', region: 'Asia Pacific / Oceania' },
-  oman: { name: 'Oman', flag: '🇴🇲', currency: 'OMR', region: 'Middle East / GCC' },
-  om: { name: 'Oman', flag: '🇴🇲', currency: 'OMR', region: 'Middle East / GCC' },
+  'united-states': { name: 'United States', flag: '🇺🇸', currency: 'USD', currencySymbol: '$', timezone: 'America/New_York', region: 'North America' },
+  us: { name: 'United States', flag: '🇺🇸', currency: 'USD', currencySymbol: '$', timezone: 'America/New_York', region: 'North America' },
+  uk: { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', currencySymbol: '£', timezone: 'Europe/London', region: 'Europe / UK' },
+  'united-kingdom': { name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', currencySymbol: '£', timezone: 'Europe/London', region: 'Europe / UK' },
+  'saudi-arabia': { name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', currencySymbol: '﷼', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
+  sa: { name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', currencySymbol: '﷼', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
+  'united-arab-emirates': { name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', currencySymbol: 'د.إ', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  uae: { name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', currencySymbol: 'د.إ', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  australia: { name: 'Australia', flag: '🇦🇺', currency: 'AUD', currencySymbol: 'A$', timezone: 'Australia/Sydney', region: 'Asia Pacific / Oceania' },
+  au: { name: 'Australia', flag: '🇦🇺', currency: 'AUD', currencySymbol: 'A$', timezone: 'Australia/Sydney', region: 'Asia Pacific / Oceania' },
+  oman: { name: 'Oman', flag: '🇴🇲', currency: 'OMR', currencySymbol: 'ر.ع.', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  om: { name: 'Oman', flag: '🇴🇲', currency: 'OMR', currencySymbol: 'ر.ع.', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  canada: { name: 'Canada', flag: '🇨🇦', currency: 'CAD', currencySymbol: 'C$', timezone: 'America/Toronto', region: 'North America' },
+  ca: { name: 'Canada', flag: '🇨🇦', currency: 'CAD', currencySymbol: 'C$', timezone: 'America/Toronto', region: 'North America' },
+  germany: { name: 'Germany', flag: '🇩🇪', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Berlin', region: 'Europe' },
+  de: { name: 'Germany', flag: '🇩🇪', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Berlin', region: 'Europe' },
+  india: { name: 'India', flag: '🇮🇳', currency: 'INR', currencySymbol: '₹', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  in: { name: 'India', flag: '🇮🇳', currency: 'INR', currencySymbol: '₹', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  singapore: { name: 'Singapore', flag: '🇸🇬', currency: 'SGD', currencySymbol: 'S$', timezone: 'Asia/Singapore', region: 'Asia Pacific' },
+  sg: { name: 'Singapore', flag: '🇸🇬', currency: 'SGD', currencySymbol: 'S$', timezone: 'Asia/Singapore', region: 'Asia Pacific' },
+  qatar: { name: 'Qatar', flag: '🇶🇦', currency: 'QAR', currencySymbol: 'ر.ق', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
+  qa: { name: 'Qatar', flag: '🇶🇦', currency: 'QAR', currencySymbol: 'ر.ق', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
+  kuwait: { name: 'Kuwait', flag: '🇰🇼', currency: 'KWD', currencySymbol: 'د.ك', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
+  kw: { name: 'Kuwait', flag: '🇰🇼', currency: 'KWD', currencySymbol: 'د.ك', timezone: 'Asia/Riyadh', region: 'Middle East / GCC' },
 };
 
-function getCountryMeta(slug?: string, title?: string): CountryMeta {
+function getCountryMeta(slug?: string, title?: string, heroPayload?: Record<string, any>): CountryMeta {
   const normalized = (slug || '').toLowerCase();
-  if (KNOWN_COUNTRIES[normalized]) return KNOWN_COUNTRIES[normalized];
+  const known = KNOWN_COUNTRIES[normalized];
   const cleanTitle = (title || slug || 'Global Market').split('|')[0]?.trim() || 'Global Market';
-  return { name: cleanTitle, flag: '🌐', currency: 'USD', region: 'International' };
-}
 
+  const currency = heroPayload?.country?.currency || known?.currency || 'USD';
+  const timezone = heroPayload?.country?.timezone || known?.timezone || 'America/New_York';
+  const flag = known?.flag || '🌐';
+  const region = known?.region || 'International';
+
+  return {
+    name: cleanTitle,
+    flag,
+    currency,
+    timezone,
+    region,
+  };
+}
 
 // ─── Edit/Create Dialog ───────────────────────────────────────────────────────
 
@@ -84,6 +158,8 @@ interface CountryEditDialogProps {
   // form state lifted up
   formCountryName: string; setFormCountryName: (v: string) => void;
   formSlug: string; setFormSlug: (v: string) => void;
+  formCurrency: string; setFormCurrency: (v: string) => void;
+  formTimezone: string; setFormTimezone: (v: string) => void;
   formHeroTitle: string; setFormHeroTitle: (v: string) => void;
   formHeroTitleHighlight: string; setFormHeroTitleHighlight: (v: string) => void;
   formHeroDescription: string; setFormHeroDescription: (v: string) => void;
@@ -98,6 +174,8 @@ function CountryEditDialog({
   open, page, saving, onClose,
   formCountryName, setFormCountryName,
   formSlug, setFormSlug,
+  formCurrency, setFormCurrency,
+  formTimezone, setFormTimezone,
   formHeroTitle, setFormHeroTitle,
   formHeroTitleHighlight, setFormHeroTitleHighlight,
   formHeroDescription, setFormHeroDescription,
@@ -161,6 +239,44 @@ function CountryEditDialog({
                       className="h-9 rounded-xl text-xs font-mono pl-6"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Localization: Currency & Timezone */}
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Coins className="h-3.5 w-3.5 text-amber-500" />
+                    <span>Market Currency</span>
+                  </label>
+                  <select
+                    value={formCurrency}
+                    onChange={(e) => setFormCurrency(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {CURRENCY_OPTIONS.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} ({c.symbol}) — {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-sky-500" />
+                    <span>Business Timezone</span>
+                  </label>
+                  <select
+                    value={formTimezone}
+                    onChange={(e) => setFormTimezone(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {TIMEZONE_OPTIONS.map((t) => (
+                      <option key={t.tz} value={t.tz}>
+                        {t.label} ({t.offset})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -301,6 +417,8 @@ export default function CountryPagesManagementPage() {
 
   const [formCountryName, setFormCountryName] = React.useState('');
   const [formSlug, setFormSlug] = React.useState('');
+  const [formCurrency, setFormCurrency] = React.useState('USD');
+  const [formTimezone, setFormTimezone] = React.useState('America/New_York');
   const [formHeroTitle, setFormHeroTitle] = React.useState('');
   const [formHeroDescription, setFormHeroDescription] = React.useState('');
   const [formHeroImage, setFormHeroImage] = React.useState('');
@@ -315,6 +433,8 @@ export default function CountryPagesManagementPage() {
   const [createCountryName, setCreateCountryName] = React.useState('');
   const [createSlug, setCreateSlug] = React.useState('');
   const [createFlag, setCreateFlag] = React.useState('🌐');
+  const [createCurrency, setCreateCurrency] = React.useState('USD');
+  const [createTimezone, setCreateTimezone] = React.useState('America/New_York');
   const [createHeroTitle, setCreateHeroTitle] = React.useState('');
   const [createHeroDescription, setCreateHeroDescription] = React.useState('');
   const [createHeroImage, setCreateHeroImage] = React.useState('');
@@ -467,6 +587,8 @@ export default function CountryPagesManagementPage() {
     const heroPayload = (heroSection?.contentPayload as Record<string, any>) || {};
 
     setFormCountryName(heroPayload.country?.name || meta.name);
+    setFormCurrency(heroPayload.country?.currency || meta.currency || 'USD');
+    setFormTimezone(heroPayload.country?.timezone || meta.timezone || 'America/New_York');
     setFormSlug(fullPage.slug || '');
     let headlineStr = fullPage.title || '';
     if (Array.isArray(heroPayload.headline?.segments)) {
@@ -506,7 +628,11 @@ export default function CountryPagesManagementPage() {
 
       const ownHeroSection = editingPage.sections?.find((s) => s.componentType === 'HERO');
       const heroPayloadBase = {
-        country: { name: formCountryName.trim() },
+        country: {
+          name: formCountryName.trim(),
+          currency: formCurrency.trim(),
+          timezone: formTimezone.trim(),
+        },
         headline: { segments: [{ value: formHeroTitle.trim(), type: 'text' }] },
         titleHighlight: formHeroTitleHighlight.trim(),
         description: { content: formHeroDescription.trim(), enabled: true },
@@ -521,6 +647,12 @@ export default function CountryPagesManagementPage() {
             contentPayload: {
               ...curPayload,
               ...heroPayloadBase,
+              country: {
+                ...curPayload.country,
+                name: formCountryName.trim(),
+                currency: formCurrency.trim(),
+                timezone: formTimezone.trim(),
+              },
               backgroundMedia: {
                 ...curPayload.backgroundMedia,
                 desktopImageUrl: formHeroImage.trim() || curPayload.backgroundMedia?.desktopImageUrl,
@@ -572,9 +704,49 @@ export default function CountryPagesManagementPage() {
           },
         }),
       });
-      notify.success(`Country page for "${createCountryName}" created.`);
+
+      // Initialize localized Hero section with country name, currency, timezone
+      const heroPayloadBase = {
+        country: {
+          name: createCountryName.trim(),
+          currency: createCurrency.trim(),
+          timezone: createTimezone.trim(),
+        },
+        headline: {
+          segments: [
+            {
+              value: createHeroTitle.trim() || `Enterprise Shopify Plus Engineering for ${createCountryName.trim()}`,
+              type: 'text',
+            },
+          ],
+        },
+        titleHighlight: createCountryName.trim(),
+        description: {
+          content: createHeroDescription.trim() || `Partnering with enterprise brands in ${createCountryName.trim()} to engineer resilient commerce infrastructure.`,
+          enabled: true,
+        },
+        backgroundMedia: {
+          desktopImageUrl: createHeroImage.trim() || `/images/countries/${cleanSlug}.jpg`,
+          mobileImageUrl: createHeroImage.trim() || `/images/countries/${cleanSlug}.jpg`,
+          overlayOpacity: 0.38,
+        },
+      };
+
+      await fetchApi(`/pages/${cleanSlug}/sections`, {
+        method: 'POST',
+        body: JSON.stringify({
+          sectionIdentifier: 'hero-banner',
+          componentType: 'HERO',
+          displayOrder: 1,
+          isActive: true,
+          contentPayload: heroPayloadBase,
+        }),
+      });
+
+      notify.success(`Country page for "${createCountryName}" created with ${createCurrency} and ${createTimezone}.`);
       setCreateOpen(false);
       setCreateCountryName(''); setCreateSlug(''); setCreateFlag('🌐');
+      setCreateCurrency('USD'); setCreateTimezone('America/New_York');
       setCreateHeroTitle(''); setCreateHeroDescription(''); setCreateHeroImage('');
       await loadData();
     } catch (err: any) {
@@ -694,10 +866,10 @@ export default function CountryPagesManagementPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredPages.map((page) => {
-                  const meta = getCountryMeta(page.slug, page.title);
-                  const liveUrl = `${getSiteUrl()}/${page.slug}`;
                   const heroSection = page.sections?.find((s) => s.componentType === 'HERO');
                   const heroPayload = (heroSection?.contentPayload as Record<string, any>) || {};
+                  const meta = getCountryMeta(page.slug, page.title, heroPayload);
+                  const liveUrl = `${getSiteUrl()}/${page.slug}`;
                   const bgImage = heroPayload.backgroundMedia?.desktopImageUrl || `/images/countries/${page.slug}.jpg`;
                   const isChecked = selected.has(page.id || '');
 
@@ -747,11 +919,23 @@ export default function CountryPagesManagementPage() {
                         </div>
                       </td>
 
-                      {/* Region */}
+                      {/* Region & Market Locale */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5 shrink-0" />
-                          <span className="text-[11px]">{meta.region}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                            <span className="text-[11px] font-medium text-foreground">{meta.region}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/50" title={`Market Currency: ${meta.currency}`}>
+                              <Coins className="h-2.5 w-2.5 text-amber-500" />
+                              {meta.currency}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground bg-muted border border-border" title={`Business Timezone: ${meta.timezone}`}>
+                              <Clock className="h-2.5 w-2.5 text-sky-500" />
+                              {meta.timezone.split('/')[1]?.replace(/_/g, ' ') || meta.timezone}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
@@ -835,10 +1019,10 @@ export default function CountryPagesManagementPage() {
         /* ── GRID VIEW ──────────────────────────────────────────────── */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredPages.map((page) => {
-            const meta = getCountryMeta(page.slug, page.title);
-            const liveUrl = `${getSiteUrl()}/${page.slug}`;
             const heroSection = page.sections?.find((s) => s.componentType === 'HERO');
             const heroPayload = (heroSection?.contentPayload as Record<string, any>) || {};
+            const meta = getCountryMeta(page.slug, page.title, heroPayload);
+            const liveUrl = `${getSiteUrl()}/${page.slug}`;
             const bgImage = heroPayload.backgroundMedia?.desktopImageUrl || `/images/countries/${page.slug}.jpg`;
             const isChecked = selected.has(page.id || '');
 
@@ -901,14 +1085,21 @@ export default function CountryPagesManagementPage() {
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <div className="pt-2 border-t border-border flex items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-medium">8 Sections Registered</span>
+                      <span className="font-medium text-[11px]">8 Sections</span>
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground bg-muted border-border">
-                      {meta.region}
-                    </Badge>
+                    <div className="flex items-center gap-1 flex-wrap justify-end">
+                      <Badge variant="outline" className="text-[10px] font-mono text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-300/40" title={`Market Currency: ${meta.currency}`}>
+                        <Coins className="h-2.5 w-2.5 mr-1 text-amber-500" />
+                        {meta.currency}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground bg-muted border-border" title={`Business Timezone: ${meta.timezone}`}>
+                        <Clock className="h-2.5 w-2.5 mr-1 text-sky-500" />
+                        {meta.timezone.split('/')[1]?.replace(/_/g, ' ') || meta.timezone}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="pt-2 grid grid-cols-12 gap-2">
@@ -947,6 +1138,8 @@ export default function CountryPagesManagementPage() {
         onClose={() => setEditOpen(false)}
         formCountryName={formCountryName} setFormCountryName={setFormCountryName}
         formSlug={formSlug} setFormSlug={setFormSlug}
+        formCurrency={formCurrency} setFormCurrency={setFormCurrency}
+        formTimezone={formTimezone} setFormTimezone={setFormTimezone}
         formHeroTitle={formHeroTitle} setFormHeroTitle={setFormHeroTitle}
         formHeroTitleHighlight={formHeroTitleHighlight} setFormHeroTitleHighlight={setFormHeroTitleHighlight}
         formHeroDescription={formHeroDescription} setFormHeroDescription={setFormHeroDescription}
@@ -959,31 +1152,39 @@ export default function CountryPagesManagementPage() {
 
       {/* ── CREATE DIALOG ─────────────────────────────────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg rounded-2xl border-slate-200 bg-white shadow-2xl p-0 flex flex-col overflow-hidden">
+        <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-slate-200 bg-white shadow-2xl p-0 flex flex-col overflow-hidden max-h-[90vh]">
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Globe className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl leading-none">
+                {createFlag}
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-slate-900">Create New Country Page</DialogTitle>
                 <DialogDescription className="text-xs text-slate-500 mt-0.5">
-                  Initializes a new country landing page equipped with the full 8-section enterprise layout.
+                  Launch a localized market landing page with tailored currency, timezone, and complete 8-section sequence.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3.5">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2 space-y-1">
+            <div className="grid grid-cols-4 gap-2.5">
+              <div className="col-span-3 space-y-1">
                 <label className="text-xs font-semibold text-slate-700">Country Name *</label>
                 <Input
                   value={createCountryName}
                   onChange={(e) => {
-                    setCreateCountryName(e.target.value);
-                    if (!createSlug) {
-                      setCreateSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                    const val = e.target.value;
+                    setCreateCountryName(val);
+                    const autoSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    if (!createSlug || createSlug === createCountryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) {
+                      setCreateSlug(autoSlug);
+                    }
+                    const matched = KNOWN_COUNTRIES[autoSlug];
+                    if (matched) {
+                      setCreateFlag(matched.flag);
+                      setCreateCurrency(matched.currency);
+                      setCreateTimezone(matched.timezone);
                     }
                   }}
                   placeholder="e.g. Germany"
@@ -991,7 +1192,7 @@ export default function CountryPagesManagementPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Flag Emoji</label>
+                <label className="text-xs font-semibold text-slate-700">Flag</label>
                 <Input value={createFlag} onChange={(e) => setCreateFlag(e.target.value)} placeholder="🇩🇪" className="h-9 rounded-xl text-xs text-center text-lg" />
               </div>
             </div>
@@ -1001,6 +1202,45 @@ export default function CountryPagesManagementPage() {
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-xs font-mono text-slate-400">/</span>
                 <Input value={createSlug} onChange={(e) => setCreateSlug(e.target.value)} placeholder="germany" className="h-9 rounded-xl text-xs font-mono pl-6" />
+              </div>
+            </div>
+
+            {/* Currency & Timezone Selection */}
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Coins className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Market Currency *</span>
+                </label>
+                <select
+                  value={createCurrency}
+                  onChange={(e) => setCreateCurrency(e.target.value)}
+                  className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {CURRENCY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) — {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-sky-500" />
+                  <span>Business Timezone *</span>
+                </label>
+                <select
+                  value={createTimezone}
+                  onChange={(e) => setCreateTimezone(e.target.value)}
+                  className="w-full h-9 rounded-xl border border-input bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {TIMEZONE_OPTIONS.map((t) => (
+                    <option key={t.tz} value={t.tz}>
+                      {t.label} ({t.offset})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
