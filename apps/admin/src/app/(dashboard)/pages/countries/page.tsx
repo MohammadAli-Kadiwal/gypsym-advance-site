@@ -9,7 +9,6 @@ import {
   Settings2,
   ChevronRight,
   Search,
-  Sparkles,
   CheckCircle2,
   Loader2,
   RefreshCw,
@@ -39,6 +38,7 @@ import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import { getSiteUrl } from '@/lib/site-url';
 import type { PageData } from '../_components/types';
 
@@ -73,16 +73,6 @@ function getCountryMeta(slug?: string, title?: string): CountryMeta {
   return { name: cleanTitle, flag: '🌐', currency: 'USD', region: 'International' };
 }
 
-const EIGHT_SECTIONS_SPEC = [
-  { id: 'hero-banner',              label: '1. Hero Section',          desc: 'Localized headline, subtext, background image & CTA' },
-  { id: 'verified-results-metrics', label: '2. Verified Results',       desc: '+318% volume surge, 42ms TTFB, $1.4B+ GMV' },
-  { id: 'portfolio-showcase',       label: '3. Portfolio',              desc: 'High-conversion flagship case studies' },
-  { id: 'delivery-process',         label: '4. Delivery Methodology',   desc: '4-phase architecture, build, CRO & SLA' },
-  { id: 'client-testimonials',      label: '5. Client Love',            desc: 'Executive endorsements & client ratings' },
-  { id: 'clients-partners',         label: '6. Clients & Partners',     desc: 'Global enterprise logo cloud & metrics ribbon' },
-  { id: 'contact-inquiry',          label: '7. Direct Engagement',      desc: 'High-intent consultation form with NDA' },
-  { id: 'homepage-cta',             label: '8. Enterprise Architecture', desc: 'Final conversion banner before footer' },
-];
 
 // ─── Edit/Create Dialog ───────────────────────────────────────────────────────
 
@@ -383,6 +373,10 @@ export default function CountryPagesManagementPage() {
     });
   };
 
+  // Confirmation Dialog states
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
+  const [singleDeleteTarget, setSingleDeleteTarget] = React.useState<PageData | null>(null);
+
   // ── Bulk Actions ────────────────────────────────────────────────────────────
   const handleBulkStatus = async (status: 'PUBLISHED' | 'DRAFT') => {
     const ids = [...selected];
@@ -406,10 +400,9 @@ export default function CountryPagesManagementPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleExecuteBulkDelete = async () => {
     const ids = [...selected];
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} country page(s)? This cannot be undone.`)) return;
     setBulkWorking(true);
     try {
       await Promise.all(
@@ -426,6 +419,25 @@ export default function CountryPagesManagementPage() {
       notify.error('Bulk delete failed.');
     } finally {
       setBulkWorking(false);
+      setBulkDeleteConfirm(false);
+    }
+  };
+
+  const handleExecuteSingleDelete = async () => {
+    if (!singleDeleteTarget) return;
+    try {
+      await fetchApi(`/pages/${singleDeleteTarget.slug}`, { method: 'DELETE' });
+      setPages((prev) => prev.filter((p) => p.slug !== singleDeleteTarget.slug));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (singleDeleteTarget.id) next.delete(singleDeleteTarget.id);
+        return next;
+      });
+      notify.success(`Country page for "${singleDeleteTarget.title}" deleted.`);
+    } catch {
+      notify.error('Failed to delete country page.');
+    } finally {
+      setSingleDeleteTarget(null);
     }
   };
 
@@ -605,28 +617,6 @@ export default function CountryPagesManagementPage() {
         }
       />
 
-      {/* Architecture strip */}
-      <Card className="rounded-2xl border-border bg-muted/40 shadow-2xs p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary font-mono flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                Guaranteed 8-Section Architecture Structure
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">Every country page strictly renders in the high-conversion sequence:</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-foreground">
-            {EIGHT_SECTIONS_SPEC.map((s) => (
-              <span key={s.id} className="px-2 py-0.5 rounded-lg bg-card border border-border shadow-2xs flex items-center gap-1" title={s.desc}>
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                <span>{s.label}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </Card>
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -641,41 +631,6 @@ export default function CountryPagesManagementPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Bulk actions — visible when selection exists */}
-          {someSelected && (
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-              <span className="text-xs font-semibold text-slate-600">{selected.size} selected</span>
-              <div className="w-px h-4 bg-slate-200" />
-              <Button
-                variant="ghost" size="sm"
-                onClick={() => handleBulkStatus('PUBLISHED')}
-                disabled={bulkWorking}
-                className="h-7 px-2 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-50 cursor-pointer"
-              >
-                <Eye className="h-3.5 w-3.5 mr-1" />
-                Publish
-              </Button>
-              <Button
-                variant="ghost" size="sm"
-                onClick={() => handleBulkStatus('DRAFT')}
-                disabled={bulkWorking}
-                className="h-7 px-2 text-[11px] font-semibold text-amber-600 hover:bg-amber-50 cursor-pointer"
-              >
-                <EyeOff className="h-3.5 w-3.5 mr-1" />
-                Draft
-              </Button>
-              <Button
-                variant="ghost" size="sm"
-                onClick={handleBulkDelete}
-                disabled={bulkWorking}
-                className="h-7 px-2 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                Delete
-              </Button>
-            </div>
-          )}
-
           {/* View toggle */}
           <div className="flex items-center border border-border rounded-xl overflow-hidden bg-card">
             <button
@@ -831,7 +786,7 @@ export default function CountryPagesManagementPage() {
 
                       {/* Actions */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Button
                             variant="outline"
                             size="sm"
@@ -848,6 +803,15 @@ export default function CountryPagesManagementPage() {
                               <ChevronRight className="h-3 w-3 ml-0.5" />
                             </Button>
                           </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSingleDeleteTarget(page)}
+                            className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                            title="Delete Country Page"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -947,17 +911,26 @@ export default function CountryPagesManagementPage() {
                     </Badge>
                   </div>
 
-                  <div className="pt-2 grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleOpenEdit(page)} className="border-border hover:bg-muted text-xs font-medium cursor-pointer">
+                  <div className="pt-2 grid grid-cols-12 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleOpenEdit(page)} className="col-span-5 border-border hover:bg-muted text-xs font-medium cursor-pointer">
                       <Edit3 className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
                       <span>Edit</span>
                     </Button>
-                    <Link href={`/pages/countries/${page.slug}`}>
-                      <Button size="sm" className="w-full cursor-pointer shadow-2xs">
+                    <Link href={`/pages/countries/${page.slug}`} className="col-span-5">
+                      <Button size="sm" className="w-full cursor-pointer shadow-2xs text-xs">
                         <span>Studio</span>
                         <ChevronRight className="w-3.5 h-3.5 ml-1" />
                       </Button>
                     </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSingleDeleteTarget(page)}
+                      className="col-span-2 p-0 border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 text-muted-foreground cursor-pointer flex items-center justify-center"
+                      title="Delete Country Page"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -1056,6 +1029,79 @@ export default function CountryPagesManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Sticky Floating Bulk Action Dock ─────────────────────────── */}
+      {someSelected && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-border bg-card/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 text-card-foreground">
+          <span className="text-xs font-semibold text-foreground pr-2.5 border-r border-border">
+            {selected.size} selected
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-border hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-pointer"
+            onClick={() => handleBulkStatus('PUBLISHED')}
+            disabled={bulkWorking}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1.5" />
+            <span>Publish</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs rounded-xl border-border hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 cursor-pointer"
+            onClick={() => handleBulkStatus('DRAFT')}
+            disabled={bulkWorking}
+          >
+            <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+            <span>Draft</span>
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-8 text-xs rounded-xl shadow-xs cursor-pointer"
+            onClick={() => setBulkDeleteConfirm(true)}
+            disabled={bulkWorking}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            <span>Delete</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground rounded-xl ml-1 cursor-pointer"
+            onClick={() => setSelected(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {/* ─── Bulk Delete Confirmation Modal Popup ────────────────────── */}
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        onOpenChange={setBulkDeleteConfirm}
+        title={`Delete ${selected.size} ${selected.size === 1 ? 'Country Page' : 'Country Pages'}?`}
+        description={`This action cannot be undone. Are you sure you want to permanently delete these ${selected.size} selected country landing pages?`}
+        confirmLabel={bulkWorking ? 'Deleting...' : `Delete ${selected.size} ${selected.size === 1 ? 'Page' : 'Pages'}`}
+        variant="destructive"
+        onConfirm={handleExecuteBulkDelete}
+      />
+
+      {/* ─── Single Item Delete Confirmation Modal Popup ───────────────── */}
+      <ConfirmDialog
+        open={!!singleDeleteTarget}
+        onOpenChange={(open) => !open && setSingleDeleteTarget(null)}
+        title="Delete Country Page?"
+        description={`Are you sure you want to permanently delete the country page for "${singleDeleteTarget?.title || 'this country'}"? This action will remove it from the live website.`}
+        confirmLabel="Delete Country Page"
+        variant="destructive"
+        onConfirm={handleExecuteSingleDelete}
+      />
     </AdminContentContainer>
   );
 }
