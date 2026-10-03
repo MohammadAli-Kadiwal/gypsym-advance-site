@@ -8,10 +8,8 @@ import {
   Loader2,
   Pencil,
   Trash2,
-  Globe,
   ChevronUp,
   ChevronDown,
-  ExternalLink,
   Search,
   FileCheck,
   FileClock,
@@ -23,8 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
-import { StatusToggleField } from '@/components/crud/status-toggle-field';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import {
@@ -74,34 +70,12 @@ export interface Partner {
 
 interface PartnerFormState {
   name: string;
-  slug: string;
-  tier: PartnerTier;
   logoUrl: string;
-  logoDarkUrl: string;
-  shortDescription: string;
-  description: string;
-  websiteUrl: string;
-  partnerType: string;
-  industry: string;
-  displayOrder: number;
-  status: PartnerStatus;
-  showOnHomepage: boolean;
 }
 
 const EMPTY_FORM: PartnerFormState = {
   name: '',
-  slug: '',
-  tier: 'TECHNOLOGY',
   logoUrl: '',
-  logoDarkUrl: '',
-  shortDescription: '',
-  description: '',
-  websiteUrl: '',
-  partnerType: '',
-  industry: '',
-  displayOrder: 0,
-  status: 'PUBLISHED',
-  showOnHomepage: true,
 };
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
@@ -110,35 +84,6 @@ function formatOrder(order: number): string {
   return String(order).padStart(2, '0');
 }
 
-function getTierBadge(tier: PartnerTier) {
-  switch (tier) {
-    case 'GLOBAL_ALLIANCE':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-          GLOBAL ALLIANCE
-        </span>
-      );
-    case 'PLATINUM':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-          PLATINUM
-        </span>
-      );
-    case 'PREMIER':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-          PREMIER
-        </span>
-      );
-    case 'TECHNOLOGY':
-    default:
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-          TECHNOLOGY
-        </span>
-      );
-  }
-}
 
 function getStatusBadge(status: PartnerStatus) {
   switch (status) {
@@ -176,29 +121,12 @@ interface PartnerDialogProps {
 
 function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSubmit }: PartnerDialogProps) {
   const [form, setForm] = React.useState<PartnerFormState>(() => initial);
-  const [activeTab, setActiveTab] = React.useState<'general' | 'branding' | 'details'>('general');
 
   React.useEffect(() => {
     if (open) {
       setForm(initial);
-      setActiveTab('general');
     }
   }, [open, initial]);
-
-  function patch<K extends keyof PartnerFormState>(key: K, value: PartnerFormState[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
-  function handleNameChange(name: string) {
-    patch('name', name);
-    if (mode === 'create' && (!form.slug || form.slug === '')) {
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-      patch('slug', generatedSlug);
-    }
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -211,7 +139,7 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-2xl rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
           <div className="flex items-center space-x-3">
             <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -223,269 +151,44 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 mt-0.5">
                 {mode === 'create'
-                  ? 'Configure partner branding, tier, and homepage visibility.'
-                  : 'Update partner profile, logos, and publication settings.'}
+                  ? 'Add partner name and brand logo image.'
+                  : 'Update partner name and brand logo image.'}
               </DialogDescription>
             </div>
           </div>
-
-          {/* Sub-tabs inside modal */}
-          <div className="flex space-x-2 pt-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('general')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                activeTab === 'general'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              General & Display
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('branding')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                activeTab === 'branding'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              Branding & Logos
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('details')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                activeTab === 'details'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              Overview & Details
-            </button>
-          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* ── TAB 1: General & Display ──────────────────────────────────── */}
-          {activeTab === 'general' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Partner Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Partner Name <span className="text-rose-500">*</span>
-                  </label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="e.g. Amazon Web Services"
-                    className="text-xs rounded-xl"
-                    autoFocus
-                  />
-                </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Partner Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Partner Name <span className="text-rose-500">*</span>
+            </label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Amazon Web Services"
+              className="text-xs rounded-xl"
+              autoFocus
+            />
+          </div>
 
-                {/* Slug */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Slug <span className="text-slate-400 font-normal">(unique identifier)</span>
-                  </label>
-                  <Input
-                    value={form.slug}
-                    onChange={(e) => patch('slug', e.target.value)}
-                    placeholder="e.g. amazon-web-services"
-                    className="text-xs font-mono rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Tier */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Partnership Tier</label>
-                  <select
-                    value={form.tier}
-                    onChange={(e) => patch('tier', e.target.value as PartnerTier)}
-                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="GLOBAL_ALLIANCE">Global Alliance</option>
-                    <option value="PLATINUM">Platinum Partner</option>
-                    <option value="PREMIER">Premier Partner</option>
-                    <option value="TECHNOLOGY">Technology Partner</option>
-                  </select>
-                </div>
-
-                {/* Status */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => patch('status', e.target.value as PartnerStatus)}
-                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="PUBLISHED">Published</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Partner Type */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Partner Type <span className="text-slate-400 font-normal">(e.g. Cloud, AI, Commerce)</span>
-                  </label>
-                  <Input
-                    value={form.partnerType}
-                    onChange={(e) => patch('partnerType', e.target.value)}
-                    placeholder="e.g. Cloud & Infrastructure"
-                    className="text-xs rounded-xl"
-                  />
-                </div>
-
-                {/* Industry */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Industry / Vertical
-                  </label>
-                  <Input
-                    value={form.industry}
-                    onChange={(e) => patch('industry', e.target.value)}
-                    placeholder="e.g. Enterprise Cloud Computing"
-                    className="text-xs rounded-xl"
-                  />
-                </div>
-              </div>
-
-              {/* Website URL */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
-                  <Globe className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Website URL</span>
-                </label>
-                <Input
-                  value={form.websiteUrl}
-                  onChange={(e) => patch('websiteUrl', e.target.value)}
-                  placeholder="https://aws.amazon.com"
-                  className="text-xs font-mono rounded-xl"
-                />
-              </div>
-
-              {/* Publication Status: Draft vs Public */}
-              <StatusToggleField
-                value={form.status}
-                onChange={(status) => patch('status', status as PartnerStatus)}
-              />
-
-              {/* Homepage Visibility & Display Order Row */}
-              <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    checked={form.showOnHomepage}
-                    onCheckedChange={(checked) => patch('showOnHomepage', checked)}
-                    id="show-homepage-toggle"
-                  />
-                  <div>
-                    <label htmlFor="show-homepage-toggle" className="text-xs font-bold text-slate-900 cursor-pointer">
-                      Show in Homepage Partners Section
-                    </label>
-                    <p className="text-[11px] text-slate-500">
-                      When active, this partner will be automatically rendered in the centered 8 → 6 → 4 homepage grid.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 shrink-0">
-                  <label className="text-xs font-semibold text-slate-700 whitespace-nowrap">
-                    Display Order:
-                  </label>
-                  <Input
-                    type="number"
-                    value={form.displayOrder}
-                    onChange={(e) => patch('displayOrder', parseInt(e.target.value, 10) || 0)}
-                    className="w-20 text-xs font-mono rounded-xl text-center"
-                    min={0}
-                  />
-                </div>
-              </div>
+          {/* Partner Logo / Image */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-800">
+                Partner Image / Logo
+              </label>
+              <span className="text-[10px] text-slate-400">SVG, PNG, or WebP recommended</span>
             </div>
-          )}
-
-          {/* ── TAB 2: Branding & Logos ───────────────────────────────────── */}
-          {activeTab === 'branding' && (
-            <div className="space-y-5">
-              {/* Primary Logo */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                    <span>Primary Partner Logo (Light / Neutral)</span>
-                    <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">SVG, PNG, or WebP recommended</span>
-                </div>
-                <ImageUploadField
-                  value={form.logoUrl}
-                  onChange={(url) => patch('logoUrl', url)}
-                  label="Primary Logo"
-                  description="Used on white / light backgrounds across the site and inside the homepage grid."
-                  placeholder="https://cdn.gypsym.com/partners/aws.svg"
-                />
-              </div>
-
-              {/* Dark Mode Logo */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-800 flex items-center space-x-1.5">
-                    <span>Dark Mode Partner Logo</span>
-                    <span className="text-slate-400 font-normal">(optional)</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">For dark / inverted themes</span>
-                </div>
-                <ImageUploadField
-                  value={form.logoDarkUrl}
-                  onChange={(url) => patch('logoDarkUrl', url)}
-                  label="Dark Mode Logo"
-                  description="Inverted or white variant optimized for high-contrast dark sections."
-                  placeholder="https://cdn.gypsym.com/partners/aws-white.svg"
-                  previewDark={true}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ── TAB 3: Overview & Details ─────────────────────────────────── */}
-          {activeTab === 'details' && (
-            <div className="space-y-4">
-              {/* Short Description */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  Short Tagline / Summary <span className="text-slate-400 font-normal">(optional)</span>
-                </label>
-                <Input
-                  value={form.shortDescription}
-                  onChange={(e) => patch('shortDescription', e.target.value)}
-                  placeholder="e.g. Premier Consulting Partner for Cloud Native & Serverless Infrastructure"
-                  className="text-xs rounded-xl"
-                />
-              </div>
-
-              {/* Full Description / Overview */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  Partnership Overview & Capabilities <span className="text-slate-400 font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => patch('description', e.target.value)}
-                  placeholder="Describe joint solutions, architectural certifications, and technical capabilities delivered with this partner..."
-                  rows={5}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"
-                />
-              </div>
-            </div>
-          )}
+            <ImageUploadField
+              value={form.logoUrl}
+              onChange={(url) => setForm((f) => ({ ...f, logoUrl: url }))}
+              label="Partner Logo"
+              description="Upload partner logo or brand image used across the site and partner grids."
+              placeholder="https://cdn.gypsym.com/partners/aws.svg"
+            />
+          </div>
 
           {/* Footer Actions */}
           <DialogFooter className="pt-4 border-t border-slate-100 gap-2 flex-row justify-end">
@@ -512,7 +215,7 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
               ) : (
                 <>
                   <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  {mode === 'create' ? 'Create Partner' : 'Update Partner'}
+                  {mode === 'create' ? 'Create Partner' : 'Save Changes'}
                 </>
               )}
             </Button>
@@ -600,8 +303,6 @@ export default function PartnersPage() {
   // Filters & Search
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('ALL');
-  const [homepageFilter, setHomepageFilter] = React.useState<string>('ALL');
-  const [tierFilter, setTierFilter] = React.useState<string>('ALL');
 
   // Selected items for bulk actions
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -635,14 +336,10 @@ export default function PartnersPage() {
   // ── Filtered Partner List ──────────────────────────────────────────────────
   const filteredPartners = React.useMemo(() => {
     return partners.filter((p) => {
-      // Search
+      // Search by name
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = p.name.toLowerCase().includes(q);
-        const matchesType = (p.partnerType || '').toLowerCase().includes(q);
-        const matchesIndustry = (p.industry || '').toLowerCase().includes(q);
-        const matchesDesc = (p.shortDescription || '').toLowerCase().includes(q);
-        if (!matchesName && !matchesType && !matchesIndustry && !matchesDesc) {
+        if (!p.name.toLowerCase().includes(q)) {
           return false;
         }
       }
@@ -652,22 +349,9 @@ export default function PartnersPage() {
         return false;
       }
 
-      // Homepage
-      if (homepageFilter === 'HOMEPAGE_ONLY' && !p.showOnHomepage) {
-        return false;
-      }
-      if (homepageFilter === 'EXCLUDED' && p.showOnHomepage) {
-        return false;
-      }
-
-      // Tier
-      if (tierFilter !== 'ALL' && p.tier !== tierFilter) {
-        return false;
-      }
-
       return true;
     });
-  }, [partners, searchQuery, statusFilter, homepageFilter, tierFilter]);
+  }, [partners, searchQuery, statusFilter]);
 
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
@@ -681,22 +365,21 @@ export default function PartnersPage() {
   async function handleCreate(form: PartnerFormState) {
     setSaving(true);
     try {
+      const slugBase = form.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
       const created = await fetchApi<Partner>('/partners', {
         method: 'POST',
         body: JSON.stringify({
           name: form.name.trim(),
-          slug: form.slug.trim() || undefined,
-          tier: form.tier,
+          slug: slugBase || undefined,
           logoUrl: form.logoUrl.trim() || undefined,
-          logoDarkUrl: form.logoDarkUrl.trim() || undefined,
-          shortDescription: form.shortDescription.trim() || undefined,
-          description: form.description.trim() || undefined,
-          websiteUrl: form.websiteUrl.trim() || undefined,
-          partnerType: form.partnerType.trim() || undefined,
-          industry: form.industry.trim() || undefined,
-          displayOrder: form.displayOrder,
-          status: form.status,
-          showOnHomepage: form.showOnHomepage,
+          tier: 'TECHNOLOGY',
+          status: 'PUBLISHED',
+          showOnHomepage: true,
+          displayOrder: partners.length > 0 ? Math.max(...partners.map((p) => p.displayOrder || 0)) + 1 : 0,
         }),
       });
 
@@ -732,21 +415,10 @@ export default function PartnersPage() {
           ? {
               ...p,
               name: partnerName,
-              slug: form.slug.trim() || p.slug,
-              tier: form.tier,
               logoUrl: form.logoUrl.trim() || p.logoUrl,
-              logoDarkUrl: form.logoDarkUrl.trim() || p.logoDarkUrl,
-              shortDescription: form.shortDescription.trim() || null,
-              description: form.description.trim() || null,
-              websiteUrl: form.websiteUrl.trim() || null,
-              partnerType: form.partnerType.trim() || null,
-              industry: form.industry.trim() || null,
-              displayOrder: form.displayOrder,
-              status: form.status,
-              showOnHomepage: form.showOnHomepage,
             }
           : p
-      ).sort((a, b) => a.displayOrder - b.displayOrder)
+      )
     );
 
     try {
@@ -754,18 +426,7 @@ export default function PartnersPage() {
         method: 'PUT',
         body: JSON.stringify({
           name: partnerName,
-          slug: form.slug.trim() || undefined,
-          tier: form.tier,
           logoUrl: form.logoUrl.trim() || undefined,
-          logoDarkUrl: form.logoDarkUrl.trim() || undefined,
-          shortDescription: form.shortDescription.trim() || undefined,
-          description: form.description.trim() || undefined,
-          websiteUrl: form.websiteUrl.trim() || undefined,
-          partnerType: form.partnerType.trim() || undefined,
-          industry: form.industry.trim() || undefined,
-          displayOrder: form.displayOrder,
-          status: form.status,
-          showOnHomepage: form.showOnHomepage,
         }),
       });
 
@@ -778,9 +439,10 @@ export default function PartnersPage() {
                 ...p,
                 ...updated,
                 name: updated.name || partnerName,
+                logoUrl: updated.logoUrl || form.logoUrl.trim() || p.logoUrl,
               }
             : p
-        ).sort((a, b) => a.displayOrder - b.displayOrder)
+        )
       );
 
       handleCloseEdit();
@@ -809,34 +471,6 @@ export default function PartnersPage() {
     }
   }
 
-  // ── Toggle Show on Homepage ────────────────────────────────────────────────
-  async function handleToggleHomepage(partner: Partner) {
-    const nextVal = !partner.showOnHomepage;
-
-    // Optimistic UI update
-    setPartners((prev) =>
-      prev.map((p) => (p.id === partner.id ? { ...p, showOnHomepage: nextVal } : p)),
-    );
-
-    try {
-      await fetchApi(`/partners/${partner.id}/homepage`, {
-        method: 'PATCH',
-        body: JSON.stringify({ showOnHomepage: nextVal }),
-      });
-
-      if (nextVal) {
-        notify.success(`"${partner.name}" is now shown on the homepage.`);
-      } else {
-        notify.info(`"${partner.name}" removed from homepage.`);
-      }
-    } catch {
-      // Revert on error
-      setPartners((prev) =>
-        prev.map((p) => (p.id === partner.id ? { ...p, showOnHomepage: partner.showOnHomepage } : p)),
-      );
-      notify.error('Failed to update homepage visibility.');
-    }
-  }
 
   // ── Reorder Up / Down ──────────────────────────────────────────────────────
   async function handleMoveOrder(partner: Partner, direction: 'up' | 'down') {
@@ -1012,7 +646,7 @@ export default function PartnersPage() {
                 setSearchQuery(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search by name, type, industry..."
+              placeholder="Search partner by name..."
               className="pl-9 h-9 text-xs rounded-xl"
             />
             {searchQuery && (
@@ -1044,36 +678,6 @@ export default function PartnersPage() {
               <option value="DRAFT">Draft Only</option>
               <option value="ARCHIVED">Archived Only</option>
             </select>
-
-            {/* Homepage Filter */}
-            <select
-              value={homepageFilter}
-              onChange={(e) => {
-                setHomepageFilter(e.target.value);
-                setPage(1);
-              }}
-              className="h-9 rounded-xl border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              <option value="ALL">All Placements</option>
-              <option value="HOMEPAGE_ONLY">On Homepage Only</option>
-              <option value="EXCLUDED">Excluded from Homepage</option>
-            </select>
-
-            {/* Tier Filter */}
-            <select
-              value={tierFilter}
-              onChange={(e) => {
-                setTierFilter(e.target.value);
-                setPage(1);
-              }}
-              className="h-9 rounded-xl border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-            >
-              <option value="ALL">All Tiers</option>
-              <option value="GLOBAL_ALLIANCE">Global Alliance</option>
-              <option value="PLATINUM">Platinum</option>
-              <option value="PREMIER">Premier</option>
-              <option value="TECHNOLOGY">Technology</option>
-            </select>
           </div>
         </div>
       </Card>
@@ -1102,7 +706,7 @@ export default function PartnersPage() {
               <p className="text-sm font-semibold text-slate-700">No partners found</p>
               <p className="text-xs text-slate-400 mt-1">
                 {partners.length === 0
-                  ? 'Add your first partner to start populating the homepage centered grid.'
+                  ? 'Add your first partner with a name and logo image.'
                   : 'Try adjusting your search or filter options.'}
               </p>
             </div>
@@ -1130,14 +734,9 @@ export default function PartnersPage() {
                   />
                 </TableHead>
                 <TableHead className="w-[80px] text-xs font-bold text-muted-foreground">Order</TableHead>
-                <TableHead className="w-[70px] text-xs font-bold text-muted-foreground">Logo</TableHead>
-                <TableHead className="text-xs font-bold text-muted-foreground">Partner</TableHead>
-                <TableHead className="text-xs font-bold text-muted-foreground hidden md:table-cell">Tier</TableHead>
-                <TableHead className="text-xs font-bold text-muted-foreground hidden lg:table-cell">Type & Industry</TableHead>
-                <TableHead className="w-[150px] text-xs font-bold text-muted-foreground text-center">
-                  Homepage Grid
-                </TableHead>
-                <TableHead className="w-[90px] text-xs font-bold text-muted-foreground text-center">Status</TableHead>
+                <TableHead className="w-[90px] text-xs font-bold text-muted-foreground">Logo / Image</TableHead>
+                <TableHead className="text-xs font-bold text-muted-foreground">Partner Name</TableHead>
+                <TableHead className="w-[110px] text-xs font-bold text-muted-foreground text-center">Status</TableHead>
                 <TableHead className="w-[100px] text-right text-xs font-bold text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -1189,7 +788,7 @@ export default function PartnersPage() {
 
                   {/* Logo Preview */}
                   <TableCell className="py-3">
-                    <div className="h-10 w-10 rounded-lg border border-border bg-card flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
+                    <div className="h-11 w-11 rounded-xl border border-border bg-card flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
                       {partner.logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -1201,72 +800,14 @@ export default function PartnersPage() {
                           }}
                         />
                       ) : (
-                        <Handshake className="h-4 w-4 text-muted-foreground" />
+                        <Handshake className="h-5 w-5 text-muted-foreground" />
                       )}
                     </div>
                   </TableCell>
 
-                  {/* Partner Name & Slug & Website */}
+                  {/* Partner Name */}
                   <TableCell className="py-3">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-xs text-foreground">{partner.name}</span>
-                        {partner.websiteUrl && (
-                          <a
-                            href={partner.websiteUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-muted-foreground hover:text-primary"
-                            title={`Open ${partner.name} website`}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2 text-[11px] text-muted-foreground font-mono mt-0.5">
-                        {partner.slug ? <span>/{partner.slug}</span> : <span className="italic">no slug</span>}
-                        {partner.shortDescription && (
-                          <span className="text-muted-foreground font-sans truncate max-w-[200px] hidden sm:inline">
-                            · {partner.shortDescription}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Tier */}
-                  <TableCell className="py-3 hidden md:table-cell">
-                    {getTierBadge(partner.tier)}
-                  </TableCell>
-
-                  {/* Type & Industry */}
-                  <TableCell className="py-3 hidden lg:table-cell">
-                    <div className="text-xs text-foreground">
-                      {partner.partnerType || <span className="text-muted-foreground">—</span>}
-                    </div>
-                    {partner.industry && (
-                      <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
-                        {partner.industry}
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Show on Homepage Switch */}
-                  <TableCell className="py-3 text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      <Switch
-                        checked={partner.showOnHomepage}
-                        onCheckedChange={() => handleToggleHomepage(partner)}
-                        aria-label={`Toggle homepage visibility for ${partner.name}`}
-                      />
-                      <span
-                        className={`text-[11px] font-bold ${
-                          partner.showOnHomepage ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {partner.showOnHomepage ? 'ACTIVE' : 'OFF'}
-                      </span>
-                    </div>
+                    <span className="font-semibold text-xs text-foreground">{partner.name}</span>
                   </TableCell>
 
                   {/* Status */}
@@ -1345,18 +886,7 @@ export default function PartnersPage() {
           editTarget
             ? {
                 name: editTarget.name,
-                slug: editTarget.slug || '',
-                tier: editTarget.tier,
                 logoUrl: editTarget.logoUrl || '',
-                logoDarkUrl: editTarget.logoDarkUrl || '',
-                shortDescription: editTarget.shortDescription || '',
-                description: editTarget.description || '',
-                websiteUrl: editTarget.websiteUrl || '',
-                partnerType: editTarget.partnerType || '',
-                industry: editTarget.industry || '',
-                displayOrder: editTarget.displayOrder,
-                status: editTarget.status,
-                showOnHomepage: editTarget.showOnHomepage,
               }
             : EMPTY_FORM
         }

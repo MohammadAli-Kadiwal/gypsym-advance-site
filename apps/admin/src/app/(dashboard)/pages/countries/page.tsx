@@ -40,7 +40,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
@@ -509,8 +509,8 @@ export default function CountryPagesManagementPage() {
         return next;
       });
       notify.success(`Country page for "${singleDeleteTarget.title}" deleted.`);
-    } catch {
-      notify.error('Failed to delete country page.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err, 'Failed to delete country page.'));
     } finally {
       setSingleDeleteTarget(null);
     }
@@ -523,8 +523,8 @@ export default function CountryPagesManagementPage() {
       await fetchApi(`/pages/${page.slug}`, { method: 'PUT', body: JSON.stringify({ status: nextStatus }) });
       setPages((prev) => prev.map((p) => (p.slug === page.slug ? { ...p, status: nextStatus as any } : p)));
       notify.success(`Status updated to ${nextStatus === 'PUBLISHED' ? 'Published' : 'Draft'}.`);
-    } catch {
-      notify.error('Failed to update status.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err, 'Failed to update status.'));
     }
   };
 
@@ -635,7 +635,7 @@ export default function CountryPagesManagementPage() {
       setEditOpen(false);
       await loadData();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to save country page settings');
+      notify.error(normalizeErrorMessage(err, 'Failed to save country page settings'));
     } finally {
       setSavingSettings(false);
     }
@@ -648,7 +648,7 @@ export default function CountryPagesManagementPage() {
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     setCreating(true);
     try {
-      await fetchApi<PageData>('/pages', {
+      const createdPage = await fetchApi<PageData>('/pages', {
         method: 'POST',
         body: JSON.stringify({
           title: `${createCountryName.trim()} | Gypsym Technology`,
@@ -665,6 +665,8 @@ export default function CountryPagesManagementPage() {
           },
         }),
       });
+
+      const targetSlug = createdPage?.slug || cleanSlug;
 
       // Initialize localized Hero section with country name, currency, timezone, content
       const heroPayloadBase = {
@@ -689,31 +691,35 @@ export default function CountryPagesManagementPage() {
           enabled: true,
         },
         backgroundMedia: {
-          desktopImageUrl: createHeroImage.trim() || `/images/countries/${cleanSlug}.jpg`,
-          mobileImageUrl: createHeroImage.trim() || `/images/countries/${cleanSlug}.jpg`,
+          desktopImageUrl: createHeroImage.trim() || `/images/countries/${targetSlug}.jpg`,
+          mobileImageUrl: createHeroImage.trim() || `/images/countries/${targetSlug}.jpg`,
           overlayOpacity: 0.38,
         },
       };
 
-      await fetchApi(`/pages/${cleanSlug}/sections`, {
-        method: 'POST',
-        body: JSON.stringify({
-          sectionIdentifier: 'hero-banner',
-          componentType: 'HERO',
-          displayOrder: 1,
-          isActive: true,
-          contentPayload: heroPayloadBase,
-        }),
-      });
+      try {
+        await fetchApi(`/pages/${targetSlug}/sections`, {
+          method: 'POST',
+          body: JSON.stringify({
+            sectionIdentifier: 'hero-banner',
+            componentType: 'HERO',
+            displayOrder: 1,
+            isActive: true,
+            contentPayload: heroPayloadBase,
+          }),
+        });
+      } catch (sectionErr) {
+        console.warn('Initial hero section creation warning:', sectionErr);
+      }
 
-      notify.success(`Country page for "${createCountryName}" created with ${createCurrency} and ${createTimezone}.`);
       setCreateOpen(false);
       setCreateCountryName(''); setCreateSlug(''); setCreateFlag('🌐');
       setCreateCurrency('USD'); setCreateTimezone('America/New_York');
       setCreateHeroTitle(''); setCreateHeroDescription(''); setCreateContent(''); setCreateHeroImage('');
+      notify.success(`Country page for "${createCountryName}" created with ${createCurrency} and ${createTimezone}.`);
       await loadData();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to create country page');
+      notify.error(normalizeErrorMessage(err, 'Failed to create country page'));
     } finally {
       setCreating(false);
     }

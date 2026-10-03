@@ -52,12 +52,22 @@ class NotificationManager {
     const duration =
       options?.duration ?? (type === 'error' ? 8000 : type === 'warning' ? 6000 : 4000);
 
-    const message =
-      typeof messageOrObj === 'string'
-        ? messageOrObj
-        : [messageOrObj.title, messageOrObj.description || messageOrObj.message]
-            .filter(Boolean)
-            .join(' - ');
+    let message = '';
+    if (typeof messageOrObj === 'string') {
+      message = messageOrObj;
+    } else if (messageOrObj instanceof Error) {
+      const anyErr = messageOrObj as any;
+      const serverMsg = anyErr.response?.data?.message || anyErr.details;
+      const str = Array.isArray(serverMsg) ? serverMsg.filter(Boolean).join('. ') : (typeof serverMsg === 'string' ? serverMsg : '');
+      message = str || messageOrObj.message || 'An error occurred';
+    } else if (typeof messageOrObj === 'object' && messageOrObj !== null) {
+      const anyObj = messageOrObj as any;
+      const desc = anyObj.description || anyObj.message || anyObj.response?.data?.message;
+      const descStr = Array.isArray(desc) ? desc.filter(Boolean).join('. ') : (typeof desc === 'string' ? desc : '');
+      message = [anyObj.title, descStr].filter(Boolean).join(' - ') || 'Notification';
+    } else {
+      message = String(messageOrObj || 'Notification');
+    }
 
     // Max 4 toasts at a time
     if (this.toasts.length >= 4) {

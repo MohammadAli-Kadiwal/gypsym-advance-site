@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { usersService } from '@/services/users.service';
 import { notify } from '@/lib/notifications';
+import { normalizeErrorMessage } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateTime } from '@/lib/utils';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
@@ -206,7 +207,7 @@ export default function UsersAdminPage() {
       });
       loadUsers();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to create user.');
+      notify.error(normalizeErrorMessage(err, 'Failed to create user.'));
     } finally {
       setSubmitting(false);
     }
@@ -275,7 +276,7 @@ export default function UsersAdminPage() {
 
       loadUsers();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to update user.');
+      notify.error(normalizeErrorMessage(err, 'Failed to update user.'));
     } finally {
       setSubmitting(false);
     }
@@ -292,7 +293,7 @@ export default function UsersAdminPage() {
       setSelectedUser(null);
       loadUsers();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to delete user.');
+      notify.error(normalizeErrorMessage(err, 'Failed to delete user.'));
     } finally {
       setSubmitting(false);
     }

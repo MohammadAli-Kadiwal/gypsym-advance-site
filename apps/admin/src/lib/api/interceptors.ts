@@ -147,7 +147,7 @@ export function setupInterceptors(client: AxiosInstance): void {
       if (Array.isArray(responseData?.message)) {
         // Class-validator format: ['email must be an email', 'password is too short']
         validationDetails = responseData.message.map((msg: string) => ({ message: msg }));
-        serverMessage = responseData.message[0];
+        serverMessage = responseData.message.filter(Boolean).join('. ');
       } else if (Array.isArray(responseData?.error?.details)) {
         validationDetails = responseData.error.details;
       }
@@ -155,13 +155,15 @@ export function setupInterceptors(client: AxiosInstance): void {
       // Sanitize server message to ensure no database columns, SQL, or internal details leak
       const isSafeMessage =
         typeof serverMessage === 'string' &&
-        serverMessage.length < 250 &&
-        !serverMessage.includes('Prisma') &&
-        !serverMessage.includes('Postgres') &&
-        !serverMessage.includes('SELECT') &&
-        !serverMessage.includes('INSERT') &&
-        !serverMessage.includes('table') &&
-        !serverMessage.includes('foreign key');
+        serverMessage.trim().length > 0 &&
+        serverMessage.length < 350 &&
+        !serverMessage.includes('PrismaClient') &&
+        !serverMessage.includes('prisma.') &&
+        !serverMessage.includes('PostgresError') &&
+        !serverMessage.includes('syntax error at or near') &&
+        !serverMessage.includes('foreign key constraint') &&
+        !serverMessage.includes('relation "') &&
+        !serverMessage.includes('column "');
 
       let friendlyMessage = '';
 
@@ -221,7 +223,7 @@ export function setupInterceptors(client: AxiosInstance): void {
         case 502:
         case 503:
         case 504:
-          friendlyMessage = 'A server error occurred. Please try again later.';
+          friendlyMessage = isSafeMessage ? serverMessage : 'A server error occurred. Please try again later.';
           code = 'SERVER_ERROR';
           break;
 

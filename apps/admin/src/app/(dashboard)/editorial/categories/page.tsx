@@ -162,7 +162,7 @@ export default function EditorialCategoriesAdminPage() {
       setIsDialogOpen(false);
       loadCategories();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to save blog category.');
+      notify.error(normalizeErrorMessage(err, 'Failed to save blog category.'));
     } finally {
       setIsSaving(false);
     }

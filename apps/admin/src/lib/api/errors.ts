@@ -62,20 +62,33 @@ export function normalizeErrorMessage(err: unknown, fallbackMessage: string = 'A
     return err.message;
   }
 
-  if (err instanceof Error) {
-    const raw = err.message || '';
+  const anyErr = err as any;
 
+  // Extract nested server message if provided by Axios response or custom error wrapper
+  const candidate =
+    anyErr?.response?.data?.message ||
+    anyErr?.response?.data?.error?.message ||
+    anyErr?.response?.data?.error ||
+    anyErr?.details ||
+    (err instanceof Error ? err.message : typeof err === 'string' ? err : null);
+
+  let raw = '';
+  if (Array.isArray(candidate)) {
+    raw = candidate.filter(Boolean).join('. ');
+  } else if (typeof candidate === 'string') {
+    raw = candidate.trim();
+  }
+
+  if (raw) {
     // Check if technical leak
     const containsTechnicalJargon =
-      raw.includes('Prisma') ||
-      raw.includes('Postgres') ||
-      raw.includes('SQL') ||
-      raw.includes('SELECT') ||
-      raw.includes('INSERT') ||
-      raw.includes('foreign key') ||
-      raw.includes('unique constraint') ||
-      raw.includes('column') ||
-      raw.includes('table');
+      raw.includes('PrismaClient') ||
+      raw.includes('prisma.') ||
+      raw.includes('PostgresError') ||
+      raw.includes('syntax error at or near') ||
+      raw.includes('foreign key constraint') ||
+      raw.includes('relation "') ||
+      raw.includes('column "');
 
     if (containsTechnicalJargon) {
       return 'The operation could not be completed due to a database constraint. Please check your inputs.';
@@ -85,11 +98,7 @@ export function normalizeErrorMessage(err: unknown, fallbackMessage: string = 'A
       return 'Unable to connect to the backend server. Please verify your network connection.';
     }
 
-    return raw || fallbackMessage;
-  }
-
-  if (typeof err === 'string') {
-    return err;
+    return raw;
   }
 
   return fallbackMessage;

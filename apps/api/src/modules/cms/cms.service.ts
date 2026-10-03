@@ -2643,7 +2643,7 @@ export class CmsService implements OnModuleInit {
       where: { slug, deletedAt: null },
     });
     if (existing) {
-      throw new Error(`A page with slug '/${slug}' already exists.`);
+      throw new ConflictException(`A page with slug '/${slug}' already exists.`);
     }
 
     const page = await this.prisma.page.create({
@@ -2717,13 +2717,13 @@ export class CmsService implements OnModuleInit {
     if (body.status !== undefined) updateData.status = body.status;
     if (body.slug !== undefined && body.slug !== page.slug) {
       if (page.slug === 'home') {
-        throw new Error("Cannot change URL slug of the root 'home' landing page.");
+        throw new BadRequestException("Cannot change URL slug of the root 'home' landing page.");
       }
       const existingSlug = await this.prisma.page.findFirst({
         where: { slug: body.slug, deletedAt: null },
       });
       if (existingSlug && existingSlug.id !== page.id) {
-        throw new Error(`A page with slug '/${body.slug}' already exists.`);
+        throw new ConflictException(`A page with slug '/${body.slug}' already exists.`);
       }
       updateData.slug = body.slug;
     }
@@ -2796,7 +2796,7 @@ export class CmsService implements OnModuleInit {
 
   async deletePage(slug: string): Promise<void> {
     if (slug === 'home' || slug === 'services' || slug === 'portfolio' || slug === 'contact' || slug === 'book') {
-      throw new Error(`The core system page '/${slug}' is protected and cannot be deleted.`);
+      throw new BadRequestException(`The core system page '/${slug}' is protected and cannot be deleted.`);
     }
 
     const candidateSlugs = this.resolveCandidateSlugs(slug);
@@ -2860,11 +2860,13 @@ export class CmsService implements OnModuleInit {
     const [liveClients, livePartners, livePortfolioProjects, siteSettingsRow, brandSettingsRow] = await Promise.all([
       this.getClients('PUBLISHED'),
       this.getPartners({ status: 'PUBLISHED', showOnHomepage: true }),
-      (this.prisma as any).portfolioProjectItem.findMany({
-        where: { status: 'PUBLISHED' },
-        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
-        include: { category: true },
-      }),
+      (this.prisma as any).portfolioProjectItem?.findMany
+        ? (this.prisma as any).portfolioProjectItem.findMany({
+            where: { status: 'PUBLISHED' },
+            orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
+            include: { category: true },
+          }).catch(() => [])
+        : Promise.resolve([]),
       this.prisma.siteSetting.findUnique({ where: { key: 'site_settings' } }).catch(() => null),
       this.prisma.brandSetting.findFirst({ where: { isActive: true } }).catch(() => null),
     ]);

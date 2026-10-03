@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { notify } from '@/lib/notifications';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { AdminContentContainer } from '@/components/layout/admin-page';
 import { PagesTable } from './_components/pages-table';
 import type { PageData } from './_components/types';
@@ -40,7 +40,7 @@ export default function PagesManagementPage() {
       notify.success(`Page settings for "/${slug}" saved successfully.`);
       await loadBackendData();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to save page settings');
+      notify.error(normalizeErrorMessage(err, 'Failed to save page settings'));
       throw err;
     }
   };
@@ -54,7 +54,7 @@ export default function PagesManagementPage() {
       notify.success(`Page "${data.title}" created successfully.`);
       await loadBackendData();
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to create page');
+      notify.error(normalizeErrorMessage(err, 'Failed to create page'));
       throw err;
     }
   };

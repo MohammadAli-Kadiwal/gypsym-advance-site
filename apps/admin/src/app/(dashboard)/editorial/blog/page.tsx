@@ -39,7 +39,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -168,7 +168,7 @@ export default function EditorialBlogAdminPage() {
       setQuickCategoryName('');
       setIsQuickCategoryOpen(false);
     } catch (err: any) {
-      notify.error(err?.message || 'Failed to create category.');
+      notify.error(normalizeErrorMessage(err, 'Failed to create category.'));
     } finally {
       setIsCreatingCategory(false);
     }
