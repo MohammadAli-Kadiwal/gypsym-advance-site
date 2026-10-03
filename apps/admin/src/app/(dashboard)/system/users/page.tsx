@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { usersService } from '@/services/users.service';
 import { notify } from '@/lib/notifications';
-import { normalizeErrorMessage } from '@/lib/api-client';
+import { normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateTime } from '@/lib/utils';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
@@ -166,20 +166,20 @@ export default function UsersAdminPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.email || !createForm.email.includes('@')) {
-      notify.error('Valid enterprise email is required.');
+      notify.error(ERROR_MESSAGES.USERS.EMAIL_REQUIRED);
       return;
     }
     if (!createForm.password || createForm.password.length < 8) {
-      notify.error('Password must be at least 8 characters long.');
+      notify.error(ERROR_MESSAGES.USERS.PASSWORD_TOO_SHORT);
       return;
     }
     if (createForm.password !== createForm.confirmPassword) {
-      notify.error('Passwords do not match.');
+      notify.error(ERROR_MESSAGES.USERS.PASSWORDS_DO_NOT_MATCH);
       return;
     }
     // Super Admin limit: only one allowed
     if (createForm.role === 'SUPER_ADMIN' && existingSuperAdmin) {
-      notify.error('A Super Administrator account already exists. Only one Super Admin is permitted per system.');
+      notify.error(ERROR_MESSAGES.USERS.SUPER_ADMIN_EXISTS);
       return;
     }
 
@@ -194,7 +194,7 @@ export default function UsersAdminPage() {
         isActive: createForm.isActive,
       });
 
-      notify.success(`User account for ${createForm.email} created successfully.`);
+      notify.success(SUCCESS_MESSAGES.USERS.CREATED(createForm.email));
       setCreateModalOpen(false);
       setCreateForm({
         firstName: '',
@@ -207,7 +207,7 @@ export default function UsersAdminPage() {
       });
       loadUsers();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to create user.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.USERS.CREATE_FAILED));
     } finally {
       setSubmitting(false);
     }
@@ -224,17 +224,17 @@ export default function UsersAdminPage() {
       existingSuperAdmin &&
       existingSuperAdmin.id !== selectedUser.id
     ) {
-      notify.error('A Super Administrator account already exists. Only one Super Admin is permitted.');
+      notify.error(ERROR_MESSAGES.USERS.SUPER_ADMIN_EXISTS);
       return;
     }
 
     if (editForm.newPassword) {
       if (editForm.newPassword.length < 8) {
-        notify.error('New password must be at least 8 characters long.');
+        notify.error(ERROR_MESSAGES.USERS.PASSWORD_TOO_SHORT);
         return;
       }
       if (editForm.newPassword !== editForm.confirmNewPassword) {
-        notify.error('New passwords do not match.');
+        notify.error(ERROR_MESSAGES.USERS.PASSWORDS_DO_NOT_MATCH);
         return;
       }
     }
@@ -269,14 +269,14 @@ export default function UsersAdminPage() {
       }
 
       if (editForm.newPassword.trim()) {
-        notify.success(`Password reset for ${selectedUser.email}. All their active sessions have been revoked.`);
+        notify.success(SUCCESS_MESSAGES.USERS.PASSWORD_RESET(selectedUser.email));
       } else {
-        notify.success('User updated successfully.');
+        notify.success(SUCCESS_MESSAGES.USERS.UPDATED);
       }
 
       loadUsers();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to update user.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.USERS.UPDATE_FAILED));
     } finally {
       setSubmitting(false);
     }
@@ -288,12 +288,12 @@ export default function UsersAdminPage() {
     setSubmitting(true);
     try {
       await usersService.delete(selectedUser.id);
-      notify.success(`User ${selectedUser.email} has been deactivated and removed.`);
+      notify.success(SUCCESS_MESSAGES.USERS.DELETED(selectedUser.email));
       setDeleteModalOpen(false);
       setSelectedUser(null);
       loadUsers();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to delete user.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.USERS.DELETE_FAILED));
     } finally {
       setSubmitting(false);
     }

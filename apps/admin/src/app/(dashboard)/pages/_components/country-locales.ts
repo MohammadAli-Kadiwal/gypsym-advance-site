@@ -196,6 +196,26 @@ export const KNOWN_COUNTRIES: Record<string, CountryMeta> = {
   eg: { name: 'Egypt', flag: '🇪🇬', currency: 'EGP', currencySymbol: 'E£', timezone: 'Africa/Cairo', region: 'Middle East & Africa' },
   nigeria: { name: 'Nigeria', flag: '🇳🇬', currency: 'NGN', currencySymbol: '₦', timezone: 'Africa/Lagos', region: 'Africa' },
   ng: { name: 'Nigeria', flag: '🇳🇬', currency: 'NGN', currencySymbol: '₦', timezone: 'Africa/Lagos', region: 'Africa' },
+  kenya: { name: 'Kenya', flag: '🇰🇪', currency: 'KES', currencySymbol: 'KSh', timezone: 'Africa/Nairobi', region: 'Africa' },
+  ke: { name: 'Kenya', flag: '🇰🇪', currency: 'KES', currencySymbol: 'KSh', timezone: 'Africa/Nairobi', region: 'Africa' },
+  finland: { name: 'Finland', flag: '🇫🇮', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Helsinki', region: 'Europe' },
+  fi: { name: 'Finland', flag: '🇫🇮', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Helsinki', region: 'Europe' },
+  greece: { name: 'Greece', flag: '🇬🇷', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Athens', region: 'Europe' },
+  gr: { name: 'Greece', flag: '🇬🇷', currency: 'EUR', currencySymbol: '€', timezone: 'Europe/Athens', region: 'Europe' },
+  'czech-republic': { name: 'Czech Republic', flag: '🇨🇿', currency: 'CZK', currencySymbol: 'Kč', timezone: 'Europe/Prague', region: 'Europe' },
+  cz: { name: 'Czech Republic', flag: '🇨🇿', currency: 'CZK', currencySymbol: 'Kč', timezone: 'Europe/Prague', region: 'Europe' },
+  israel: { name: 'Israel', flag: '🇮🇱', currency: 'ILS', currencySymbol: '₪', timezone: 'Asia/Jerusalem', region: 'Middle East' },
+  il: { name: 'Israel', flag: '🇮🇱', currency: 'ILS', currencySymbol: '₪', timezone: 'Asia/Jerusalem', region: 'Middle East' },
+  argentina: { name: 'Argentina', flag: '🇦🇷', currency: 'ARS', currencySymbol: '$', timezone: 'America/Argentina/Buenos_Aires', region: 'South America' },
+  ar: { name: 'Argentina', flag: '🇦🇷', currency: 'ARS', currencySymbol: '$', timezone: 'America/Argentina/Buenos_Aires', region: 'South America' },
+  chile: { name: 'Chile', flag: '🇨🇱', currency: 'CLP', currencySymbol: '$', timezone: 'America/Santiago', region: 'South America' },
+  cl: { name: 'Chile', flag: '🇨🇱', currency: 'CLP', currencySymbol: '$', timezone: 'America/Santiago', region: 'South America' },
+  colombia: { name: 'Colombia', flag: '🇨🇴', currency: 'COP', currencySymbol: '$', timezone: 'America/Bogota', region: 'South America' },
+  co: { name: 'Colombia', flag: '🇨🇴', currency: 'COP', currencySymbol: '$', timezone: 'America/Bogota', region: 'South America' },
+  pakistan: { name: 'Pakistan', flag: '🇵🇰', currency: 'PKR', currencySymbol: '₨', timezone: 'Asia/Karachi', region: 'Asia Pacific' },
+  pk: { name: 'Pakistan', flag: '🇵🇰', currency: 'PKR', currencySymbol: '₨', timezone: 'Asia/Karachi', region: 'Asia Pacific' },
+  bangladesh: { name: 'Bangladesh', flag: '🇧🇩', currency: 'BDT', currencySymbol: '৳', timezone: 'Asia/Dhaka', region: 'Asia Pacific' },
+  bd: { name: 'Bangladesh', flag: '🇧🇩', currency: 'BDT', currencySymbol: '৳', timezone: 'Asia/Dhaka', region: 'Asia Pacific' },
 };
 
 export interface CountryPresetItem {
@@ -227,6 +247,127 @@ export const COUNTRY_PRESETS: CountryPresetItem[] = (() => {
 })();
 
 /**
+ * Universal Unicode Flag Emoji Generator from standard 2-letter ISO 3166-1 alpha-2 code
+ * e.g. "IN" -> 🇮🇳, "US" -> 🇺🇸, "KW" -> 🇰🇼, "AE" -> 🇦🇪, "DE" -> 🇩🇪, "GB" -> 🇬🇧
+ */
+export function getFlagEmojiFromCountryCode(code: string): string {
+  if (!code || typeof code !== 'string') return '';
+  const clean = code.trim().toUpperCase();
+  if (clean.length !== 2 || !/^[A-Z]{2}$/.test(clean)) return '';
+  return String.fromCodePoint(
+    127397 + clean.charCodeAt(0),
+    127397 + clean.charCodeAt(1)
+  );
+}
+
+// Build reverse region name to ISO code mapping dynamically via Intl.DisplayNames
+const REGION_NAMES_TO_ISO: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  try {
+    if (typeof Intl !== 'undefined' && typeof Intl.DisplayNames === 'function') {
+      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+      let regionCodes: string[] = [];
+      try {
+        if (typeof (Intl as any).supportedValuesOf === 'function') {
+          regionCodes = (Intl as any).supportedValuesOf('region') || [];
+        }
+      } catch {
+        // fallback
+      }
+      if (!regionCodes.length) {
+        regionCodes = Object.keys(KNOWN_COUNTRIES).filter((k) => k.length === 2).map((k) => k.toUpperCase());
+      }
+      for (const code of regionCodes) {
+        if (/^[A-Z]{2}$/.test(code)) {
+          try {
+            const name = dn.of(code);
+            if (name) {
+              const lower = name.toLowerCase();
+              map[lower] = code;
+              map[lower.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')] = code;
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return map;
+})();
+
+/**
+ * Common Aliases mapping to KNOWN_COUNTRIES keys or ISO codes
+ */
+const COUNTRY_ALIASES: Record<string, string> = {
+  usa: 'united-states',
+  america: 'united-states',
+  us: 'united-states',
+  uk: 'united-kingdom',
+  britain: 'united-kingdom',
+  'great-britain': 'united-kingdom',
+  england: 'united-kingdom',
+  gb: 'united-kingdom',
+  uae: 'united-arab-emirates',
+  dubai: 'united-arab-emirates',
+  'abu-dhabi': 'united-arab-emirates',
+  emirates: 'united-arab-emirates',
+  ae: 'united-arab-emirates',
+  ksa: 'saudi-arabia',
+  saudi: 'saudi-arabia',
+  sa: 'saudi-arabia',
+  deutschland: 'germany',
+  de: 'germany',
+  bharat: 'india',
+  hindustan: 'india',
+  in: 'india',
+  holland: 'netherlands',
+  nl: 'netherlands',
+  korea: 'south-korea',
+  kr: 'south-korea',
+  turkiye: 'turkey',
+  tr: 'turkey',
+  czechia: 'czech-republic',
+  cz: 'czech-republic',
+  kuwait: 'kuwait',
+  kw: 'kuwait',
+  qatar: 'qatar',
+  qa: 'qatar',
+  oman: 'oman',
+  om: 'oman',
+  bahrain: 'bahrain',
+  bh: 'bahrain',
+  australia: 'australia',
+  au: 'australia',
+  canada: 'canada',
+  ca: 'canada',
+  france: 'france',
+  fr: 'france',
+  japan: 'japan',
+  jp: 'japan',
+  singapore: 'singapore',
+  sg: 'singapore',
+  italy: 'italy',
+  it: 'italy',
+  spain: 'spain',
+  es: 'spain',
+  switzerland: 'switzerland',
+  ch: 'switzerland',
+  sweden: 'sweden',
+  se: 'sweden',
+  norway: 'norway',
+  no: 'norway',
+  denmark: 'denmark',
+  dk: 'denmark',
+  brazil: 'brazil',
+  br: 'brazil',
+  mexico: 'mexico',
+  mx: 'mexico',
+};
+
+/**
  * Searches and automatically detects matching country locale metadata (Timezone, Currency, Flag, Slug).
  * Supports fuzzy matching against country names, slugs, ISO codes, and common aliases.
  */
@@ -250,45 +391,13 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     };
   }
 
-  // 2. Exact or prefix match against country name
-  for (const item of COUNTRY_PRESETS) {
-    const itemNorm = item.name.toLowerCase();
-    if (itemNorm === raw || item.slug === normalized) {
-      return item;
-    }
-  }
-
-  // 3. Partial / word boundary match
-  for (const item of COUNTRY_PRESETS) {
-    const itemNorm = item.name.toLowerCase();
-    if (itemNorm.startsWith(raw) || raw.startsWith(itemNorm)) {
-      return item;
-    }
-  }
-
-  // 4. Aliases
-  const aliasMap: Record<string, string> = {
-    usa: 'united-states',
-    america: 'united-states',
-    us: 'united-states',
-    uk: 'united-kingdom',
-    britain: 'united-kingdom',
-    england: 'united-kingdom',
-    uae: 'united-arab-emirates',
-    dubai: 'united-arab-emirates',
-    emirates: 'united-arab-emirates',
-    ksa: 'saudi-arabia',
-    saudi: 'saudi-arabia',
-    deutschland: 'germany',
-    bharat: 'india',
-  };
-
-  const aliasKey = aliasMap[raw] || aliasMap[normalized];
-  if (aliasKey && KNOWN_COUNTRIES[aliasKey]) {
-    const k = KNOWN_COUNTRIES[aliasKey];
+  // 2. Direct match in COUNTRY_ALIASES
+  const aliasTarget = COUNTRY_ALIASES[raw] || COUNTRY_ALIASES[normalized];
+  if (aliasTarget && KNOWN_COUNTRIES[aliasTarget]) {
+    const k = KNOWN_COUNTRIES[aliasTarget];
     return {
       name: k.name,
-      slug: aliasKey,
+      slug: aliasTarget,
       flag: k.flag,
       currency: k.currency,
       timezone: k.timezone,
@@ -296,18 +405,93 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     };
   }
 
+  // 3. Exact or prefix match against country name in COUNTRY_PRESETS
+  for (const item of COUNTRY_PRESETS) {
+    const itemNorm = item.name.toLowerCase();
+    if (itemNorm === raw || item.slug === normalized) {
+      return item;
+    }
+  }
+
+  // 4. Partial / word boundary match against preset countries
+  for (const item of COUNTRY_PRESETS) {
+    const itemNorm = item.name.toLowerCase();
+    if (itemNorm.startsWith(raw) || raw.startsWith(itemNorm)) {
+      return item;
+    }
+  }
+
+  // 5. Check if query matches an ISO 3166-1 alpha-2 code directly (e.g. "KW", "IN", "US")
+  if (raw.length === 2 && /^[a-z]{2}$/.test(raw)) {
+    const flag = getFlagEmojiFromCountryCode(raw);
+    if (flag) {
+      try {
+        const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+        const name = dn.of(raw.toUpperCase()) || raw.toUpperCase();
+        return {
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          flag,
+          currency: 'USD',
+          timezone: 'UTC',
+          region: 'International',
+        };
+      } catch {
+        // fallback
+      }
+    }
+  }
+
+  // 6. Check Intl.DisplayNames reverse lookup (all 249 ISO regions)
+  const isoFromRegion = REGION_NAMES_TO_ISO[raw] || REGION_NAMES_TO_ISO[normalized];
+  if (isoFromRegion) {
+    const flag = getFlagEmojiFromCountryCode(isoFromRegion);
+    try {
+      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+      const name = dn.of(isoFromRegion) || query;
+      return {
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        flag: flag || '🌐',
+        currency: 'USD',
+        timezone: 'UTC',
+        region: 'International',
+      };
+    } catch {
+      // fallback
+    }
+  }
+
   return null;
 }
 
 export function getCountryMeta(slug?: string, title?: string, heroPayload?: Record<string, any>): CountryMeta {
-  const normalized = (slug || '').toLowerCase();
-  const known = KNOWN_COUNTRIES[normalized];
+  const normalizedSlug = (slug || '').toLowerCase().replace(/^\/+/, '');
   const cleanTitle = (title || slug || 'Global Market').split('|')[0]?.trim() || 'Global Market';
+  const countryName = heroPayload?.country?.name || cleanTitle;
 
-  const currency = heroPayload?.country?.currency || known?.currency || 'USD';
-  const timezone = heroPayload?.country?.timezone || known?.timezone || 'America/New_York';
-  const flag = known?.flag || '🌐';
-  const region = known?.region || 'International';
+  const known = KNOWN_COUNTRIES[normalizedSlug] || KNOWN_COUNTRIES[cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')];
+  const matchedLocale = findCountryLocale(countryName) || findCountryLocale(cleanTitle) || findCountryLocale(normalizedSlug);
+
+  // 1. Explicit flag in heroPayload
+  let flag = heroPayload?.country?.flag;
+  if (!flag || flag === '🌐' || flag.trim() === '') {
+    // 2. Matched locale or known country flag
+    flag = matchedLocale?.flag || known?.flag;
+  }
+  // 3. Fallback: check 2-letter ISO code in slug
+  if ((!flag || flag === '🌐' || flag.trim() === '') && /^[a-z]{2}$/i.test(normalizedSlug)) {
+    const isoFlag = getFlagEmojiFromCountryCode(normalizedSlug);
+    if (isoFlag) flag = isoFlag;
+  }
+  // 4. Default fallback
+  if (!flag || flag.trim() === '') {
+    flag = '🌐';
+  }
+
+  const currency = heroPayload?.country?.currency || known?.currency || matchedLocale?.currency || 'USD';
+  const timezone = heroPayload?.country?.timezone || known?.timezone || matchedLocale?.timezone || 'America/New_York';
+  const region = known?.region || matchedLocale?.region || 'International';
 
   return {
     name: cleanTitle,
@@ -317,3 +501,4 @@ export function getCountryMeta(slug?: string, title?: string, heroPayload?: Reco
     region,
   };
 }
+

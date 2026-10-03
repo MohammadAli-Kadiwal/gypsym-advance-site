@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { notify } from '@/lib/notifications';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { AdminContentContainer } from '@/components/layout/admin-page';
 import { PagesTable } from './_components/pages-table';
 import type { PageData } from './_components/types';
@@ -20,7 +20,7 @@ export default function PagesManagementPage() {
         setAllPages(data);
       }
     } catch {
-      notify.error('Unable to synchronize pages from database.');
+      notify.error(ERROR_MESSAGES.PAGES.PAGE_SYNC_FAILED);
     } finally {
       setLoading(false);
     }
@@ -37,10 +37,10 @@ export default function PagesManagementPage() {
         method: 'PUT',
         body: JSON.stringify(data),
       });
-      notify.success(`Page settings for "/${slug}" saved successfully.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.PAGE_SAVED(slug));
       await loadBackendData();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to save page settings'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_SAVE_FAILED));
       throw err;
     }
   };
@@ -51,10 +51,10 @@ export default function PagesManagementPage() {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      notify.success(`Page "${data.title}" created successfully.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.PAGE_CREATED(data.title || 'New Page'));
       await loadBackendData();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to create page'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_CREATE_FAILED));
       throw err;
     }
   };

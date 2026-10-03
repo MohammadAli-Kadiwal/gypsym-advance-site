@@ -28,7 +28,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -150,19 +150,19 @@ export default function EditorialCategoriesAdminPage() {
           method: 'PUT',
           body: JSON.stringify(payload),
         });
-        notify.success(`Category "${payload.name}" updated successfully.`);
+        notify.success(SUCCESS_MESSAGES.BLOG.CATEGORY_SAVED(payload.name));
       } else {
         await fetchApi('/cms/blog/categories', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
-        notify.success(`Category "${payload.name}" created successfully.`);
+        notify.success(SUCCESS_MESSAGES.BLOG.CATEGORY_CREATED(payload.name));
       }
 
       setIsDialogOpen(false);
       loadCategories();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to save blog category.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.BLOG.CATEGORY_SAVE_FAILED));
     } finally {
       setIsSaving(false);
     }
@@ -172,9 +172,7 @@ export default function EditorialCategoriesAdminPage() {
   const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
     if (categoryToDelete.postCount > 0) {
-      notify.error(
-        `Cannot delete "${categoryToDelete.name}" because it has ${categoryToDelete.postCount} assigned article(s). Please reassign them first.`
-      );
+      notify.error(ERROR_MESSAGES.BLOG.CATEGORY_HAS_ARTICLES(categoryToDelete.name, categoryToDelete.postCount));
       setCategoryToDelete(null);
       return;
     }
@@ -183,7 +181,7 @@ export default function EditorialCategoriesAdminPage() {
       await fetchApi(`/cms/blog/categories/${categoryToDelete.id}`, {
         method: 'DELETE',
       });
-      notify.success(`Category "${categoryToDelete.name}" deleted.`);
+      notify.success(SUCCESS_MESSAGES.BLOG.CATEGORY_DELETED(categoryToDelete.name));
       setSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(categoryToDelete.id);
@@ -191,7 +189,7 @@ export default function EditorialCategoriesAdminPage() {
       });
       loadCategories();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to delete category.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.BLOG.CATEGORY_DELETE_FAILED));
       loadCategories();
     } finally {
       setCategoryToDelete(null);

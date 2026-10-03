@@ -2,6 +2,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosErr
 import { ApiError } from './errors';
 import { API_CONFIG } from './config';
 import type { CustomRequestConfig, ApiErrorDetail } from './types';
+import { ERROR_MESSAGES } from '../messages';
 
 /**
  * Retrieve Enterprise Auth Token from cookie or local storage
@@ -111,7 +112,7 @@ export function setupInterceptors(client: AxiosInstance): void {
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         return Promise.reject(
           new ApiError({
-            message: 'The request took too long to complete. Please try again.',
+            message: ERROR_MESSAGES.REQUEST_TIMEOUT,
             status: 408,
             code: 'REQUEST_TIMEOUT',
             isTimeout: true,
@@ -122,7 +123,7 @@ export function setupInterceptors(client: AxiosInstance): void {
       if (!error.response) {
         return Promise.reject(
           new ApiError({
-            message: 'Unable to connect to the backend server. Please verify your connection.',
+            message: ERROR_MESSAGES.NETWORK_ERROR,
             status: 0,
             code: 'NETWORK_ERROR',
             isNetworkError: true,
@@ -169,12 +170,12 @@ export function setupInterceptors(client: AxiosInstance): void {
 
       switch (status) {
         case 400:
-          friendlyMessage = isSafeMessage ? serverMessage : 'Invalid request. Please verify the submitted data.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.BAD_REQUEST;
           code = code || 'BAD_REQUEST';
           break;
 
         case 401:
-          friendlyMessage = 'Your session has expired or is invalid. Please sign in again.';
+          friendlyMessage = ERROR_MESSAGES.UNAUTHORIZED;
           code = 'UNAUTHORIZED';
           // Notify application of auth expiration without redirect loop
           if (typeof window !== 'undefined') {
@@ -183,30 +184,28 @@ export function setupInterceptors(client: AxiosInstance): void {
           break;
 
         case 403:
-          friendlyMessage = isSafeMessage ? serverMessage : 'You do not have permission to perform this action.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.FORBIDDEN;
           code = 'FORBIDDEN';
           break;
 
         case 404:
-          friendlyMessage = isSafeMessage ? serverMessage : 'The requested resource was not found.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.NOT_FOUND;
           code = 'NOT_FOUND';
           break;
 
         case 409:
-          friendlyMessage = isSafeMessage ? serverMessage : 'A conflict occurred. This record or unique field already exists.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.CONFLICT;
           code = 'CONFLICT';
           break;
 
         case 422:
-          friendlyMessage = isSafeMessage ? serverMessage : 'Validation failed. Please verify the form inputs.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.VALIDATION_FAILED;
           code = 'VALIDATION_FAILED';
           break;
 
         case 429: {
           const retryAfterSec = headers['retry-after'] ? parseInt(headers['retry-after'] as string, 10) : undefined;
-          friendlyMessage = retryAfterSec
-            ? `Too many requests. Please wait ${retryAfterSec} seconds before trying again.`
-            : 'Too many requests. Please wait a moment before trying again.';
+          friendlyMessage = ERROR_MESSAGES.RATE_LIMIT_EXCEEDED(retryAfterSec);
           code = 'RATE_LIMIT_EXCEEDED';
           return Promise.reject(
             new ApiError({
@@ -223,7 +222,7 @@ export function setupInterceptors(client: AxiosInstance): void {
         case 502:
         case 503:
         case 504:
-          friendlyMessage = isSafeMessage ? serverMessage : 'A server error occurred. Please try again later.';
+          friendlyMessage = isSafeMessage ? serverMessage : ERROR_MESSAGES.SERVER_ERROR;
           code = 'SERVER_ERROR';
           break;
 

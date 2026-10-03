@@ -1,4 +1,5 @@
 import type { ApiErrorDetail } from './types';
+import { ERROR_MESSAGES } from '../messages';
 
 /**
  * Standard Frontend Application Error Class
@@ -55,7 +56,7 @@ export class ApiError extends Error {
  * Sanitizes technical database jargon, Prisma errors, PostgreSQL column identifiers,
  * SQL keywords, and stack traces before presenting to the user.
  */
-export function normalizeErrorMessage(err: unknown, fallbackMessage: string = 'An unexpected error occurred.'): string {
+export function normalizeErrorMessage(err: unknown, fallbackMessage: string = ERROR_MESSAGES.UNEXPECTED): string {
   if (!err) return fallbackMessage;
 
   if (err instanceof ApiError) {
@@ -91,11 +92,11 @@ export function normalizeErrorMessage(err: unknown, fallbackMessage: string = 'A
       raw.includes('column "');
 
     if (containsTechnicalJargon) {
-      return 'The operation could not be completed due to a database constraint. Please check your inputs.';
+      return ERROR_MESSAGES.DATABASE_CONSTRAINT;
     }
 
     if (raw.includes('Failed to fetch') || raw.includes('NetworkError') || raw.includes('ECONNREFUSED')) {
-      return 'Unable to connect to the backend server. Please verify your network connection.';
+      return ERROR_MESSAGES.NETWORK_ERROR;
     }
 
     return raw;

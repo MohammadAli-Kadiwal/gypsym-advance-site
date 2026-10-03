@@ -39,7 +39,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
@@ -158,7 +158,7 @@ export default function EditorialBlogAdminPage() {
         method: 'POST',
         body: JSON.stringify({ name: quickCategoryName.trim() }),
       });
-      notify.success(`Category "${res.name}" created!`);
+      notify.success(SUCCESS_MESSAGES.BLOG.CATEGORY_CREATED(res.name));
       const updatedCatRes = await fetchApi<any>('/blog/categories');
       const catList = updatedCatRes?.data ?? updatedCatRes;
       if (Array.isArray(catList)) {
@@ -168,7 +168,7 @@ export default function EditorialBlogAdminPage() {
       setQuickCategoryName('');
       setIsQuickCategoryOpen(false);
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to create category.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.BLOG.CATEGORY_CREATE_FAILED));
     } finally {
       setIsCreatingCategory(false);
     }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { API_MESSAGES } from '../../common/messages';
 
 @Injectable()
 export class CmsService implements OnModuleInit {
@@ -2643,7 +2644,7 @@ export class CmsService implements OnModuleInit {
       where: { slug, deletedAt: null },
     });
     if (existing) {
-      throw new ConflictException(`A page with slug '/${slug}' already exists.`);
+      throw new ConflictException(API_MESSAGES.PAGE_ALREADY_EXISTS(slug));
     }
 
     const page = await this.prisma.page.create({
@@ -2717,13 +2718,13 @@ export class CmsService implements OnModuleInit {
     if (body.status !== undefined) updateData.status = body.status;
     if (body.slug !== undefined && body.slug !== page.slug) {
       if (page.slug === 'home') {
-        throw new BadRequestException("Cannot change URL slug of the root 'home' landing page.");
+        throw new BadRequestException(API_MESSAGES.HOME_SLUG_IMMUTABLE);
       }
       const existingSlug = await this.prisma.page.findFirst({
         where: { slug: body.slug, deletedAt: null },
       });
       if (existingSlug && existingSlug.id !== page.id) {
-        throw new ConflictException(`A page with slug '/${body.slug}' already exists.`);
+        throw new ConflictException(API_MESSAGES.PAGE_ALREADY_EXISTS(body.slug));
       }
       updateData.slug = body.slug;
     }
@@ -2796,7 +2797,7 @@ export class CmsService implements OnModuleInit {
 
   async deletePage(slug: string): Promise<void> {
     if (slug === 'home' || slug === 'services' || slug === 'portfolio' || slug === 'contact' || slug === 'book') {
-      throw new BadRequestException(`The core system page '/${slug}' is protected and cannot be deleted.`);
+      throw new BadRequestException(API_MESSAGES.PAGE_PROTECTED(slug));
     }
 
     const candidateSlugs = this.resolveCandidateSlugs(slug);
@@ -2807,7 +2808,7 @@ export class CmsService implements OnModuleInit {
       },
     });
     if (!page) {
-      throw new NotFoundException(`Page '${slug}' not found`);
+      throw new NotFoundException(API_MESSAGES.PAGE_NOT_FOUND(slug));
     }
 
     await this.prisma.page.delete({

@@ -40,7 +40,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { notify } from '@/lib/notifications';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
@@ -64,6 +64,7 @@ interface CountryEditDialogProps {
   onClose: () => void;
   // form state lifted up
   formCountryName: string; setFormCountryName: (v: string) => void;
+  formFlag: string; setFormFlag: (v: string) => void;
   formSlug: string; setFormSlug: (v: string) => void;
   formCurrency: string; setFormCurrency: (v: string) => void;
   formTimezone: string; setFormTimezone: (v: string) => void;
@@ -81,6 +82,7 @@ interface CountryEditDialogProps {
 function CountryEditDialog({
   open, page, saving, onClose,
   formCountryName, setFormCountryName,
+  formFlag, setFormFlag,
   formSlug, setFormSlug,
   formCurrency, setFormCurrency,
   formTimezone, setFormTimezone,
@@ -94,7 +96,8 @@ function CountryEditDialog({
   formMetaDesc, setFormMetaDesc,
   onSave,
 }: CountryEditDialogProps) {
-  const flag = page ? getCountryMeta(page.slug, page.title).flag : '🌐';
+  const fallbackFlag = page ? getCountryMeta(page.slug, page.title).flag : '🌐';
+  const displayFlag = formFlag && formFlag !== '🌐' ? formFlag : fallbackFlag;
   const [autoMatchedNotice, setAutoMatchedNotice] = React.useState<string | null>(null);
 
   return (
@@ -104,7 +107,7 @@ function CountryEditDialog({
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl leading-none">
-              {flag}
+              {displayFlag}
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-slate-900">
@@ -128,8 +131,8 @@ function CountryEditDialog({
 
             {/* TAB 1: Hero & Copy */}
             <TabsContent value="hero" className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-6 space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700">Country Name</label>
                     {autoMatchedNotice && (
@@ -149,7 +152,10 @@ function CountryEditDialog({
                       if (matched) {
                         setFormCurrency(matched.currency);
                         setFormTimezone(matched.timezone);
-                        setAutoMatchedNotice(`Auto-set: ${matched.timezone} (${matched.currency})`);
+                        if (!formFlag || formFlag === '🌐') {
+                          setFormFlag(matched.flag);
+                        }
+                        setAutoMatchedNotice(`Auto-set: ${matched.flag} ${matched.timezone} (${matched.currency})`);
                       } else {
                         setAutoMatchedNotice(null);
                       }
@@ -165,7 +171,16 @@ function CountryEditDialog({
                     ))}
                   </datalist>
                 </div>
-                <div className="space-y-1">
+                <div className="col-span-2 space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Flag</label>
+                  <Input
+                    value={formFlag}
+                    onChange={(e) => setFormFlag(e.target.value)}
+                    placeholder="🇺🇸"
+                    className="h-9 rounded-xl text-xs text-center text-lg"
+                  />
+                </div>
+                <div className="col-span-4 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">URL Route Slug</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-xs font-mono text-slate-400">/</span>
@@ -368,6 +383,7 @@ export default function CountryPagesManagementPage() {
   const [savingSettings, setSavingSettings] = React.useState(false);
 
   const [formCountryName, setFormCountryName] = React.useState('');
+  const [formFlag, setFormFlag] = React.useState('🌐');
   const [formSlug, setFormSlug] = React.useState('');
   const [formCurrency, setFormCurrency] = React.useState('USD');
   const [formTimezone, setFormTimezone] = React.useState('America/New_York');
@@ -508,9 +524,9 @@ export default function CountryPagesManagementPage() {
         if (singleDeleteTarget.id) next.delete(singleDeleteTarget.id);
         return next;
       });
-      notify.success(`Country page for "${singleDeleteTarget.title}" deleted.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.COUNTRY_DELETED(singleDeleteTarget.title));
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to delete country page.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_DELETE_FAILED));
     } finally {
       setSingleDeleteTarget(null);
     }
@@ -522,9 +538,9 @@ export default function CountryPagesManagementPage() {
     try {
       await fetchApi(`/pages/${page.slug}`, { method: 'PUT', body: JSON.stringify({ status: nextStatus }) });
       setPages((prev) => prev.map((p) => (p.slug === page.slug ? { ...p, status: nextStatus as any } : p)));
-      notify.success(`Status updated to ${nextStatus === 'PUBLISHED' ? 'Published' : 'Draft'}.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.STATUS_UPDATED(nextStatus));
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to update status.'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_STATUS_FAILED));
     }
   };
 
@@ -542,6 +558,7 @@ export default function CountryPagesManagementPage() {
     const heroPayload = (heroSection?.contentPayload as Record<string, any>) || {};
 
     setFormCountryName(heroPayload.country?.name || meta.name);
+    setFormFlag(heroPayload.country?.flag || meta.flag || '🌐');
     setFormCurrency(heroPayload.country?.currency || meta.currency || 'USD');
     setFormTimezone(heroPayload.country?.timezone || meta.timezone || 'America/New_York');
     setFormSlug(fullPage.slug || '');
@@ -583,10 +600,12 @@ export default function CountryPagesManagementPage() {
         }),
       });
 
+      const resolvedEditFlag = (formFlag && formFlag !== '🌐' ? formFlag : getCountryMeta(formSlug.trim(), formCountryName.trim()).flag).trim();
       const ownHeroSection = editingPage.sections?.find((s) => s.componentType === 'HERO');
       const heroPayloadBase = {
         country: {
           name: formCountryName.trim(),
+          flag: resolvedEditFlag,
           currency: formCurrency.trim(),
           timezone: formTimezone.trim(),
           content: formContent.trim(),
@@ -609,6 +628,7 @@ export default function CountryPagesManagementPage() {
               country: {
                 ...curPayload.country,
                 name: formCountryName.trim(),
+                flag: resolvedEditFlag,
                 currency: formCurrency.trim(),
                 timezone: formTimezone.trim(),
                 content: formContent.trim(),
@@ -631,11 +651,11 @@ export default function CountryPagesManagementPage() {
         });
       }
 
-      notify.success(`Country page for "${formCountryName}" saved.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.COUNTRY_SAVED(formCountryName));
       setEditOpen(false);
       await loadData();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to save country page settings'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_SAVE_FAILED));
     } finally {
       setSavingSettings(false);
     }
@@ -643,9 +663,12 @@ export default function CountryPagesManagementPage() {
 
   // ── Create ──────────────────────────────────────────────────────────────────
   const handleCreateCountry = async () => {
-    if (!createCountryName.trim()) { notify.error('Country name is required.'); return; }
+    if (!createCountryName.trim()) { notify.error(ERROR_MESSAGES.PAGES.COUNTRY_NAME_REQUIRED); return; }
     const cleanSlug = (createSlug || createCountryName)
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const matchedLocale = findCountryLocale(createCountryName.trim()) || findCountryLocale(cleanSlug);
+    const resolvedFlag = (createFlag && createFlag !== '🌐' ? createFlag : (matchedLocale?.flag || '🌐')).trim();
+
     setCreating(true);
     try {
       const createdPage = await fetchApi<PageData>('/pages', {
@@ -668,10 +691,11 @@ export default function CountryPagesManagementPage() {
 
       const targetSlug = createdPage?.slug || cleanSlug;
 
-      // Initialize localized Hero section with country name, currency, timezone, content
+      // Initialize localized Hero section with country name, flag, currency, timezone, content
       const heroPayloadBase = {
         country: {
           name: createCountryName.trim(),
+          flag: resolvedFlag,
           currency: createCurrency.trim(),
           timezone: createTimezone.trim(),
           content: createContent.trim(),
@@ -716,10 +740,10 @@ export default function CountryPagesManagementPage() {
       setCreateCountryName(''); setCreateSlug(''); setCreateFlag('🌐');
       setCreateCurrency('USD'); setCreateTimezone('America/New_York');
       setCreateHeroTitle(''); setCreateHeroDescription(''); setCreateContent(''); setCreateHeroImage('');
-      notify.success(`Country page for "${createCountryName}" created with ${createCurrency} and ${createTimezone}.`);
+      notify.success(SUCCESS_MESSAGES.PAGES.COUNTRY_CREATED(createCountryName, createCurrency, createTimezone));
       await loadData();
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err, 'Failed to create country page'));
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PAGES.PAGE_CREATE_FAILED));
     } finally {
       setCreating(false);
     }
@@ -1106,6 +1130,7 @@ export default function CountryPagesManagementPage() {
         saving={savingSettings}
         onClose={() => setEditOpen(false)}
         formCountryName={formCountryName} setFormCountryName={setFormCountryName}
+        formFlag={formFlag} setFormFlag={setFormFlag}
         formSlug={formSlug} setFormSlug={setFormSlug}
         formCurrency={formCurrency} setFormCurrency={setFormCurrency}
         formTimezone={formTimezone} setFormTimezone={setFormTimezone}
@@ -1164,7 +1189,7 @@ export default function CountryPagesManagementPage() {
                       setCreateFlag(matched.flag);
                       setCreateCurrency(matched.currency);
                       setCreateTimezone(matched.timezone);
-                      setCreateAutoMatchedNotice(`Auto-set: ${matched.name} (${matched.timezone} · ${matched.currency})`);
+                      setCreateAutoMatchedNotice(`Auto-set: ${matched.flag} ${matched.name} (${matched.timezone} · ${matched.currency})`);
                     } else {
                       setCreateAutoMatchedNotice(null);
                     }

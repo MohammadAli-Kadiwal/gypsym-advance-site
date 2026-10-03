@@ -40,7 +40,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { notify } from '@/lib/notifications';
-import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
+import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { TablePagination } from '@/components/ui/table-pagination';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -385,9 +385,9 @@ export default function PartnersPage() {
 
       setPartners((prev) => [...prev, created].sort((a, b) => a.displayOrder - b.displayOrder));
       setCreateOpen(false);
-      notify.success(`Partner "${created.name}" created successfully.`);
+      notify.success(SUCCESS_MESSAGES.PARTNERS.CREATED(created.name));
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err) || 'Could not create partner. Please check inputs.');
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PARTNERS.CREATE_FAILED));
     } finally {
       setSaving(false);
     }
@@ -446,10 +446,10 @@ export default function PartnersPage() {
       );
 
       handleCloseEdit();
-      notify.success(`Partner "${partnerName}" updated successfully.`);
+      notify.success(SUCCESS_MESSAGES.PARTNERS.UPDATED(partnerName));
       loadPartners().catch(() => {});
     } catch (err: any) {
-      notify.error(normalizeErrorMessage(err) || 'Could not update partner.');
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PARTNERS.UPDATE_FAILED));
     } finally {
       setSaving(false);
     }
@@ -462,10 +462,10 @@ export default function PartnersPage() {
     try {
       await fetchApi(`/partners/${deleteTarget.id}`, { method: 'DELETE' });
       setPartners((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-      notify.success(`Partner "${deleteTarget.name}" deleted.`);
+      notify.success(SUCCESS_MESSAGES.PARTNERS.DELETED(deleteTarget.name));
       setDeleteTarget(null);
-    } catch {
-      notify.error('Could not delete partner.');
+    } catch (err: any) {
+      notify.error(normalizeErrorMessage(err, ERROR_MESSAGES.PARTNERS.DELETE_FAILED));
     } finally {
       setDeleting(false);
     }

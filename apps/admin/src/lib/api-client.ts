@@ -1,6 +1,7 @@
 import { api, ApiError, normalizeErrorMessage, getAuthToken } from './api';
+import { MESSAGES, ERROR_MESSAGES, WARNING_MESSAGES, SUCCESS_MESSAGES } from './messages';
 
-export { ApiError, normalizeErrorMessage, getAuthToken };
+export { ApiError, normalizeErrorMessage, getAuthToken, MESSAGES, ERROR_MESSAGES, WARNING_MESSAGES, SUCCESS_MESSAGES };
 
 /**
  * Backward-compatible fetchApi wrapper that routes all requests through

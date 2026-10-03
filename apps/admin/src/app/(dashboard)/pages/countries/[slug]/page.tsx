@@ -158,11 +158,13 @@ export default function CountryStudioPage() {
         (s) => s.componentType === 'HERO' && !s.id.startsWith('home-inherited-')
       );
       const curPayload = (existingHero?.contentPayload as Record<string, any>) || {};
+      const meta = getCountryMeta(targetSlug, pageTitle, curPayload);
       const updatedPayload = {
         ...curPayload,
         content: heroContent.trim() || undefined,
         country: {
           ...curPayload.country,
+          flag: curPayload.country?.flag || meta.flag || '🌐',
           content: heroContent.trim() || undefined,
           currency: heroCurrency,
           timezone: heroTimezone,
