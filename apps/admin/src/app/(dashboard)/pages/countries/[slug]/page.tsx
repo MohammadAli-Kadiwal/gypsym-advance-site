@@ -35,7 +35,9 @@ import type { PageData } from '../../_components/types';
 import {
   ALL_CURRENCIES,
   getCountryMeta,
+  type CountryMeta,
 } from '../../_components/country-locales';
+import { CountryFlag } from '../../_components/country-flag';
 import { TimezoneSearchSelect } from '../../_components/timezone-search-select';
 
 const EIGHT_SECTIONS_SPEC = [
@@ -77,6 +79,7 @@ export default function CountryStudioPage() {
   const [metaTitle, setMetaTitle] = React.useState('');
   const [metaDesc, setMetaDesc] = React.useState('');
   const [pageStatus, setPageStatus] = React.useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
+  const [countryMeta, setCountryMeta] = React.useState<CountryMeta | null>(null);
 
   const loadPageData = React.useCallback(async () => {
     if (!slug) return;
@@ -98,6 +101,7 @@ export default function CountryStudioPage() {
         );
         const p = (heroSection?.contentPayload as Record<string, any>) || {};
         const meta = getCountryMeta(data.slug || slug, data.title, p);
+        setCountryMeta(meta);
 
         let headlineStr = '';
         if (Array.isArray(p.headline?.segments) && p.headline.segments.length > 0) {
@@ -249,7 +253,14 @@ export default function CountryStudioPage() {
       <AdminPageHeader
         backHref="/pages/countries"
         backLabel="Country Pages"
-        title={pageTitle || slug}
+        title={
+          <div className="flex items-center gap-2">
+            {countryMeta && (
+              <CountryFlag code={countryMeta.isoCode} flag={countryMeta.flag} name={pageTitle || slug} size="md" />
+            )}
+            <span>{pageTitle || slug}</span>
+          </div>
+        }
         status={
           <Badge variant="outline" className="font-mono text-xs bg-primary/5 text-primary border-primary/20">
             /{slug}

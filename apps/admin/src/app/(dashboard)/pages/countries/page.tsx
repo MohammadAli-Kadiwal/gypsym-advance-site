@@ -52,7 +52,9 @@ import {
   COUNTRY_PRESETS,
   findCountryLocale,
   getCountryMeta,
+  getCountryCodeFromFlagEmoji,
 } from '../_components/country-locales';
+import { CountryFlag } from '../_components/country-flag';
 import { TimezoneSearchSelect } from '../_components/timezone-search-select';
 
 // ─── Edit/Create Dialog ───────────────────────────────────────────────────────
@@ -106,8 +108,8 @@ function CountryEditDialog({
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl leading-none">
-              {displayFlag}
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <CountryFlag code={getCountryCodeFromFlagEmoji(displayFlag)} flag={displayFlag} name={formCountryName} size="xl" />
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-slate-900">
@@ -173,12 +175,17 @@ function CountryEditDialog({
                 </div>
                 <div className="col-span-2 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">Flag</label>
-                  <Input
-                    value={formFlag}
-                    onChange={(e) => setFormFlag(e.target.value)}
-                    placeholder="🇺🇸"
-                    className="h-9 rounded-xl text-xs text-center text-lg"
-                  />
+                  <div className="relative flex items-center">
+                    <div className="absolute left-2.5 flex items-center pointer-events-none">
+                      <CountryFlag code={getCountryCodeFromFlagEmoji(formFlag)} flag={formFlag} size="sm" />
+                    </div>
+                    <Input
+                      value={formFlag}
+                      onChange={(e) => setFormFlag(e.target.value)}
+                      placeholder="🇺🇸"
+                      className="h-9 rounded-xl text-xs pl-8 font-medium"
+                    />
+                  </div>
                 </div>
                 <div className="col-span-4 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">URL Route Slug</label>
@@ -889,8 +896,8 @@ export default function CountryPagesManagementPage() {
                             />
                           </div>
                           <div>
-                            <div className="flex items-center gap-1.5 font-bold text-foreground">
-                              <span className="text-sm leading-none">{meta.flag}</span>
+                            <div className="flex items-center gap-2 font-bold text-foreground">
+                              <CountryFlag code={meta.isoCode} flag={meta.flag} name={meta.name} size="md" />
                               <span>{(page.title || '').replace(' | Gypsym Technology', '')}</span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1 max-w-[200px]">
@@ -1057,7 +1064,7 @@ export default function CountryPagesManagementPage() {
 
                   <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/90 backdrop-blur-md text-xs font-bold text-foreground shadow-xs">
-                      <span className="text-base leading-none">{meta.flag}</span>
+                      <CountryFlag code={meta.isoCode} flag={meta.flag} name={meta.name} size="sm" />
                       <span>{meta.name}</span>
                     </span>
                     <a href={liveUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-semibold text-white/90 hover:text-white bg-white/20 hover:bg-white/30 backdrop-blur-md px-2 py-0.5 rounded-lg transition-colors">
@@ -1150,8 +1157,8 @@ export default function CountryPagesManagementPage() {
         <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-slate-200 bg-white shadow-2xl p-0 flex flex-col overflow-hidden max-h-[90vh]">
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xl leading-none">
-                {createFlag}
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <CountryFlag code={getCountryCodeFromFlagEmoji(createFlag)} flag={createFlag} name={createCountryName} size="xl" />
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-slate-900">Create New Country Page</DialogTitle>
@@ -1207,7 +1214,17 @@ export default function CountryPagesManagementPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-700">Flag</label>
-                <Input value={createFlag} onChange={(e) => setCreateFlag(e.target.value)} placeholder="🇩🇪" className="h-9 rounded-xl text-xs text-center text-lg" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 flex items-center pointer-events-none">
+                    <CountryFlag code={getCountryCodeFromFlagEmoji(createFlag)} flag={createFlag} size="sm" />
+                  </div>
+                  <Input
+                    value={createFlag}
+                    onChange={(e) => setCreateFlag(e.target.value)}
+                    placeholder="🇩🇪"
+                    className="h-9 rounded-xl text-xs pl-8 font-medium"
+                  />
+                </div>
               </div>
             </div>
 

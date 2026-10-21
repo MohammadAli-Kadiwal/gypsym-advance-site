@@ -3,6 +3,7 @@
 export interface CountryMeta {
   name: string;
   flag: string;
+  isoCode?: string;
   currency: string;
   currencySymbol?: string;
   timezone: string;
@@ -260,6 +261,54 @@ export function getFlagEmojiFromCountryCode(code: string): string {
   );
 }
 
+/**
+ * Reverse extraction: extract standard 2-letter ISO 3166-1 alpha-2 code from a Flag Emoji
+ * e.g. "🇺🇸" -> "US", "🇮🇳" -> "IN", "🇰🇼" -> "KW", "🇩🇪" -> "DE"
+ */
+export function getCountryCodeFromFlagEmoji(flag: string): string {
+  if (!flag || typeof flag !== 'string') return '';
+  const codePoints = [...flag].map((c) => c.codePointAt(0) || 0);
+  const code0 = codePoints[0];
+  const code1 = codePoints[1];
+  if (
+    codePoints.length === 2 &&
+    code0 !== undefined && code0 >= 127462 && code0 <= 127487 &&
+    code1 !== undefined && code1 >= 127462 && code1 <= 127487
+  ) {
+    return String.fromCharCode(code0 - 127397, code1 - 127397);
+  }
+  return '';
+}
+
+/**
+ * Strips agency and marketing slug/title prefixes to cleanly isolate the country or territory name
+ * e.g. "shopify-agency-in-california" -> "california"
+ * e.g. "shopify-agency-in-newyork" -> "newyork"
+ * e.g. "Shopify Agency in California | Gypsym" -> "California"
+ */
+export function cleanLocationQuery(query: string): string {
+  if (!query || typeof query !== 'string') return '';
+  let str = query.trim().split('|')[0] || '';
+  // Title-style prefixes
+  str = str
+    .replace(/^shopify\s+(plus\s+)?agency\s+in\s+/i, '')
+    .replace(/^ecommerce\s+agency\s+in\s+/i, '')
+    .replace(/^web\s+design\s+in\s+/i, '')
+    .replace(/^agency\s+in\s+/i, '')
+    .replace(/^in\s+/i, '');
+  // Slug-style prefixes
+  str = str
+    .replace(/^shopify-plus-agency-in-/i, '')
+    .replace(/^shopify-agency-in-/i, '')
+    .replace(/^ecommerce-agency-in-/i, '')
+    .replace(/^web-design-in-/i, '')
+    .replace(/^agency-in-/i, '')
+    .replace(/^in-/i, '')
+    .replace(/-agency$/i, '')
+    .replace(/-shopify$/i, '');
+  return str.trim();
+}
+
 // Build reverse region name to ISO code mapping dynamically via Intl.DisplayNames
 const REGION_NAMES_TO_ISO: Record<string, string> = (() => {
   const map: Record<string, string> = {};
@@ -297,6 +346,93 @@ const REGION_NAMES_TO_ISO: Record<string, string> = (() => {
   }
   return map;
 })();
+
+/**
+ * Regional subdivisions, US states, provinces, and metros mapped to their sovereign nation
+ */
+export const REGIONAL_SUBDIVISIONS: Record<
+  string,
+  { country: string; flag: string; isoCode: string; currency: string; timezone: string; region: string }
+> = {
+  // US States & Metros -> United States (🇺🇸 / US)
+  california: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  'new-york': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  'new-york-state': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  newyork: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  nyc: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  texas: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  florida: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  illinois: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  chicago: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  washington: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  seattle: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  massachusetts: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  boston: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  'los-angeles': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  'san-francisco': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  miami: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  georgia: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  atlanta: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  pennsylvania: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  ohio: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  michigan: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Detroit', region: 'North America' },
+  'north-carolina': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  virginia: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  arizona: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Phoenix', region: 'North America' },
+  colorado: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Denver', region: 'North America' },
+  denver: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Denver', region: 'North America' },
+  'new-jersey': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  tennessee: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  indiana: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Indiana/Indianapolis', region: 'North America' },
+  missouri: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  maryland: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  wisconsin: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  minnesota: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  'south-carolina': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  alabama: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  louisiana: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  kentucky: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  oregon: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  oklahoma: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  connecticut: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/New_York', region: 'North America' },
+  utah: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Denver', region: 'North America' },
+  iowa: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+  nevada: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  'las-vegas': { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Los_Angeles', region: 'North America' },
+  austin: { country: 'United States', flag: '🇺🇸', isoCode: 'US', currency: 'USD', timezone: 'America/Chicago', region: 'North America' },
+
+  // Canada Provinces & Metros -> Canada (🇨🇦 / CA)
+  ontario: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Toronto', region: 'North America' },
+  quebec: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Montreal', region: 'North America' },
+  'british-columbia': { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Vancouver', region: 'North America' },
+  alberta: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Edmonton', region: 'North America' },
+  toronto: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Toronto', region: 'North America' },
+  vancouver: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Vancouver', region: 'North America' },
+  montreal: { country: 'Canada', flag: '🇨🇦', isoCode: 'CA', currency: 'CAD', timezone: 'America/Montreal', region: 'North America' },
+
+  // Australia States & Metros -> Australia (🇦🇺 / AU)
+  'new-south-wales': { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Sydney', region: 'Asia Pacific / Oceania' },
+  victoria: { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Melbourne', region: 'Asia Pacific / Oceania' },
+  queensland: { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Brisbane', region: 'Asia Pacific / Oceania' },
+  'western-australia': { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Perth', region: 'Asia Pacific / Oceania' },
+  sydney: { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Sydney', region: 'Asia Pacific / Oceania' },
+  melbourne: { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Melbourne', region: 'Asia Pacific / Oceania' },
+  brisbane: { country: 'Australia', flag: '🇦🇺', isoCode: 'AU', currency: 'AUD', timezone: 'Australia/Brisbane', region: 'Asia Pacific / Oceania' },
+
+  // UK Metros & Nations -> United Kingdom (🇬🇧 / GB)
+  england: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  scotland: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  wales: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  'northern-ireland': { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  london: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  manchester: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+  birmingham: { country: 'United Kingdom', flag: '🇬🇧', isoCode: 'GB', currency: 'GBP', timezone: 'Europe/London', region: 'Europe / UK' },
+
+  // UAE Emirates & Metros -> United Arab Emirates (🇦🇪 / AE)
+  dubai: { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  'abu-dhabi': { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  sharjah: { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+};
 
 /**
  * Common Aliases mapping to KNOWN_COUNTRIES keys or ISO codes
@@ -369,16 +505,31 @@ const COUNTRY_ALIASES: Record<string, string> = {
 
 /**
  * Searches and automatically detects matching country locale metadata (Timezone, Currency, Flag, Slug).
- * Supports fuzzy matching against country names, slugs, ISO codes, and common aliases.
+ * Supports fuzzy matching against country names, slugs, ISO codes, regional subdivisions, and common aliases.
  */
 export function findCountryLocale(query: string): CountryPresetItem | null {
   if (!query || typeof query !== 'string') return null;
-  const raw = query.trim().toLowerCase();
+
+  const cleaned = cleanLocationQuery(query);
+  const raw = (cleaned || query).trim().toLowerCase();
   if (!raw) return null;
 
   const normalized = raw.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-  // 1. Direct key match in KNOWN_COUNTRIES
+  // 1. Regional Subdivisions (e.g. California, New York State, Texas, Dubai, Ontario, Sydney)
+  const sub = REGIONAL_SUBDIVISIONS[normalized] || REGIONAL_SUBDIVISIONS[raw];
+  if (sub) {
+    return {
+      name: sub.country,
+      slug: sub.country.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      flag: sub.flag,
+      currency: sub.currency,
+      timezone: sub.timezone,
+      region: sub.region,
+    };
+  }
+
+  // 2. Direct key match in KNOWN_COUNTRIES
   if (KNOWN_COUNTRIES[normalized]) {
     const k = KNOWN_COUNTRIES[normalized];
     return {
@@ -391,7 +542,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     };
   }
 
-  // 2. Direct match in COUNTRY_ALIASES
+  // 3. Direct match in COUNTRY_ALIASES
   const aliasTarget = COUNTRY_ALIASES[raw] || COUNTRY_ALIASES[normalized];
   if (aliasTarget && KNOWN_COUNTRIES[aliasTarget]) {
     const k = KNOWN_COUNTRIES[aliasTarget];
@@ -405,7 +556,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     };
   }
 
-  // 3. Exact or prefix match against country name in COUNTRY_PRESETS
+  // 4. Exact or prefix match against country name in COUNTRY_PRESETS
   for (const item of COUNTRY_PRESETS) {
     const itemNorm = item.name.toLowerCase();
     if (itemNorm === raw || item.slug === normalized) {
@@ -413,7 +564,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     }
   }
 
-  // 4. Partial / word boundary match against preset countries
+  // 5. Partial / word boundary match against preset countries
   for (const item of COUNTRY_PRESETS) {
     const itemNorm = item.name.toLowerCase();
     if (itemNorm.startsWith(raw) || raw.startsWith(itemNorm)) {
@@ -421,7 +572,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     }
   }
 
-  // 5. Check if query matches an ISO 3166-1 alpha-2 code directly (e.g. "KW", "IN", "US")
+  // 6. Check if query matches an ISO 3166-1 alpha-2 code directly (e.g. "KW", "IN", "US")
   if (raw.length === 2 && /^[a-z]{2}$/.test(raw)) {
     const flag = getFlagEmojiFromCountryCode(raw);
     if (flag) {
@@ -442,7 +593,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     }
   }
 
-  // 6. Check Intl.DisplayNames reverse lookup (all 249 ISO regions)
+  // 7. Check Intl.DisplayNames reverse lookup (all 249 ISO regions)
   const isoFromRegion = REGION_NAMES_TO_ISO[raw] || REGION_NAMES_TO_ISO[normalized];
   if (isoFromRegion) {
     const flag = getFlagEmojiFromCountryCode(isoFromRegion);
@@ -466,39 +617,60 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
 }
 
 export function getCountryMeta(slug?: string, title?: string, heroPayload?: Record<string, any>): CountryMeta {
-  const normalizedSlug = (slug || '').toLowerCase().replace(/^\/+/, '');
-  const cleanTitle = (title || slug || 'Global Market').split('|')[0]?.trim() || 'Global Market';
-  const countryName = heroPayload?.country?.name || cleanTitle;
+  const cleanedSlug = cleanLocationQuery(slug || '');
+  const normalizedSlug = cleanedSlug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-  const known = KNOWN_COUNTRIES[normalizedSlug] || KNOWN_COUNTRIES[cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')];
-  const matchedLocale = findCountryLocale(countryName) || findCountryLocale(cleanTitle) || findCountryLocale(normalizedSlug);
+  const rawTitle = (title || slug || 'Global Market').split('|')[0]?.trim() || 'Global Market';
+  const cleanTitle = cleanLocationQuery(rawTitle) || rawTitle;
+  const countryName = heroPayload?.country?.name ? cleanLocationQuery(heroPayload.country.name) : cleanTitle;
+
+  const matchedLocale =
+    findCountryLocale(heroPayload?.country?.flag ? getCountryCodeFromFlagEmoji(heroPayload.country.flag) : '') ||
+    findCountryLocale(countryName) ||
+    findCountryLocale(cleanTitle) ||
+    findCountryLocale(normalizedSlug) ||
+    findCountryLocale(slug || '');
 
   // 1. Explicit flag in heroPayload
   let flag = heroPayload?.country?.flag;
-  if (!flag || flag === '🌐' || flag.trim() === '') {
-    // 2. Matched locale or known country flag
-    flag = matchedLocale?.flag || known?.flag;
+  let isoCode = '';
+  if (flag && flag !== '🌐' && flag.trim() !== '') {
+    isoCode = getCountryCodeFromFlagEmoji(flag);
   }
-  // 3. Fallback: check 2-letter ISO code in slug
+
+  if (!flag || flag === '🌐' || flag.trim() === '') {
+    flag = matchedLocale?.flag;
+    isoCode = matchedLocale ? getCountryCodeFromFlagEmoji(matchedLocale.flag) || (matchedLocale.slug.length === 2 ? matchedLocale.slug.toUpperCase() : '') : '';
+  }
+
+  // Fallback 2-letter ISO code from slug
   if ((!flag || flag === '🌐' || flag.trim() === '') && /^[a-z]{2}$/i.test(normalizedSlug)) {
     const isoFlag = getFlagEmojiFromCountryCode(normalizedSlug);
-    if (isoFlag) flag = isoFlag;
+    if (isoFlag) {
+      flag = isoFlag;
+      isoCode = normalizedSlug.toUpperCase();
+    }
   }
-  // 4. Default fallback
+
   if (!flag || flag.trim() === '') {
     flag = '🌐';
   }
+  if (!isoCode && flag && flag !== '🌐') {
+    isoCode = getCountryCodeFromFlagEmoji(flag);
+  }
 
-  const currency = heroPayload?.country?.currency || known?.currency || matchedLocale?.currency || 'USD';
-  const timezone = heroPayload?.country?.timezone || known?.timezone || matchedLocale?.timezone || 'America/New_York';
-  const region = known?.region || matchedLocale?.region || 'International';
+  const currency = heroPayload?.country?.currency || matchedLocale?.currency || 'USD';
+  const timezone = heroPayload?.country?.timezone || matchedLocale?.timezone || 'America/New_York';
+  const region = matchedLocale?.region || 'International';
 
   return {
-    name: cleanTitle,
+    name: cleanTitle || matchedLocale?.name || 'Global Market',
     flag,
+    isoCode,
     currency,
     timezone,
     region,
   };
 }
+
 
