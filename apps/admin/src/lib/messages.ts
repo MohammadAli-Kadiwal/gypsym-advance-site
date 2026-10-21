@@ -51,6 +51,7 @@ export const ERROR_MESSAGES = {
     CATEGORY_CREATE_FAILED: 'Failed to create category.',
     CATEGORY_SAVE_FAILED: 'Failed to save blog category.',
     CATEGORY_DELETE_FAILED: 'Failed to delete category.',
+    BULK_CATEGORY_DELETE_FAILED: 'Failed to delete selected categories.',
     CATEGORY_LOAD_FAILED: 'Failed to load blog categories.',
     CATEGORY_HAS_ARTICLES: (name: string, count: number) =>
       `Cannot delete "${name}" because it has ${count} assigned article(s). Please reassign them first.`,
@@ -124,6 +125,7 @@ export const SUCCESS_MESSAGES = {
     CATEGORY_CREATED: (name: string) => `Category "${name}" created successfully.`,
     CATEGORY_SAVED: (name: string) => `Category "${name}" updated successfully.`,
     CATEGORY_DELETED: (name: string) => `Category "${name}" deleted.`,
+    BULK_CATEGORIES_DELETED: (count: number) => `Successfully deleted ${count} categories.`,
     POST_CREATED: (title: string) => `Post "${title}" created successfully.`,
     POST_SAVED: (title: string) => `Post "${title}" updated successfully.`,
     POST_DELETED: 'Post deleted successfully.',

@@ -299,7 +299,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         id: 'content-blog-categories',
         title: 'Blog Categories Taxonomy',
         subtitle: 'Manage dynamic blog categories, topics, and route slugs',
-        path: '/editorial/categories',
+        path: '/editorial/blog?tab=categories',
         category: 'Content',
         icon: Tags,
         keywords: 'categories taxonomy topics tags blog editorial',

@@ -45,6 +45,8 @@ import { AdminContentContainer, AdminPageHeader, AdminLoadingState } from '@/com
 import { TablePagination } from '@/components/ui/table-pagination';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { getSiteUrl } from '@/lib/site-url';
+import { cn } from '@/lib/utils';
+import { BlogCategoriesTab } from '../_components/blog-categories-tab';
 
 interface BlogPostRecord {
   id: string;
@@ -88,6 +90,27 @@ export default function EditorialBlogAdminPage() {
   const [selectedStatus, setSelectedStatus] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
+
+  // Unified Tab Management (Blog Posts vs Categories, identical to Portfolio)
+  const [activeTab, setActiveTab] = React.useState<'posts' | 'categories'>('posts');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'categories') {
+        setActiveTab('categories');
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: 'posts' | 'categories') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   // Modal State
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -460,11 +483,64 @@ export default function EditorialBlogAdminPage() {
     return { total, published, drafts, totalViews };
   }, [posts]);
 
+  const editorialTabs = (
+    <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-xl w-fit">
+      <button
+        type="button"
+        onClick={() => handleTabChange('posts')}
+        className={cn(
+          'inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+          activeTab === 'posts'
+            ? 'bg-card text-foreground shadow-xs'
+            : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+        )}
+      >
+        <BookOpen className="w-3.5 h-3.5" />
+        <span>Blog Posts</span>
+        <span
+          className={cn(
+            'text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold',
+            activeTab === 'posts' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {posts.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleTabChange('categories')}
+        className={cn(
+          'inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+          activeTab === 'categories'
+            ? 'bg-card text-foreground shadow-xs'
+            : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+        )}
+      >
+        <Tags className="w-3.5 h-3.5" />
+        <span>Categories</span>
+        <span
+          className={cn(
+            'text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold',
+            activeTab === 'categories' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {categories.length}
+        </span>
+      </button>
+    </div>
+  );
+
   return (
     <AdminContentContainer variant="wide">
       <AdminPageHeader
-        title="Technical Blog & Articles"
-        description="Manage high-impact engineering publications, cloud architecture deep-dives, and technical leadership content."
+        title={activeTab === 'posts' ? 'Technical Blog & Articles' : 'Blog Categories & Taxonomies'}
+        description={
+          activeTab === 'posts'
+            ? 'Manage high-impact engineering publications, cloud architecture deep-dives, and technical leadership content.'
+            : 'Manage domain categories, classification taxonomies, and public topic hubs for all blog publications.'
+        }
+        tabs={editorialTabs}
         status={
           <div className="flex items-center gap-1.5 text-xs font-mono tracking-wider text-primary uppercase">
             <Sparkles className="w-3.5 h-3.5" />
@@ -496,29 +572,22 @@ export default function EditorialBlogAdminPage() {
               </Link>
             </Button>
 
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="gap-2 cursor-pointer"
-            >
-              <Link href="/editorial/categories">
-                <Tags className="w-3.5 h-3.5 text-primary" />
-                <span>Categories</span>
-              </Link>
-            </Button>
-
-            <Button
-              onClick={handleOpenCreate}
-              size="sm"
-              className="gap-2 shadow-xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New Article</span>
-            </Button>
+            {activeTab === 'posts' && (
+              <Button
+                onClick={handleOpenCreate}
+                size="sm"
+                className="gap-2 shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Article</span>
+              </Button>
+            )}
           </div>
         }
       />
+
+      {activeTab === 'posts' ? (
+        <>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -857,6 +926,14 @@ export default function EditorialBlogAdminPage() {
           />
         )}
       </div>
+      </>
+    ) : (
+      <BlogCategoriesTab
+        categories={categories as any}
+        isLoading={isLoading}
+        onRefresh={loadData}
+      />
+    )}
 
       {/* Create / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

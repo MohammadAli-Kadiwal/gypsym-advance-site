@@ -269,6 +269,7 @@ export class PortfolioService {
         metrics: p.metrics,
         displayOrder: p.displayOrder,
         status: p.status,
+        projectDate: p.createdAt,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       })),
@@ -310,6 +311,7 @@ export class PortfolioService {
       metrics: p.metrics,
       displayOrder: p.displayOrder,
       status: p.status,
+      projectDate: p.createdAt,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
@@ -369,6 +371,8 @@ export class PortfolioService {
     metrics?: string;
     displayOrder?: number;
     status?: ContentStatusType;
+    projectDate?: string;
+    createdAt?: string | Date;
   }) {
     if (!data.title || !data.title.trim()) {
       throw new BadRequestException('Project title is required.');
@@ -398,6 +402,12 @@ export class PortfolioService {
       displayOrder = (last?.displayOrder ?? 0) + 1;
     }
 
+    const createdDate = data.projectDate
+      ? new Date(data.projectDate)
+      : data.createdAt
+      ? new Date(data.createdAt)
+      : undefined;
+
     return this.prisma.portfolioProjectItem.create({
       data: {
         orderNumber: data.orderNumber?.trim() || null,
@@ -413,6 +423,7 @@ export class PortfolioService {
         metrics: data.metrics?.trim() || null,
         displayOrder,
         status: (data.status as any) || 'PUBLISHED',
+        ...(createdDate && { createdAt: createdDate }),
       },
       include: {
         category: true,
@@ -436,6 +447,8 @@ export class PortfolioService {
       metrics?: string;
       displayOrder?: number;
       status?: ContentStatusType;
+      projectDate?: string;
+      createdAt?: string | Date;
     },
   ) {
     const existing = await this.prisma.portfolioProjectItem.findUnique({
@@ -461,6 +474,12 @@ export class PortfolioService {
       finalSlug = slugCandidate;
     }
 
+    const updatedDate = data.projectDate
+      ? new Date(data.projectDate)
+      : data.createdAt
+      ? new Date(data.createdAt)
+      : undefined;
+
     return this.prisma.portfolioProjectItem.update({
       where: { id },
       data: {
@@ -477,6 +496,7 @@ export class PortfolioService {
         ...(data.metrics !== undefined && { metrics: data.metrics?.trim() || null }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.status !== undefined && { status: data.status as any }),
+        ...(updatedDate && { createdAt: updatedDate }),
       },
       include: {
         category: true,

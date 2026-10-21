@@ -259,12 +259,33 @@ export default function EditorialCategoriesAdminPage() {
     return { totalCategories, activeWithPosts, totalClassifiedPosts, avgPosts };
   }, [categories]);
 
+  const editorialTabs = (
+    <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-xl w-fit">
+      <Link
+        href="/editorial/blog"
+        className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-foreground hover:bg-card/50"
+      >
+        <BookOpen className="w-3.5 h-3.5" />
+        <span>Blog Posts</span>
+      </Link>
+
+      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-card text-foreground shadow-xs">
+        <Tags className="w-3.5 h-3.5" />
+        <span>Categories</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-primary/10 text-primary">
+          {categories.length}
+        </span>
+      </div>
+    </div>
+  );
+
   return (
     <AdminContentContainer>
       {/* Header */}
       <AdminPageHeader
         title="Blog Categories Taxonomy"
         description="Dynamically manage publication topics, engineering domains, and route slugs classifying technical publications."
+        tabs={editorialTabs}
         actions={
           <div className="flex items-center gap-2">
             <Button

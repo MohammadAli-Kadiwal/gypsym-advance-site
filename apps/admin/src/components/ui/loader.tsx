@@ -33,7 +33,7 @@ const sizeClasses: Record<LoaderSize, { ring: string; icon: string; wrapper: str
     ring: 'h-20 w-20 border-[3px]',
     icon: 'h-11 w-11',
   },
-};
+}; 33
 
 /**
  * Standardized Unified Brand Spinner

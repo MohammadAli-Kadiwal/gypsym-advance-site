@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Megaphone,
   SlidersHorizontal,
+  Calendar,
 } from 'lucide-react';
 import { DataTable, ColumnDef } from '@/components/crud/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   Card,
   CardHeader,
@@ -58,6 +60,7 @@ export interface PortfolioProjectRecord extends BaseRecord {
   tags?: string[];
   metrics?: string;
   displayOrder?: number;
+  projectDate?: string;
 }
 
 export interface PortfolioCategoryRecord extends BaseRecord {
@@ -74,6 +77,7 @@ interface ProjectFormState {
   slug: string;
   client: string;
   categoryId: string;
+  projectDate: string;
   metrics: string;
   projectUrl: string;
   imageUrl: string;
@@ -88,6 +92,7 @@ const EMPTY_PROJECT_FORM: ProjectFormState = {
   slug: '',
   client: '',
   categoryId: '',
+  projectDate: (new Date().toISOString().split('T')[0]) ?? '',
   metrics: '',
   projectUrl: '',
   imageUrl: '',
@@ -126,12 +131,19 @@ interface ProjectDialogProps {
 
 function getInitialProjectForm(initial?: PortfolioProjectRecord | null): ProjectFormState {
   if (!initial) return EMPTY_PROJECT_FORM;
+  const initialDate = (initial.projectDate
+    ? String(initial.projectDate).split('T')[0]
+    : initial.createdAt
+    ? String(initial.createdAt).split('T')[0]
+    : new Date().toISOString().split('T')[0]) ?? '';
+
   return {
     orderNumber: initial.orderNumber || '',
     title: initial.title || '',
     slug: initial.slug || '',
     client: initial.client || '',
     categoryId: initial.categoryId || '',
+    projectDate: initialDate,
     metrics: initial.metrics || '',
     projectUrl: initial.projectUrl || '',
     imageUrl: initial.imageUrl || '',
@@ -262,6 +274,7 @@ function ProjectDialog({
       slug: form.slug.trim() || undefined,
       client: form.client.trim() || undefined,
       categoryId: form.categoryId || null,
+      projectDate: form.projectDate || undefined,
       metrics: form.metrics.trim() || undefined,
       projectUrl: form.projectUrl.trim() || undefined,
       imageUrl: form.imageUrl.trim(),
@@ -273,7 +286,7 @@ function ProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] rounded-2xl border-slate-200 bg-white shadow-2xl p-0 flex flex-col overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[92vh] rounded-2xl border-slate-200 bg-white shadow-2xl p-0 flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center space-x-3">
@@ -350,21 +363,37 @@ function ProjectDialog({
             </div>
           </div>
 
-          {/* Section 3: Category */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">Category</label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => patch('categoryId', e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Uncategorized</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+          {/* Section 3: Category & Project Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Category</label>
+              <select
+                value={form.categoryId}
+                onChange={(e) => patch('categoryId', e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Uncategorized</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
+                <span>Date of Project</span>
+                <span className="text-slate-400 font-normal text-[11px]">(Launch / Completion)</span>
+              </label>
+              <Input
+                type="date"
+                value={form.projectDate}
+                onChange={(e) => patch('projectDate', e.target.value)}
+                className="text-xs font-mono"
+              />
+            </div>
           </div>
 
           {/* Publication Status: Draft vs Public */}
@@ -570,15 +599,19 @@ function ProjectDialog({
             />
           </div>
 
-          {/* Section 7: Description */}
+          {/* Section 7: Description / Summary with RichTextEditor */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">Project Summary</label>
-            <Textarea
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700">Project Summary</label>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                Rich text markdown, media links, lists, code, and live preview
+              </span>
+            </div>
+            <RichTextEditor
               value={form.description}
-              onChange={(e) => patch('description', e.target.value)}
-              placeholder="Ultra-low-latency distributed clearing architectures, ledger networks, and transaction engines..."
-              rows={3}
-              className="text-xs leading-relaxed"
+              onChange={(content) => patch('description', content)}
+              placeholder="Write detailed project summary, technical architecture, and impact highlights in rich markdown..."
+              minHeight="260px"
             />
           </div>
 
@@ -1080,6 +1113,20 @@ export default function PortfolioAdminPage() {
           {item.category || 'Uncategorized'}
         </Badge>
       ),
+    },
+    {
+      key: 'projectDate',
+      header: 'Project Date',
+      sortable: true,
+      render: (item) => {
+        const d = item.projectDate || item.createdAt;
+        return (
+          <span className="font-mono text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1.5">
+            <Calendar className="w-3 h-3 text-primary/70 shrink-0" />
+            <span>{d ? formatDate(d) : '—'}</span>
+          </span>
+        );
+      },
     },
     {
       key: 'metrics',

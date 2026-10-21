@@ -30,7 +30,6 @@ import {
   Globe,
   UserCheck,
   Calculator,
-  Tags,
 } from 'lucide-react';
 import { useAuth, RoleType } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
@@ -91,11 +90,6 @@ export function Sidebar() {
           label: 'Blog Posts',
           href: '/editorial/blog',
           icon: BookOpen,
-        },
-        {
-          label: 'Blog Categories',
-          href: '/editorial/categories',
-          icon: Tags,
         },
         {
           label: 'Author Profile',
