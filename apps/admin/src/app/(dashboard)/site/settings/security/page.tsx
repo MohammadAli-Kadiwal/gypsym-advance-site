@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { authService } from '@/services/auth.service';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 interface SecuritySettings {
   maxFailedAttempts: number;
@@ -121,6 +121,16 @@ export default function SecuritySettingsPage() {
       setUnblockingIp(null);
     }
   };
+
+  if (loading) {
+    return (
+      <AdminPageLoadingState
+        title="Security & Login Protection"
+        message="Loading password lockout rules, IP restriction registries, and session controls..."
+        description="Syncing state with Gypsym platform services..."
+      />
+    );
+  }
 
   return (
     <AdminContentContainer variant="standard" className="space-y-6 pb-24">

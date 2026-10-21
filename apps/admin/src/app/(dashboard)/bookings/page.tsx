@@ -27,7 +27,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminTableLoader } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { ExecutiveBriefingDossier, type BriefingData } from '@/components/briefing/executive-briefing-dossier';
 
@@ -341,12 +341,11 @@ export default function BookingsManagementPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
-                    <span>Loading bookings...</span>
-                  </td>
-                </tr>
+                <AdminTableLoader
+                  colSpan={8}
+                  title="Loading discovery bookings..."
+                  message="Synchronizing scheduled calendar sessions with platform database..."
+                />
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">

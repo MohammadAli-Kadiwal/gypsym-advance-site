@@ -29,6 +29,7 @@ import { notify } from '@/lib/notifications';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { Linkedin, Twitter, Github } from 'lucide-react';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { AdminPageLoadingState } from '@/components/layout/admin-page';
 
 interface TeamRecord extends BaseRecord {
   avatar?: string;
@@ -768,10 +769,12 @@ export default function TeamAdminPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 p-6">
-        <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
-      </div>
+      <AdminPageLoadingState
+        title="Team & Leadership Profiles"
+        message="Loading executive roster, principal architects, and engineering leads..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

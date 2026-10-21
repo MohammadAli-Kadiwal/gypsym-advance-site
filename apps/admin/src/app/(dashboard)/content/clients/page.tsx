@@ -18,6 +18,7 @@ import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { AdminPageLoadingState } from '@/components/layout/admin-page';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface ClientRecord extends BaseRecord {
@@ -620,10 +621,12 @@ export default function ClientsPage() {
 
   if (!mounted) {
     return (
-      <div className="w-full py-6 space-y-4">
-        <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
-      </div>
+      <AdminPageLoadingState
+        title="Clients"
+        message="Loading client logos, marquee strips, and enterprise references..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

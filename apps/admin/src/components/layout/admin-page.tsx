@@ -278,27 +278,15 @@ export function AdminErrorState({
   );
 }
 
-interface AdminLoadingStateProps {
-  message?: string;
-  className?: string;
-}
-
-/**
- * Standardized Loading State
- */
-export function AdminLoadingState({
-  message = 'Loading data...',
-  className,
-}: AdminLoadingStateProps) {
-  return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center p-12 text-center rounded-xl border border-border bg-card/50',
-        className
-      )}
-    >
-      <div className="h-7 w-7 rounded-full border-2 border-primary border-t-transparent animate-spin mb-3" />
-      <span className="text-xs font-medium text-muted-foreground">{message}</span>
-    </div>
-  );
-}
+// ── Standardized Common Loaders ──
+export {
+  LoaderSpinner,
+  AdminLoadingState,
+  AdminPageLoadingState,
+  AdminTableLoader,
+  AdminFullscreenLoader,
+  type AdminLoadingStateProps,
+  type AdminPageLoadingStateProps,
+  type AdminTableLoaderProps,
+  type LoaderSize,
+} from '@/components/ui/loader';

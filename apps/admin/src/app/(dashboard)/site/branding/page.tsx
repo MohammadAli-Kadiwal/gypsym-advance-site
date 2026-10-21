@@ -21,7 +21,7 @@ import {
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 function isValidHexOrHsl(val: string): boolean {
   if (!val) return false;
@@ -38,6 +38,7 @@ function isValidHexOrHsl(val: string): boolean {
 export default function BrandingStudioPage() {
   const [branding, setBranding] = React.useState(INITIAL_BRANDING);
   const [previewTheme, setPreviewTheme] = React.useState<'dark' | 'light'>('light');
+  const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
 
   // Sync with API & localStorage on mount
@@ -68,6 +69,8 @@ export default function BrandingStudioPage() {
         } catch {
           // Ignore storage errors
         }
+      } finally {
+        setLoading(false);
       }
     }
     load();
@@ -160,6 +163,16 @@ export default function BrandingStudioPage() {
   const activeTextColor = previewTheme === 'dark' ? '#f8fafc' : '#0f172a';
   const activeMutedColor = previewTheme === 'dark' ? '#94a3b8' : '#64748b';
   const activeBorderColor = previewTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+
+  if (loading) {
+    return (
+      <AdminPageLoadingState
+        title="Branding & Visual Identity"
+        message="Loading brand assets, logo tokens, and theme palettes..."
+        description="Syncing state with Gypsym platform services..."
+      />
+    );
+  }
 
   return (
     <AdminContentContainer variant="standard">

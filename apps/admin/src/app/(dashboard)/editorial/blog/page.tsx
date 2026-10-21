@@ -41,7 +41,7 @@ import {
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminLoadingState } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { getSiteUrl } from '@/lib/site-url';
@@ -637,10 +637,11 @@ export default function EditorialBlogAdminPage() {
       {/* Main Data Table */}
       <div className="bg-card rounded-xl border border-border shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-16 flex flex-col items-center justify-center text-center">
-            <RefreshCw className="w-8 h-8 text-primary animate-spin mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">Loading publications from database...</p>
-          </div>
+          <AdminLoadingState
+            title="Loading Technical Publications"
+            message="Fetching articles, author attributions, and category taxonomy..."
+            className="border-0 shadow-none bg-transparent py-20"
+          />
         ) : filteredPosts.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-3">

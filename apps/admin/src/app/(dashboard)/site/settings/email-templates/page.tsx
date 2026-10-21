@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 import { getSiteUrl, getAdminUrl } from '@/lib/site-url';
 import {
   FileCode,
@@ -232,14 +232,12 @@ export default function EmailTemplatesPage() {
 
   if (loading && Object.keys(templates).length === 0) {
     return (
-      <AdminContentContainer variant="wide" className="space-y-6 pb-24">
-        <div className="flex items-center justify-center min-h-[450px]">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <span className="text-xs font-medium">Loading Email Templates Studio...</span>
-          </div>
-        </div>
-      </AdminContentContainer>
+      <AdminPageLoadingState
+        title="Email Templates Studio"
+        message="Loading transactional templates, liquid markup variables, and previews..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

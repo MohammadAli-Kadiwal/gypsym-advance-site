@@ -808,6 +808,7 @@ export default function PortfolioAdminPage() {
   // Data states
   const [projects, setProjects] = React.useState<PortfolioProjectRecord[]>([]);
   const [categories, setCategories] = React.useState<PortfolioCategoryRecord[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [portfolioSection, setPortfolioSection] = React.useState<{ id: string; contentPayload: Record<string, any> } | null>(null);
   const [settingsSaving, setSettingsSaving] = React.useState(false);
 
@@ -822,6 +823,7 @@ export default function PortfolioAdminPage() {
 
   // Fetch data
   const loadData = React.useCallback(async () => {
+    setLoading(true);
     try {
       const [projData, catData, pageRes] = await Promise.all([
         fetchApi<PortfolioProjectRecord[]>('/portfolio/admin/projects'),
@@ -846,6 +848,8 @@ export default function PortfolioAdminPage() {
       }
     } catch (err) {
       notify.error(normalizeErrorMessage(err, 'Unable to load portfolio data.'));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -1222,6 +1226,7 @@ export default function PortfolioAdminPage() {
             title="Portfolio & Case Studies"
             description="Manage the enterprise production case studies and showcase projects displayed on the /portfolio page."
             data={projects}
+            loading={loading}
             columns={projectColumns}
             searchKeys={['title', 'client', 'category', 'metrics']}
             requiredPermission="content:write"
@@ -1269,6 +1274,7 @@ export default function PortfolioAdminPage() {
             title="Portfolio & Case Studies"
             description="Manage domain categories for organizing portfolio projects. Categories appear in display order in the filter on /portfolio."
             data={categories}
+            loading={loading}
             columns={categoryColumns}
             searchKeys={['name', 'slug', 'description']}
             requiredPermission="content:write"

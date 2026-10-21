@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { notify } from '@/lib/notifications';
 import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
-import { AdminContentContainer } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageLoadingState } from '@/components/layout/admin-page';
 import { PagesTable } from './_components/pages-table';
 import type { PageData } from './_components/types';
 
@@ -59,14 +59,14 @@ export default function PagesManagementPage() {
     }
   };
 
-  if (!mounted) {
+  if (!mounted || (loading && allPages.length === 0)) {
     return (
-      <AdminContentContainer variant="wide">
-        <div className="w-full py-6 space-y-4">
-          <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
-          <div className="h-32 bg-card rounded-2xl border border-border animate-pulse" />
-        </div>
-      </AdminContentContainer>
+      <AdminPageLoadingState
+        title="Pages CMS"
+        message="Loading website pages, published route states, and layouts..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

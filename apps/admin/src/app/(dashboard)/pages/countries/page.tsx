@@ -41,7 +41,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { notify } from '@/lib/notifications';
 import { fetchApi, normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminLoadingState } from '@/components/layout/admin-page';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import { getSiteUrl } from '@/lib/site-url';
@@ -825,10 +825,11 @@ export default function CountryPagesManagementPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="text-xs">Loading country pages…</span>
-        </div>
+        <AdminLoadingState
+          title="Loading Country Landing Pages"
+          message="Fetching localized markets, currencies, and SEO records..."
+          className="border-0 shadow-none bg-transparent py-16"
+        />
       ) : filteredPages.length === 0 ? (
         <Card className="p-12 text-center rounded-2xl border-dashed border-border">
           <Globe className="h-8 w-8 text-muted-foreground mx-auto mb-2" />

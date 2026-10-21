@@ -16,7 +16,13 @@ function copyRecursive(src, dest) {
   if (stat.isDirectory()) {
     fs.mkdirSync(dest, { recursive: true });
     for (const file of fs.readdirSync(src)) {
-      if (file === 'node_modules' || file === '.git' || file === '.DS_Store') continue;
+      if (
+        file === 'node_modules' ||
+        file === '.git' ||
+        file === '.DS_Store' ||
+        file === 'cache' ||
+        file === '.turbo'
+      ) continue;
       copyRecursive(path.join(src, file), path.join(dest, file));
     }
   } else {
@@ -31,29 +37,32 @@ async function main() {
   console.log('======================================================\n');
 
   // 1. Build projects if needed
-  log('1/5 Building monorepo packages and applications...');
-  try {
-    execSync('pnpm turbo run build', { cwd: ROOT_DIR, stdio: 'inherit' });
-  } catch (err) {
-    log('⚠️  Turbo build encountered an error, verifying compiled assets...');
-  }
-
-  // Verify compiled outputs exist
+  log('1/5 Verifying and building monorepo packages and applications...');
   const apiDist = path.join(ROOT_DIR, 'apps/api/dist');
   const webNext = path.join(ROOT_DIR, 'apps/web/.next');
   const adminNext = path.join(ROOT_DIR, 'apps/admin/.next');
 
-  if (!fs.existsSync(apiDist)) {
-    log('Building API explicitly...');
-    execSync('pnpm --filter api build', { cwd: ROOT_DIR, stdio: 'inherit' });
-  }
-  if (!fs.existsSync(webNext)) {
-    log('Building Web explicitly...');
-    execSync('pnpm --filter web build', { cwd: ROOT_DIR, stdio: 'inherit' });
-  }
-  if (!fs.existsSync(adminNext)) {
-    log('Building Admin explicitly...');
-    execSync('pnpm --filter admin build', { cwd: ROOT_DIR, stdio: 'inherit' });
+  if (fs.existsSync(apiDist) && fs.existsSync(webNext) && fs.existsSync(adminNext)) {
+    log('✓ All compiled assets found (API dist, Web .next, Admin .next).');
+  } else {
+    try {
+      execSync('pnpm turbo run build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    } catch (err) {
+      log('⚠️  Turbo build encountered an error, verifying compiled assets individually...');
+    }
+
+    if (!fs.existsSync(apiDist)) {
+      log('Building API explicitly...');
+      execSync('pnpm --filter api build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    }
+    if (!fs.existsSync(webNext)) {
+      log('Building Web explicitly...');
+      execSync('pnpm --filter web build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    }
+    if (!fs.existsSync(adminNext)) {
+      log('Building Admin explicitly...');
+      execSync('pnpm --filter admin build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    }
   }
 
   // 2. Clean previous staging & zip

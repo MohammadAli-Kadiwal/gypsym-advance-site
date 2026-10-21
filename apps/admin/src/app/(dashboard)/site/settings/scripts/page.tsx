@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { settingsService } from '@/services/settings.service';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 interface ScriptSettings {
   googleAnalytics: {
@@ -141,6 +141,16 @@ export default function AnalyticsScriptsSettingsPage() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <AdminPageLoadingState
+        title="Analytics & Custom Scripts"
+        message="Loading tracking configurations, tags, and custom script integrations..."
+        description="Syncing state with Gypsym platform services..."
+      />
+    );
+  }
 
   return (
     <AdminContentContainer variant="standard" className="space-y-6 pb-24">

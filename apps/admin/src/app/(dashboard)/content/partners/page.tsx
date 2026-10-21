@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import {
@@ -593,10 +593,12 @@ export default function PartnersPage() {
   // ── SSR Guard ──────────────────────────────────────────────────────────────
   if (!mounted) {
     return (
-      <div className="w-full py-6 space-y-4">
-        <div className="h-8 w-48 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-32 bg-white rounded-2xl border border-slate-200/80 animate-pulse" />
-      </div>
+      <AdminPageLoadingState
+        title="Partners & Alliances"
+        message="Loading strategic technology alliances and enterprise integrations..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

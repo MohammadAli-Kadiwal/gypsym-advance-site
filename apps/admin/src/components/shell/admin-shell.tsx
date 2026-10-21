@@ -10,11 +10,21 @@ import { SidebarProvider } from '@/lib/sidebar-context';
 import { BrandingProvider } from '@/lib/branding-context';
 import { SystemNotificationsProvider } from '@/lib/system-notifications-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AdminFullscreenLoader } from '@/components/ui/loader';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  React.useEffect(() => {
+    document.documentElement.classList.add('overflow-hidden');
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.documentElement.classList.remove('overflow-hidden');
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated && pathname !== '/login') {
@@ -23,14 +33,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, isLoading, pathname, router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span className="text-xs font-semibold text-muted-foreground">Securing cluster session...</span>
-        </div>
-      </div>
-    );
+    return <AdminFullscreenLoader message="Securing enterprise cluster session..." badge="GYPSYM OS" />;
   }
 
   if (!isAuthenticated && pathname !== '/login') {
@@ -45,14 +48,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <TooltipProvider delayDuration={150}>
               {/* Toast renders at root level — outside overflow-hidden so fixed positioning works correctly */}
               <ToastContainer />
-              <div className="flex h-screen overflow-hidden bg-background text-foreground antialiased">
+              <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-background text-foreground antialiased">
                 {/* Desktop and Mobile-Drawer Sidebar */}
                 <Sidebar />
 
                 {/* Main Content Area */}
-                <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden bg-background">
+                <div className="flex flex-1 flex-col min-w-0 min-h-0 h-full overflow-hidden bg-background">
                   <Header />
-                  <main className="flex-1 overflow-y-auto">
+                  <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                     {children}
                   </main>
                 </div>

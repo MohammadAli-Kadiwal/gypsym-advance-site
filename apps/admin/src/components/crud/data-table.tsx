@@ -41,6 +41,7 @@ import { ConfirmDialog } from './confirm-dialog';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api-client';
 import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminTableLoader } from '@/components/ui/loader';
 import { TablePagination } from '@/components/ui/table-pagination';
 
 export interface ColumnDef<T> {
@@ -70,6 +71,7 @@ interface DataTableProps<T extends BaseRecord> {
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   entityName?: string;
+  loading?: boolean;
   customActions?: (item: T) => React.ReactNode;
   tabs?: React.ReactNode;
 }
@@ -81,6 +83,7 @@ export function DataTable<T extends BaseRecord>({
   columns,
   searchKeys = ['title', 'name', 'slug'] as (keyof T)[],
   requiredPermission = 'content:write',
+  loading = false,
   onAdd,
   onEdit,
   onPreview,
@@ -402,7 +405,13 @@ export function DataTable<T extends BaseRecord>({
             </TableHeader>
 
             <TableBody>
-              {paginatedData.length === 0 ? (
+              {loading ? (
+                <AdminTableLoader
+                  colSpan={columns.length + 3}
+                  title={`Loading ${title || 'records'}...`}
+                  message="Fetching latest operational datasets from API..."
+                />
+              ) : paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={columns.length + 3}

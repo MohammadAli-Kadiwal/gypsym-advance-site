@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 import {
   Save,
   Plus,
@@ -294,6 +294,16 @@ export default function NavigationBuilderPage() {
           <p className="text-xs text-slate-500 font-mono">Loading Navigation & Header State...</p>
         </div>
       </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <AdminPageLoadingState
+        title="Navigation & Header"
+        message="Loading navigation hierarchy, mega-menu structures, and header layouts..."
+        description="Syncing state with Gypsym platform services..."
+      />
     );
   }
 

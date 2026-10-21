@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/crud/confirm-dialog';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminLoadingState } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { ExecutiveBriefingDossier, type BriefingData } from '@/components/briefing/executive-briefing-dossier';
 
@@ -295,7 +295,13 @@ export default function ContactSubmissionsPage() {
       {/* ── Submissions Table ─────────────────────────────────────────────── */}
       <Card className="rounded-2xl border-border shadow-xs bg-card overflow-hidden">
         <CardContent className="p-0">
-          {items.length === 0 ? (
+          {loading ? (
+            <AdminLoadingState
+              title="Loading Contact Inquiries"
+              message="Fetching incoming lead submissions from Gypsym cluster..."
+              className="border-0 shadow-none bg-transparent py-20"
+            />
+          ) : items.length === 0 ? (
             <div className="py-16 text-center space-y-3">
               <div className="h-12 w-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
                 <Inbox className="w-6 h-6" />

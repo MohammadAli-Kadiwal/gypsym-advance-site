@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 import {
   Save,
   Plus,
@@ -667,12 +667,12 @@ export default function FooterSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium text-muted-foreground">
-          Loading global footer configurations...
-        </p>
-      </div>
+      <AdminPageLoadingState
+        title="Footer Settings"
+        message="Loading multi-column directory, regional markets, and legal disclosures..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
     );
   }
 

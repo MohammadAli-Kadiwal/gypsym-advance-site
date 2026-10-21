@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService } from '@/services/seo.service';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 import { SeoDashboardTab } from './_components/seo-dashboard-tab';
 import { GlobalSeoTab } from './_components/global-seo-tab';
@@ -182,6 +182,17 @@ export default function SeoManagementPage() {
   const healthScore = dashboardData?.healthScore ?? 100;
   const isHealthy = healthScore >= 80;
   const isWarning = healthScore >= 50 && healthScore < 80;
+
+  if (loadingDashboard && !dashboardData) {
+    return (
+      <AdminPageLoadingState
+        title="SEO & Discoverability"
+        message="Loading SEO health metrics, AEO entity graphs, and search index status..."
+        description="Syncing state with Gypsym platform services..."
+        variant="wide"
+      />
+    );
+  }
 
   return (
     <AdminContentContainer variant="wide">

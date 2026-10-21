@@ -295,7 +295,7 @@ export function Sidebar() {
         </div>
 
         {/* Scrollable Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-5 scrollbar-thin">
           {visibleSections.map((section) => (
             <div key={section.title} className="space-y-1">
               {!isCollapsed && (
@@ -389,9 +389,9 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar (Sticky, Collapsible) */}
+      {/* Desktop Sidebar (Collapsible) */}
       <aside
-        className={`hidden md:flex flex-col sticky top-0 h-screen shrink-0 border-r border-border bg-sidebar z-40 transition-all duration-300 select-none ${
+        className={`hidden md:flex flex-col h-full shrink-0 border-r border-border bg-sidebar z-40 transition-all duration-300 select-none ${
           collapsed ? 'w-[72px]' : 'w-[272px]'
         }`}
       >

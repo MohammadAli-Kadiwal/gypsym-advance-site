@@ -30,7 +30,7 @@ import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateTime } from '@/lib/utils';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminLoadingState } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
 
 interface UserRecord {
@@ -365,12 +365,11 @@ export default function UsersAdminPage() {
       {/* ── Users Table Card ──────────────────────────────────────────────────── */}
       <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         {loading && users.length === 0 ? (
-          <div className="flex items-center justify-center p-16">
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <span className="text-xs font-medium">Loading IAM User Directory...</span>
-            </div>
-          </div>
+          <AdminLoadingState
+            title="Loading IAM User Directory"
+            message="Fetching enterprise operators, role permissions, and access logs..."
+            className="border-0 shadow-none bg-transparent py-20"
+          />
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-16 px-4">
             <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />

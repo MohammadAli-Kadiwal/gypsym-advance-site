@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { settingsService } from '@/services/settings.service';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 export interface SocialProfileItem {
   id: string;
@@ -284,6 +284,16 @@ export default function SocialProfilesPage() {
   const activeKeys = new Set(profiles.map((p) => p.platform.toLowerCase()));
   const missingPresets = PRESET_PLATFORMS.filter((p) => !activeKeys.has(p.key) && p.key !== 'website');
   const activeCount = profiles.filter((p) => p.isActive).length;
+
+  if (loading) {
+    return (
+      <AdminPageLoadingState
+        title="Social Profiles"
+        message="Loading brand channels, community handles, and footer links..."
+        description="Syncing state with Gypsym platform services..."
+      />
+    );
+  }
 
   return (
     <AdminContentContainer variant="standard">

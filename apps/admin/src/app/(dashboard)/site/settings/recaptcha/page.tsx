@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { settingsService } from '@/services/settings.service';
 import { notify } from '@/lib/notifications';
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 import {
   ShieldCheck,
   KeyRound,
@@ -159,10 +159,11 @@ export default function RecaptchaSettingsPage() {
 
   if (loading) {
     return (
-      <AdminContentContainer variant="standard" className="space-y-6 pb-24">
-        <div className="h-8 w-64 bg-muted rounded-xl animate-pulse" />
-        <div className="h-64 bg-card rounded-2xl border border-border animate-pulse" />
-      </AdminContentContainer>
+      <AdminPageLoadingState
+        title="reCAPTCHA v3 Protection"
+        message="Loading security keys and bot protection thresholds..."
+        description="Syncing state with Gypsym platform services..."
+      />
     );
   }
 

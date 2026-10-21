@@ -16,7 +16,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
-import { AdminContentContainer, AdminPageHeader } from '@/components/layout/admin-page';
+import { AdminContentContainer, AdminPageHeader, AdminPageLoadingState } from '@/components/layout/admin-page';
 
 const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
   <label className={`block text-xs font-semibold text-foreground ${className}`} {...props} />
@@ -255,10 +255,11 @@ export default function EmailSmtpSettingsPage() {
 
   if (loading) {
     return (
-      <AdminContentContainer variant="standard" className="space-y-6 pb-24">
-        <div className="h-8 w-48 bg-muted rounded-xl animate-pulse" />
-        <div className="h-64 bg-card rounded-2xl border border-border animate-pulse" />
-      </AdminContentContainer>
+      <AdminPageLoadingState
+        title="Email & SMTP Configuration"
+        message="Loading SMTP gateway credentials, multi-account notification lists, and auto-reply templates..."
+        description="Connecting to Gypsym enterprise API..."
+      />
     );
   }
 
@@ -753,6 +754,32 @@ export default function EmailSmtpSettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* ── Bottom Save Action Bar ────────────────────────────────────────── */}
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-xs">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTestModal(true)}
+              className="rounded-xl h-9 px-4 text-xs font-semibold gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5 text-primary" />
+              Send Test Email
+            </Button>
+          </div>
+
+          <Button
+            type="submit"
+            size="sm"
+            disabled={saving}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-9 px-6 text-xs font-semibold shadow-xs gap-1.5"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Save Settings
+          </Button>
+        </div>
       </form>
 
       {/* ── Test Email Dialog Modal ─────────────────────────────────────── */}
