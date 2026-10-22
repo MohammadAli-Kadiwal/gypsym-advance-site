@@ -178,6 +178,9 @@ export interface PortfolioProjectItemDto {
   metrics?: string;
   displayOrder: number;
   status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  projectDate?: string;
 }
 
 export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
@@ -213,6 +216,21 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
     return array.filter((p: any) => p.status === 'PUBLISHED');
   } catch {
     return [];
+  }
+}
+
+export async function getPortfolioProjectBySlug(slug: string): Promise<PortfolioProjectItemDto | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/portfolio/${encodeURIComponent(slug)}`, {
+      cache: 'no-store',
+      next: { tags: [`portfolio-project-${slug}`], revalidate: 0 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const data = json?.data ?? json;
+    return data || null;
+  } catch {
+    return null;
   }
 }
 

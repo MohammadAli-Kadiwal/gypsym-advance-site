@@ -72,6 +72,7 @@ export interface PortfolioSectionProps {
   onCategoryChange?: (slug: string) => void;
   categories?: PortfolioCategoryFilterItem[];
   overrideProjects?: PortfolioProject[];
+  linkToInnerPage?: boolean;
 }
 
 export function PortfolioSection({
@@ -80,6 +81,7 @@ export function PortfolioSection({
   onCategoryChange,
   categories: categoriesProp,
   overrideProjects,
+  linkToInnerPage,
 }: PortfolioSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -123,6 +125,10 @@ export function PortfolioSection({
   const threeDScrollEnabled = p.threeDScrollEnabled !== false;
   const threeDIntensity = p.threeDIntensity || 'premium';
   const mouseParallaxEnabled = p.mouseParallaxEnabled !== false;
+
+  // Determine if project cards should open the inner detail page (/portfolio/[slug])
+  const shouldLinkInner =
+    linkToInnerPage ?? (pathname ? pathname.startsWith('/portfolio') : false);
 
   // Source projects
   const sourceProjects: PortfolioProject[] = overrideProjects || (Array.isArray(p.projects) ? p.projects : []);
@@ -356,8 +362,10 @@ export function PortfolioSection({
                 className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-3 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
               >
                 {projects.map((project, idx) => {
-                  const href = project.projectUrl || '#';
-                  const isExternal = href.startsWith('http://') || href.startsWith('https://');
+                  const href = shouldLinkInner && project.slug
+                    ? `/portfolio/${project.slug}`
+                    : (project.projectUrl || (project.slug ? `/portfolio/${project.slug}` : '#'));
+                  const isExternal = !shouldLinkInner && (href.startsWith('http://') || href.startsWith('https://'));
                   return (
                     <div
                       key={project.id || idx}
@@ -491,6 +499,7 @@ export function PortfolioSection({
                     mouseParallaxEnabled={mouseParallaxEnabled}
                     prefersReducedMotion={prefersReducedMotion}
                     isDesktop={isDesktop}
+                    shouldLinkInner={shouldLinkInner}
                   />
                 );
               })}
@@ -523,6 +532,7 @@ interface PortfolioCardProps {
   mouseParallaxEnabled: boolean;
   prefersReducedMotion: boolean;
   isDesktop: boolean;
+  shouldLinkInner: boolean;
 }
 
 function PortfolioCard({
@@ -543,6 +553,7 @@ function PortfolioCard({
   mouseParallaxEnabled,
   prefersReducedMotion,
   isDesktop,
+  shouldLinkInner,
 }: PortfolioCardProps) {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
@@ -664,8 +675,10 @@ function PortfolioCard({
     ? 'h-[340px] sm:h-[420px] lg:h-[460px]'
     : 'h-[320px] sm:h-[380px] lg:h-[430px]';
 
-  const href = project.projectUrl || '#';
-  const isExternal = href.startsWith('http://') || href.startsWith('https://');
+  const href = shouldLinkInner && project.slug
+    ? `/portfolio/${project.slug}`
+    : (project.projectUrl || (project.slug ? `/portfolio/${project.slug}` : '#'));
+  const isExternal = !shouldLinkInner && (href.startsWith('http://') || href.startsWith('https://'));
   const displayViewLabel =
     viewButtonLabel === 'View Case Study' ? 'View' : viewButtonLabel || 'View';
 

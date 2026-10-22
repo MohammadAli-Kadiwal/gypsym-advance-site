@@ -372,10 +372,10 @@ export function DataTable<T extends BaseRecord>({
       {/* ─── Main Table Container ──────────────────────────────────── */}
       <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[1050px]">
             <TableHeader className="bg-muted/40 border-b border-border">
               <TableRow>
-                <TableHead className="w-10 px-4">
+                <TableHead className="w-10 px-4 whitespace-nowrap">
                   <Checkbox
                     checked={isAllSelected}
                     onCheckedChange={(checked) => handleSelectAll(!!checked)}
@@ -399,8 +399,8 @@ export function DataTable<T extends BaseRecord>({
                   </TableHead>
                 ))}
 
-                <TableHead className="w-28 text-center text-muted-foreground font-semibold text-xs">Status</TableHead>
-                <TableHead className="w-28 text-right pr-4 text-muted-foreground font-semibold text-xs">Actions</TableHead>
+                <TableHead className="w-28 text-center text-muted-foreground font-semibold text-xs whitespace-nowrap">Status</TableHead>
+                <TableHead className="w-28 text-right pr-4 text-muted-foreground font-semibold text-xs whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
 

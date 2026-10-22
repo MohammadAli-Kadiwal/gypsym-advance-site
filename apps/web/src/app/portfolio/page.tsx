@@ -232,6 +232,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
           categories={filterCategories}
           activeCategory={selectedCategory}
           overrideProjects={projects}
+          linkToInnerPage={true}
         />
       </main>
 

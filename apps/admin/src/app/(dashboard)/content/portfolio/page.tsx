@@ -1085,8 +1085,9 @@ export default function PortfolioAdminPage() {
       key: 'orderNumber',
       header: '# Order',
       sortable: true,
+      className: 'w-20 whitespace-nowrap',
       render: (item) => (
-        <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+        <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md inline-block">
           {item.orderNumber || '--'}
         </span>
       ),
@@ -1095,10 +1096,11 @@ export default function PortfolioAdminPage() {
       key: 'title',
       header: 'Project Title',
       sortable: true,
+      className: 'min-w-[280px] max-w-[360px]',
       render: (item) => (
         <div className="flex items-center gap-3">
           {item.imageUrl && (
-            <div className="h-10 w-14 rounded bg-neutral-900 overflow-hidden shrink-0 border border-slate-200">
+            <div className="h-10 w-14 rounded-md bg-neutral-900 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 shadow-2xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={item.imageUrl}
@@ -1107,8 +1109,10 @@ export default function PortfolioAdminPage() {
               />
             </div>
           )}
-          <div>
-            <span className="font-semibold text-slate-900">{item.title}</span>
+          <div className="min-w-0 flex-1">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm line-clamp-1 leading-snug">
+              {item.title}
+            </span>
             {item.projectUrl && (
               <a
                 href={item.projectUrl}
@@ -1117,7 +1121,7 @@ export default function PortfolioAdminPage() {
                 className="font-mono text-[11px] text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 w-fit mt-0.5"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="truncate max-w-[240px]">{item.projectUrl}</span>
+                <span className="truncate max-w-[220px]">{item.projectUrl}</span>
                 <ExternalLink className="w-2.5 h-2.5 shrink-0" />
               </a>
             )}
@@ -1129,14 +1133,20 @@ export default function PortfolioAdminPage() {
       key: 'client',
       header: 'Client',
       sortable: true,
-      render: (item) => <span className="font-medium text-slate-800 text-xs">{item.client || '—'}</span>,
+      className: 'min-w-[120px] whitespace-nowrap',
+      render: (item) => <span className="font-medium text-slate-800 dark:text-slate-200 text-xs">{item.client || '—'}</span>,
     },
     {
       key: 'category',
       header: 'Category',
+      className: 'min-w-[180px] whitespace-nowrap',
       render: (item) => (
-        <Badge variant="outline" className="text-[11px] font-medium">
-          {item.category || 'Uncategorized'}
+        <Badge
+          variant="outline"
+          className="text-[11px] font-medium whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0" />
+          <span>{item.category || 'Uncategorized'}</span>
         </Badge>
       ),
     },
@@ -1144,6 +1154,7 @@ export default function PortfolioAdminPage() {
       key: 'projectDate',
       header: 'Project Date',
       sortable: true,
+      className: 'min-w-[130px] whitespace-nowrap',
       render: (item) => {
         const d = item.projectDate || item.createdAt;
         return (
@@ -1157,8 +1168,9 @@ export default function PortfolioAdminPage() {
     {
       key: 'metrics',
       header: 'Impact Metric',
+      className: 'min-w-[180px] max-w-[240px]',
       render: (item) => (
-        <span className="font-mono text-xs text-emerald-600 font-semibold">
+        <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400 font-semibold leading-relaxed inline-block">
           {item.metrics || '—'}
         </span>
       ),
@@ -1167,8 +1179,9 @@ export default function PortfolioAdminPage() {
       key: 'updatedAt',
       header: 'Updated',
       sortable: true,
+      className: 'min-w-[110px] whitespace-nowrap',
       render: (item) => (
-        <span className="font-mono text-[11px] text-muted-foreground">
+        <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap">
           {formatDate(item.updatedAt)}
         </span>
       ),
@@ -1180,8 +1193,9 @@ export default function PortfolioAdminPage() {
       key: 'displayOrder',
       header: '# Order',
       sortable: true,
+      className: 'w-20 whitespace-nowrap',
       render: (item) => (
-        <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+        <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md inline-block">
           {String(item.displayOrder ?? 0).padStart(2, '0')}
         </span>
       ),
@@ -1190,9 +1204,10 @@ export default function PortfolioAdminPage() {
       key: 'name',
       header: 'Category Name',
       sortable: true,
+      className: 'min-w-[200px]',
       render: (item) => (
         <div>
-          <span className="font-semibold text-slate-900">{item.name}</span>
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{item.name}</span>
           <div className="font-mono text-[11px] text-slate-400">/{item.slug}</div>
         </div>
       ),
@@ -1200,8 +1215,9 @@ export default function PortfolioAdminPage() {
     {
       key: 'description',
       header: 'Description',
+      className: 'min-w-[240px]',
       render: (item) => (
-        <span className="text-xs text-slate-600 line-clamp-1 max-w-sm">
+        <span className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1 max-w-sm">
           {item.description || '—'}
         </span>
       ),
@@ -1210,6 +1226,7 @@ export default function PortfolioAdminPage() {
       key: 'projectCount',
       header: 'Projects',
       sortable: true,
+      className: 'min-w-[130px] whitespace-nowrap',
       render: (item) => (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-muted text-muted-foreground whitespace-nowrap">
           <span className="font-bold text-foreground">{item.projectCount ?? 0}</span>
@@ -1221,8 +1238,9 @@ export default function PortfolioAdminPage() {
       key: 'updatedAt',
       header: 'Updated',
       sortable: true,
+      className: 'min-w-[110px] whitespace-nowrap',
       render: (item) => (
-        <span className="font-mono text-[11px] text-muted-foreground">
+        <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap">
           {formatDate(item.updatedAt)}
         </span>
       ),
