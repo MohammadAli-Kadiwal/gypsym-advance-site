@@ -36,7 +36,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { formatDate, cn } from '@/lib/utils';
+import { formatDate, formatDateDDMMYYYY, cn } from '@/lib/utils';
 import { fetchApi, normalizeErrorMessage } from '@/lib/api-client';
 import { notify } from '@/lib/notifications';
 import { BaseRecord, ItemStatus } from '@/lib/store';
@@ -385,7 +385,7 @@ function ProjectDialog({
               <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-primary" />
                 <span>Date of Project</span>
-                <span className="text-slate-400 font-normal text-[11px]">(Launch / Completion)</span>
+                <span className="text-slate-400 font-normal text-[11px]">(DD/MM/YYYY)</span>
               </label>
               <Input
                 type="date"
@@ -393,6 +393,12 @@ function ProjectDialog({
                 onChange={(e) => patch('projectDate', e.target.value)}
                 className="text-xs font-mono"
               />
+              {form.projectDate && (
+                <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
+                  <span className="text-slate-500 font-medium">Date (DD/MM/YYYY):</span>
+                  <span className="font-semibold text-primary">{formatDateDDMMYYYY(form.projectDate)}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -838,6 +844,26 @@ function CategoryDialog({
 export default function PortfolioAdminPage() {
   const [activeTab, setActiveTab] = React.useState<'projects' | 'categories' | 'settings'>('projects');
 
+  // Synchronize activeTab with URL search parameters (?tab=categories | ?tab=projects | ?tab=settings)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'categories' || tabParam === 'settings' || tabParam === 'projects') {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: 'projects' | 'categories' | 'settings') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
   // Data states
   const [projects, setProjects] = React.useState<PortfolioProjectRecord[]>([]);
   const [categories, setCategories] = React.useState<PortfolioCategoryRecord[]>([]);
@@ -1123,7 +1149,7 @@ export default function PortfolioAdminPage() {
         return (
           <span className="font-mono text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1.5">
             <Calendar className="w-3 h-3 text-primary/70 shrink-0" />
-            <span>{d ? formatDate(d) : '—'}</span>
+            <span>{d ? formatDateDDMMYYYY(d) : '—'}</span>
           </span>
         );
       },
@@ -1185,9 +1211,10 @@ export default function PortfolioAdminPage() {
       header: 'Projects',
       sortable: true,
       render: (item) => (
-        <Badge variant="secondary" className="font-mono text-[11px]">
-          {item.projectCount ?? 0} {item.projectCount === 1 ? 'project' : 'projects'}
-        </Badge>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-muted text-muted-foreground whitespace-nowrap">
+          <span className="font-bold text-foreground">{item.projectCount ?? 0}</span>
+          <span>{item.projectCount === 1 ? 'project' : 'projects'}</span>
+        </span>
       ),
     },
     {
@@ -1206,7 +1233,7 @@ export default function PortfolioAdminPage() {
     <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-xl w-fit">
       <button
         type="button"
-        onClick={() => setActiveTab('projects')}
+        onClick={() => handleTabChange('projects')}
         className={cn(
           'inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
           activeTab === 'projects'
@@ -1228,7 +1255,7 @@ export default function PortfolioAdminPage() {
 
       <button
         type="button"
-        onClick={() => setActiveTab('categories')}
+        onClick={() => handleTabChange('categories')}
         className={cn(
           'inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
           activeTab === 'categories'
@@ -1250,7 +1277,7 @@ export default function PortfolioAdminPage() {
 
       <button
         type="button"
-        onClick={() => setActiveTab('settings')}
+        onClick={() => handleTabChange('settings')}
         className={cn(
           'inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
           activeTab === 'settings'

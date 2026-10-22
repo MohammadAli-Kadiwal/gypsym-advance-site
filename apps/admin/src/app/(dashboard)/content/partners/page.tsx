@@ -122,10 +122,13 @@ interface PartnerDialogProps {
 function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSubmit }: PartnerDialogProps) {
   const [form, setForm] = React.useState<PartnerFormState>(() => initial);
 
+  // Sync initial data only when dialog opens (false -> true transition)
+  const prevOpenRef = React.useRef(open);
   React.useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setForm(initial);
     }
+    prevOpenRef.current = open;
   }, [open, initial]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -405,17 +408,18 @@ export default function PartnersPage() {
     if (!editTarget) return;
     const targetId = editTarget.id;
     const partnerName = form.name.trim();
+    const newLogoUrl = form.logoUrl.trim();
 
     setSaving(true);
 
-    // 1. Instantly & optimistically update local state so table never loses the value
+    // 1. Instantly & optimistically update local state so table reflects the new value
     setPartners((prev) =>
       prev.map((p) =>
         p.id === targetId
           ? {
               ...p,
               name: partnerName,
-              logoUrl: form.logoUrl.trim() || p.logoUrl,
+              logoUrl: newLogoUrl || null,
             }
           : p
       )
@@ -426,11 +430,13 @@ export default function PartnersPage() {
         method: 'PUT',
         body: JSON.stringify({
           name: partnerName,
-          logoUrl: form.logoUrl.trim() || undefined,
+          logoUrl: newLogoUrl,
         }),
       });
 
       const updated: Partner = (raw && typeof raw === 'object' && 'data' in raw) ? raw.data : (raw || {});
+      const resolvedLogo = updated.logoUrl !== undefined ? updated.logoUrl : (newLogoUrl || null);
+      const resolvedName = updated.name || partnerName;
 
       setPartners((prev) =>
         prev.map((p) =>
@@ -438,14 +444,14 @@ export default function PartnersPage() {
             ? {
                 ...p,
                 ...updated,
-                name: updated.name || partnerName,
-                logoUrl: updated.logoUrl || form.logoUrl.trim() || p.logoUrl,
+                name: resolvedName,
+                logoUrl: resolvedLogo,
               }
             : p
         )
       );
 
-      handleCloseEdit();
+      setEditTarget(null);
       notify.success(SUCCESS_MESSAGES.PARTNERS.UPDATED(partnerName));
       loadPartners().catch(() => {});
     } catch (err: any) {
@@ -794,6 +800,7 @@ export default function PartnersPage() {
                       {partner.logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
+                          key={partner.logoUrl}
                           src={partner.logoUrl}
                           alt={partner.name}
                           className="h-full w-full object-contain"

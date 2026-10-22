@@ -56,8 +56,9 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
   const [dragActive, setDragActive] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  const prevOpenRef = React.useRef(open);
   React.useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setForm(initial);
       setLogoError(false);
       setFileName('');
@@ -68,6 +69,7 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
         setTab('upload');
       }
     }
+    prevOpenRef.current = open;
   }, [open, initial]);
 
   function patch(key: keyof ClientFormState, value: any) {

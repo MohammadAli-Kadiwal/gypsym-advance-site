@@ -38,6 +38,11 @@ export function ImageUploadField({
 
   React.useEffect(() => {
     setLoadError(false);
+    if (value && value.startsWith('http')) {
+      setTab('url');
+    } else if (value && value.startsWith('data:')) {
+      setTab('upload');
+    }
   }, [value]);
 
   const handleFile = (file: File) => {

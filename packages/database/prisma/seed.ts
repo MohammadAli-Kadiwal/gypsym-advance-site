@@ -2317,11 +2317,79 @@ async function main() {
     }
   }
 
+  // -------------------------------------------------------------
+  // 17. Seed Portfolio Categories
+  // -------------------------------------------------------------
+  const portfolioCategories = [
+    {
+      name: 'Fashion & Lifestyle',
+      slug: 'fashion-lifestyle',
+      description: 'Modern apparel, luxury fashion brands, streetwear, footwear, and designer lifestyle platforms.',
+      order: 1,
+    },
+    {
+      name: 'Beauty & Personal Care',
+      slug: 'beauty-personal-care',
+      description: 'Cosmetics, organic skincare, haircare, wellness aesthetics, and premium personal grooming brands.',
+      order: 2,
+    },
+    {
+      name: 'Health & Wellness',
+      slug: 'health-wellness',
+      description: 'Nutrition supplements, fitness gear, mental well-being products, and holistic health stores.',
+      order: 3,
+    },
+    {
+      name: 'Electronics & Technology',
+      slug: 'electronics-technology',
+      description: 'Consumer electronics, smart hardware, high-performance computing gadgets, and tech accessories.',
+      order: 4,
+    },
+    {
+      name: 'Home & Living',
+      slug: 'home-living',
+      description: 'Interior decor, contemporary furniture, kitchen essentials, architectural lighting, and home furnishings.',
+      order: 5,
+    },
+    {
+      name: 'Jewellery & Accessories',
+      slug: 'jewellery-accessories',
+      description: 'Fine jewelry, handcrafted ornaments, watches, bespoke eyewear, and luxury wearable accessories.',
+      order: 6,
+    },
+    {
+      name: 'Arts, Crafts & Specialty Products',
+      slug: 'arts-crafts-specialty-products',
+      description: 'Artisanal creations, bespoke handmade crafts, collectibles, stationery, and niche specialty merchandise.',
+      order: 7,
+    },
+  ];
+
+  for (const cat of portfolioCategories) {
+    await prisma.portfolioCategory.upsert({
+      where: { slug: cat.slug },
+      update: {
+        name: cat.name,
+        description: cat.description,
+        displayOrder: cat.order,
+        status: ContentStatus.PUBLISHED,
+      },
+      create: {
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        displayOrder: cat.order,
+        status: ContentStatus.PUBLISHED,
+      },
+    });
+  }
+
   console.log(`\n======================================================`);
   console.log(`✅ GYPSYM PRISMA SEED COMPLETED SUCCESSFULLY`);
   console.log(`   Admin Email: ${adminEmail}`);
   console.log(`   Roles Seeded: ${rolesData.length}`);
   console.log(`   Permissions Seeded: ${permissionsData.length}`);
+  console.log(`   Portfolio Categories: ${portfolioCategories.length}`);
   console.log(`   Services & Solutions: ${services.length + solutions.length}`);
   console.log(`   Idempotency Verified: Re-run safe, zero data loss.`);
   console.log(`======================================================\n`);
