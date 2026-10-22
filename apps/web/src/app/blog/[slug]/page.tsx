@@ -354,61 +354,64 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* ── Related Publications Grid ── */}
         {post.related && post.related.length > 0 && (
           <section className="mt-16 sm:mt-20">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="text-xs font-bold text-[#d9287c] uppercase tracking-wider mb-1">
-                  Further Reading
+            <ScrollReveal direction="up" intensity="subtle">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <div className="text-xs font-bold text-[#d9287c] uppercase tracking-wider mb-1">
+                    Further Reading
+                  </div>
+                  <h3 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                    Related Architecture Publications
+                  </h3>
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-                  Related Architecture Publications
-                </h3>
+                <Link
+                  href="/blog"
+                  className="text-xs font-bold text-[#d9287c] hover:underline hidden sm:inline-flex items-center gap-1"
+                >
+                  View all articles <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
-              <Link
-                href="/blog"
-                className="text-xs font-bold text-[#d9287c] hover:underline hidden sm:inline-flex items-center gap-1"
-              >
-                View all articles <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {post.related.map((rel) => (
-                <Link
-                  key={rel.id}
-                  href={`/blog/${rel.slug}`}
-                  className="bg-white dark:bg-neutral-900 rounded-[22px] sm:rounded-[26px] p-5 border border-neutral-200/70 dark:border-neutral-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="rounded-[14px] overflow-hidden aspect-[16/10] relative bg-neutral-950 mb-4">
-                      <img
-                        src={rel.coverImage}
-                        alt={rel.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-2.5 left-2.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-900/80 text-white backdrop-blur-md">
-                          {rel.category?.name}
-                        </span>
+              {post.related.map((rel, idx) => (
+                <ScrollReveal key={rel.id} direction="up" delay={idx * 80} intensity="subtle">
+                  <Link
+                    href={`/blog/${rel.slug}`}
+                    className="h-full bg-white dark:bg-neutral-900 rounded-[22px] sm:rounded-[26px] p-5 border border-neutral-200/70 dark:border-neutral-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="rounded-[14px] overflow-hidden aspect-[16/10] relative bg-neutral-950 mb-4">
+                        <img
+                          src={rel.coverImage}
+                          alt={rel.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-900/80 text-white backdrop-blur-md">
+                            {rel.category?.name}
+                          </span>
+                        </div>
                       </div>
+
+                      <h4 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-[#d9287c] transition-colors line-clamp-2 leading-snug">
+                        {rel.title}
+                      </h4>
+                      <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
+                        {rel.excerpt}
+                      </p>
                     </div>
 
-                    <h4 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-[#d9287c] transition-colors line-clamp-2 leading-snug">
-                      {rel.title}
-                    </h4>
-                    <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                      {rel.excerpt}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                    <span>{rel.readTime}</span>
-                    <span className="text-[#d9287c] group-hover:translate-x-0.5 transition-transform font-bold">
-                      Read &rarr;
-                    </span>
-                  </div>
-                </Link>
+                    <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-[11px] font-mono text-neutral-400">
+                      <span>{rel.readTime}</span>
+                      <span className="text-[#d9287c] group-hover:translate-x-0.5 transition-transform font-bold">
+                        Read &rarr;
+                      </span>
+                    </div>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           </section>

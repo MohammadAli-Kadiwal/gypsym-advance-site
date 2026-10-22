@@ -16,6 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ServiceItemDto } from '@/lib/api';
+import { ScrollReveal } from '@/components/motion';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   ShoppingBag,
@@ -77,16 +78,16 @@ export function ServicesFilterGrid({ services, showFilter = false }: ServicesFil
 
       {/* Services Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
-        {filteredServices.map((service) => {
+        {filteredServices.map((service, idx) => {
           const IconComponent = ICON_MAP[service.iconName || 'Layers'] || Layers;
           const starterPrice = service.pricing?.[0]?.prices?.find((p) => p.currency === 'USD');
 
           return (
-            <Link
-              key={service.slug}
-              href={`/services/${service.slug}`}
-              className="group relative flex flex-col justify-between rounded-2xl bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.08)] hover:border-[#d9287c]/40 transition-all duration-300 hover:-translate-y-1 cursor-pointer block text-left"
-            >
+            <ScrollReveal key={service.slug} direction="up" delay={(idx % 3) * 80} intensity="subtle" className="h-full">
+              <Link
+                href={`/services/${service.slug}`}
+                className="h-full group relative flex flex-col justify-between rounded-2xl bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.08)] hover:border-[#d9287c]/40 transition-all duration-300 hover:-translate-y-1 cursor-pointer block text-left"
+              >
               <div>
                 {/* Header: Icon & Category Badge */}
                 <div className="flex items-center justify-between gap-3 mb-5">
@@ -152,8 +153,9 @@ export function ServicesFilterGrid({ services, showFilter = false }: ServicesFil
                 </div>
               </div>
             </Link>
-          );
-        })}
+          </ScrollReveal>
+        );
+      })}
       </div>
     </div>
   );

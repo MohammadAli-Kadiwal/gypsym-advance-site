@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Cookie } from 'lucide-react';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
@@ -56,48 +57,52 @@ export default function CookieDeclarationPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20">
+    <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20 relative overflow-x-clip">
       <JsonLd data={breadcrumbs} />
       <JsonLd data={webPageSchema} />
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumb */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-mono text-neutral-500 hover:text-neutral-900 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Gypsym Home</span>
-          </Link>
-        </div>
+        <ScrollReveal direction="down" delay={40}>
+          <div className="mb-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs font-mono text-neutral-500 hover:text-neutral-900 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Return to Gypsym Home</span>
+            </Link>
+          </div>
+        </ScrollReveal>
 
         {/* Header */}
-        <header className="border-b border-neutral-200 pb-10 mb-12">
-          <div className="flex flex-wrap items-center gap-2.5 mb-4">
-            <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 text-xs font-mono font-semibold flex items-center gap-1.5">
-              <Cookie className="w-3.5 h-3.5" />
-              <span>ePrivacy & GDPR Disclosures</span>
-            </span>
-            <span className="text-xs font-mono text-neutral-400">
-              Last Updated: {lastUpdated}
-            </span>
-          </div>
+        <ScrollReveal direction="up" intensity="subtle">
+          <header className="border-b border-neutral-200 pb-10 mb-12">
+            <div className="flex flex-wrap items-center gap-2.5 mb-4">
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 text-xs font-mono font-semibold flex items-center gap-1.5">
+                <Cookie className="w-3.5 h-3.5" />
+                <span>ePrivacy & GDPR Disclosures</span>
+              </span>
+              <span className="text-xs font-mono text-neutral-400">
+                Last Updated: {lastUpdated}
+              </span>
+            </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900">
-            Cookie Declaration & Consent Policy
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-3xl leading-relaxed">
-            This declaration provides transparent information regarding browser cookies, local storage keys, and telemetry technologies utilized across Gypsym Technology platforms.
-          </p>
-        </header>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900">
+              Cookie Declaration & Consent Policy
+            </h1>
+            <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-3xl leading-relaxed">
+              This declaration provides transparent information regarding browser cookies, local storage keys, and telemetry technologies utilized across Gypsym Technology platforms.
+            </p>
+          </header>
+        </ScrollReveal>
 
         {/* Categories */}
         <div className="space-y-10 mb-16">
-          {cookieCategories.map((cat) => (
-            <section
-              key={cat.name}
-              className="p-6 sm:p-8 rounded-2xl bg-white border border-neutral-200/90 shadow-xs space-y-5"
-            >
+          {cookieCategories.map((cat, idx) => (
+            <ScrollReveal key={cat.name} direction="up" delay={idx * 60} intensity="subtle">
+              <section
+                className="p-6 sm:p-8 rounded-2xl bg-white border border-neutral-200/90 shadow-xs space-y-5"
+              >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 pb-4">
                 <div>
                   <h2 className="text-lg font-bold text-neutral-900">{cat.name}</h2>
@@ -140,10 +145,12 @@ export default function CookieDeclarationPage() {
                 </table>
               </div>
             </section>
-          ))}
-        </div>
+          </ScrollReveal>
+        ))}
+      </div>
 
-        {/* Managing Preferences */}
+      {/* Managing Preferences */}
+      <ScrollReveal direction="up" delay={100} intensity="subtle">
         <section className="p-8 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-4">
           <h3 className="text-lg font-bold text-neutral-900">How to Manage Cookie Preferences</h3>
           <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-3xl">
@@ -153,6 +160,7 @@ export default function CookieDeclarationPage() {
             Inquiries regarding cookie governance: <a href="mailto:security@gypsym.com" className="text-blue-600 underline">security@gypsym.com</a>
           </div>
         </section>
+      </ScrollReveal>
       </div>
     </main>
   );

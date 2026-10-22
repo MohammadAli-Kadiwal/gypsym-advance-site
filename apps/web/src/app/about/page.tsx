@@ -332,11 +332,19 @@ export default async function AboutPage() {
 
       {/* ── 4. Clients / Trusted By Section (Matching Home Page) ── */}
       {clientsSectionToRender && (
-        <ClientsTrustedBySection section={clientsSectionToRender} />
+        <section id="about-clients" className="w-full relative overflow-x-clip">
+          <ScrollReveal direction="up" intensity="subtle" className="w-full">
+            <ClientsTrustedBySection section={clientsSectionToRender} />
+          </ScrollReveal>
+        </section>
       )}
 
       {/* ── 5. Bottom CTA ── */}
-      <CtaSection section={ctaSectionToRender} />
+      <section id="about-cta" className="w-full relative overflow-x-clip">
+        <ScrollReveal direction="up" intensity="subtle" className="w-full">
+          <CtaSection section={ctaSectionToRender} />
+        </ScrollReveal>
+      </section>
     </div>
   );
 }

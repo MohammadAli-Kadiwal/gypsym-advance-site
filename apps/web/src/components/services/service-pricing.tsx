@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import { ServicePriceTier } from '@/lib/api';
+import { ScrollReveal } from '@/components/motion';
 
 interface ServicePricingProps {
   pricing?: ServicePriceTier[];
@@ -18,43 +19,45 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
   }
 
   return (
-    <section className="w-full py-8 sm:py-10 md:py-12">
+    <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-            <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-            <span>TRANSPARENT PRICING</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
-            Investment Tiers for{' '}
-            <span className="font-serif italic font-normal text-neutral-900">{serviceTitle}</span>
-          </h2>
-          <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl mx-auto pt-1">
-            No surprise invoices. Choose a fixed-scope milestone or scalable engineering tier.
-          </p>
+        <ScrollReveal direction="up" intensity="subtle">
+          <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+              <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+              <span>TRANSPARENT PRICING</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
+              Investment Tiers for{' '}
+              <span className="font-serif italic font-normal text-neutral-900">{serviceTitle}</span>
+            </h2>
+            <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl mx-auto pt-1">
+              No surprise invoices. Choose a fixed-scope milestone or scalable engineering tier.
+            </p>
 
-          {/* Currency Toggle Switcher */}
-          <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
-            {(['USD', 'GBP', 'AED'] as const).map((curr) => {
-              const isActive = selectedCurrency === curr;
-              return (
-                <button
-                  key={curr}
-                  type="button"
-                  onClick={() => setSelectedCurrency(curr)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  {curr === 'USD' ? 'USD ($)' : curr === 'GBP' ? 'GBP (£)' : 'AED (د.إ)'}
-                </button>
-              );
-            })}
+            {/* Currency Toggle Switcher */}
+            <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
+              {(['USD', 'GBP', 'AED'] as const).map((curr) => {
+                const isActive = selectedCurrency === curr;
+                return (
+                  <button
+                    key={curr}
+                    type="button"
+                    onClick={() => setSelectedCurrency(curr)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-neutral-900 shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
+                  >
+                    {curr === 'USD' ? 'USD ($)' : curr === 'GBP' ? 'GBP (£)' : 'AED (د.إ)'}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
@@ -64,14 +67,14 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
             const isPopular = tier.isPopular;
 
             return (
-              <div
-                key={idx}
-                className={`relative flex flex-col justify-between rounded-2xl p-6 sm:p-8 transition-all duration-300 ${
-                  isPopular
-                    ? 'bg-neutral-950 text-white shadow-xl shadow-neutral-950/15 border-2 border-neutral-900 md:-translate-y-2'
-                    : 'bg-white text-neutral-900 border border-neutral-200/90 shadow-sm hover:border-neutral-300'
-                }`}
-              >
+              <ScrollReveal key={idx} direction="up" delay={idx * 100} intensity="subtle" className="h-full">
+                <div
+                  className={`h-full relative flex flex-col justify-between rounded-2xl p-6 sm:p-8 transition-all duration-300 ${
+                    isPopular
+                      ? 'bg-neutral-950 text-white shadow-xl shadow-neutral-950/15 border-2 border-neutral-900 md:-translate-y-2'
+                      : 'bg-white text-neutral-900 border border-neutral-200/90 shadow-sm hover:border-neutral-300'
+                  }`}
+                >
                 {/* Popular Pill */}
                 {isPopular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500 text-neutral-950 text-[11px] font-bold tracking-wider uppercase shadow-sm">
@@ -152,8 +155,9 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
                   </Link>
                 </div>
               </div>
-            );
-          })}
+            </ScrollReveal>
+          );
+        })}
         </div>
       </div>
     </section>

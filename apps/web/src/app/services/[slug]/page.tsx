@@ -15,6 +15,7 @@ import { ServiceFaqAccordion } from '@/components/services/service-faq';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { SubpageHero } from '@/components/ui/subpage-hero';
+import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildServiceSchema, buildFaqSchema } from '@/components/seo/json-ld';
 import { getSiteUrl } from '@/lib/site-url';
 
@@ -155,107 +156,110 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       />
 
       {/* ── 2. Our Strategic Approach Narrative ── */}
-      <section className="w-full py-8 sm:py-10 md:py-12">
+      <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-start">
-            <div className="lg:col-span-5 space-y-4">
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                <span>OUR STRATEGIC APPROACH</span>
-              </div>
-              <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12]">
-                Engineered for Speed, Scalability, and{' '}
-                <span className="font-serif italic font-normal text-neutral-900">Commercial Lift</span>
-              </h2>
-              <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl">
-                {service.shortDescription}
-              </p>
+          <ScrollReveal direction="up" intensity="subtle">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-start">
+              <div className="lg:col-span-5 space-y-4">
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>OUR STRATEGIC APPROACH</span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12]">
+                  Engineered for Speed, Scalability, and{' '}
+                  <span className="font-serif italic font-normal text-neutral-900">Commercial Lift</span>
+                </h2>
+                <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl">
+                  {service.shortDescription}
+                </p>
 
-              {/* Technologies Pill Tags */}
-              {service.technologies && service.technologies.length > 0 && (
-                <div className="pt-4">
-                  <p className="text-xs font-semibold tracking-wider uppercase text-neutral-500 mb-2.5">
-                    Core Tech Stack & Tooling
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {service.technologies.map((tech, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-white text-neutral-800 border border-neutral-200/80 shadow-xs"
-                      >
-                        {tech}
-                      </span>
-                    ))}
+                {/* Technologies Pill Tags */}
+                {service.technologies && service.technologies.length > 0 && (
+                  <div className="pt-4">
+                    <p className="text-xs font-semibold tracking-wider uppercase text-neutral-500 mb-2.5">
+                      Core Tech Stack & Tooling
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {service.technologies.map((tech, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-white text-neutral-800 border border-neutral-200/80 shadow-xs"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="lg:col-span-7 bg-white rounded-2xl border border-neutral-200/80 p-6 sm:p-8 space-y-5 shadow-xs">
-              <h3 className="text-lg sm:text-xl font-bold text-neutral-900 flex items-center gap-2">
-                <Workflow className="w-5 h-5 text-[#d9287c]" />
-                <span>Deep Technical Implementation</span>
-              </h3>
-              <p className="text-sm sm:text-[15px] leading-relaxed text-neutral-700">
-                {service.detailedContent}
-              </p>
+              <div className="lg:col-span-7 bg-white rounded-2xl border border-neutral-200/80 p-6 sm:p-8 space-y-5 shadow-xs">
+                <h3 className="text-lg sm:text-xl font-bold text-neutral-900 flex items-center gap-2">
+                  <Workflow className="w-5 h-5 text-[#d9287c]" />
+                  <span>Deep Technical Implementation</span>
+                </h3>
+                <p className="text-sm sm:text-[15px] leading-relaxed text-neutral-700">
+                  {service.detailedContent}
+                </p>
 
-              {service.deliverables && service.deliverables.length > 0 && (
-                <div className="pt-3 border-t border-neutral-200/60">
-                  <p className="text-xs font-semibold tracking-wider uppercase text-neutral-500 mb-3">
-                    Guaranteed Project Deliverables
-                  </p>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {service.deliverables.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-neutral-700">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                {service.deliverables && service.deliverables.length > 0 && (
+                  <div className="pt-3 border-t border-neutral-200/60">
+                    <p className="text-xs font-semibold tracking-wider uppercase text-neutral-500 mb-3">
+                      Guaranteed Project Deliverables
+                    </p>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {service.deliverables.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-neutral-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ── 3. Engineering Process (4 Steps) ── */}
       {service.process && service.process.length > 0 && (
-        <section className="w-full py-8 sm:py-10 md:py-12">
+        <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                <span>HOW WE EXECUTE</span>
+            <ScrollReveal direction="up" intensity="subtle">
+              <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>HOW WE EXECUTE</span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
+                  Our 4-Step Engineering{' '}
+                  <span className="font-serif italic font-normal text-neutral-900">Playbook</span>
+                </h2>
+                <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl mx-auto pt-1">
+                  A predictable, transparent workflow designed for zero surprises and rapid delivery.
+                </p>
               </div>
-              <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
-                Our 4-Step Engineering{' '}
-                <span className="font-serif italic font-normal text-neutral-900">Playbook</span>
-              </h2>
-              <p className="text-base sm:text-lg text-neutral-700 leading-relaxed max-w-2xl mx-auto pt-1">
-                A predictable, transparent workflow designed for zero surprises and rapid delivery.
-              </p>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {service.process.map((step, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:border-neutral-300 transition-colors"
-                >
-                  <div>
-                    <span className="text-3xl sm:text-4xl font-black text-neutral-200 group-hover:text-neutral-900 transition-colors">
-                      {step.step}
-                    </span>
-                    <h3 className="mt-3 text-base sm:text-lg font-bold text-neutral-900">
-                      {step.title}
-                    </h3>
-                    <p className="mt-2 text-xs sm:text-sm text-neutral-600 leading-relaxed">
-                      {step.description}
-                    </p>
+                <ScrollReveal key={idx} direction="up" delay={idx * 80} intensity="subtle">
+                  <div className="h-full rounded-2xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:border-neutral-300 transition-colors">
+                    <div>
+                      <span className="text-3xl sm:text-4xl font-black text-neutral-200 group-hover:text-neutral-900 transition-colors">
+                        {step.step}
+                      </span>
+                      <h3 className="mt-3 text-base sm:text-lg font-bold text-neutral-900">
+                        {step.title}
+                      </h3>
+                      <p className="mt-2 text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                        {step.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -264,35 +268,36 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
 
       {/* ── 4. Key Benefits Grid (6 Cards) ── */}
       {service.benefits && service.benefits.length > 0 && (
-        <section className="w-full py-8 sm:py-10 md:py-12">
+        <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                <span>MEASURABLE IMPACT</span>
+            <ScrollReveal direction="up" intensity="subtle">
+              <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 sm:mb-10">
+                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                  <span>MEASURABLE IMPACT</span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
+                  Key Benefits for Your{' '}
+                  <span className="font-serif italic font-normal text-neutral-900">Bottom Line</span>
+                </h2>
               </div>
-              <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-neutral-900 leading-[1.15] sm:leading-[1.12] whitespace-pre-line">
-                Key Benefits for Your{' '}
-                <span className="font-serif italic font-normal text-neutral-900">Bottom Line</span>
-              </h2>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
               {service.benefits.map((benefit, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-xs hover:shadow-md transition-shadow"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#f4f3ef] border border-neutral-200 flex items-center justify-center text-neutral-900 mb-4">
-                    <Check className="w-5 h-5 text-emerald-600" />
+                <ScrollReveal key={idx} direction="up" delay={idx * 60} intensity="subtle">
+                  <div className="h-full rounded-2xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-xs hover:shadow-md transition-shadow">
+                    <div className="w-10 h-10 rounded-xl bg-[#f4f3ef] border border-neutral-200 flex items-center justify-center text-neutral-900 mb-4">
+                      <Check className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-neutral-900">
+                      {benefit.title}
+                    </h3>
+                    <p className="mt-2 text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                      {benefit.description}
+                    </p>
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-900">
-                    {benefit.title}
-                  </h3>
-                  <p className="mt-2 text-xs sm:text-sm text-neutral-600 leading-relaxed">
-                    {benefit.description}
-                  </p>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -307,53 +312,56 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
 
       {/* ── 7. Related / Other Services Strip ── */}
       {otherServices.length > 0 && (
-        <section className="w-full py-8 sm:py-10 md:py-12">
+        <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase mb-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                  <span>COMPLEMENTARY SERVICES</span>
+            <ScrollReveal direction="up" intensity="subtle">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase mb-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                    <span>COMPLEMENTARY SERVICES</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900">
+                    Other Ways We Can{' '}
+                    <span className="font-serif italic font-normal text-neutral-900">Help You Scale</span>
+                  </h2>
                 </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900">
-                  Other Ways We Can{' '}
-                  <span className="font-serif italic font-normal text-neutral-900">Help You Scale</span>
-                </h2>
+                <Link
+                  href="/services"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-900 hover:text-[#d9287c] transition-colors"
+                >
+                  <span>View All Services</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-              <Link
-                href="/services"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-900 hover:text-[#d9287c] transition-colors"
-              >
-                <span>View All Services</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-              {otherServices.slice(0, 3).map((other) => (
-                <Link
-                  key={other.slug}
-                  href={`/services/${other.slug}`}
-                  className="group rounded-2xl border border-neutral-200/80 p-5 sm:p-6 hover:border-neutral-400 hover:shadow-md transition-all flex flex-col justify-between bg-white shadow-xs"
-                >
-                  <div>
-                    {other.category && (
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 block mb-2">
-                        {other.category}
-                      </span>
-                    )}
-                    <h3 className="text-base sm:text-lg font-bold text-neutral-900 group-hover:text-neutral-950 transition-colors">
-                      {other.title}
-                    </h3>
-                    <p className="mt-2 text-xs sm:text-sm text-neutral-600 line-clamp-2">
-                      {other.tagline || other.shortDescription}
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-neutral-900">
-                    <span>Learn more</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
+              {otherServices.slice(0, 3).map((other, idx) => (
+                <ScrollReveal key={other.slug} direction="up" delay={idx * 80} intensity="subtle">
+                  <Link
+                    href={`/services/${other.slug}`}
+                    className="h-full group rounded-2xl border border-neutral-200/80 p-5 sm:p-6 hover:border-neutral-400 hover:shadow-md transition-all flex flex-col justify-between bg-white shadow-xs"
+                  >
+                    <div>
+                      {other.category && (
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 block mb-2">
+                          {other.category}
+                        </span>
+                      )}
+                      <h3 className="text-base sm:text-lg font-bold text-neutral-900 group-hover:text-neutral-950 transition-colors">
+                        {other.title}
+                      </h3>
+                      <p className="mt-2 text-xs sm:text-sm text-neutral-600 line-clamp-2">
+                        {other.tagline || other.shortDescription}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-neutral-900">
+                      <span>Learn more</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -361,7 +369,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       )}
 
       {/* ── 8. Global Conversion CTA Section ── */}
-      <CtaSection section={ctaSectionToRender} />
+      <section id="service-cta" className="w-full relative overflow-x-clip">
+        <ScrollReveal direction="up" intensity="subtle" className="w-full">
+          <CtaSection section={ctaSectionToRender} />
+        </ScrollReveal>
+      </section>
     </div>
   );
 }

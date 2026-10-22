@@ -18,6 +18,7 @@ import { getPortfolioProjectBySlug, getPortfolioProjects, getPageBySlug } from '
 import { formatDateDDMMYYYY } from '@/lib/utils';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
+import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
 import { getSiteUrl } from '@/lib/site-url';
 
@@ -307,49 +308,52 @@ export default async function PortfolioProjectPage({ params }: PortfolioProjectP
       <JsonLd data={projectJsonLd} />
 
       {/* ── 1. Main Project Case Study Section ── */}
-      <section className="w-full pb-8 sm:pb-10 md:pb-12">
+      <section className="w-full pb-8 sm:pb-10 md:pb-12 relative overflow-x-clip">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
           {/* Top Navigation Bar: Back Button & Breadcrumbs */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-            <Link
-              href="/portfolio"
-              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-600 dark:text-neutral-300 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group select-none"
-            >
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center shadow-xs group-hover:border-[#d9287c]/40 group-hover:scale-105 transition-all">
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-              </div>
-              <span>Back to Portfolio Showcase</span>
-            </Link>
+          <ScrollReveal direction="down" delay={40}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+              <Link
+                href="/portfolio"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-600 dark:text-neutral-300 hover:text-[#d9287c] dark:hover:text-[#d9287c] transition-colors group select-none"
+              >
+                <div className="w-8 h-8 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center shadow-xs group-hover:border-[#d9287c]/40 group-hover:scale-105 transition-all">
+                  <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+                </div>
+                <span>Back to Portfolio Showcase</span>
+              </Link>
 
-            <nav
-              aria-label="Breadcrumb"
-              className="flex items-center gap-2 text-xs font-semibold text-neutral-500 overflow-x-auto whitespace-nowrap scrollbar-none"
-            >
-              <Link href="/" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                Home
-              </Link>
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              <Link href="/portfolio" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                Portfolio
-              </Link>
-              {project.category && (
-                <>
-                  <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                  <Link
-                    href={project.categorySlug ? `/portfolio?category=${project.categorySlug}` : '/portfolio'}
-                    className="hover:text-neutral-900 dark:hover:text-white transition-colors"
-                  >
-                    {project.category}
-                  </Link>
-                </>
-              )}
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              <span className="text-[#d9287c] font-medium truncate max-w-[200px]">{project.title}</span>
-            </nav>
-          </div>
+              <nav
+                aria-label="Breadcrumb"
+                className="flex items-center gap-2 text-xs font-semibold text-neutral-500 overflow-x-auto whitespace-nowrap scrollbar-none"
+              >
+                <Link href="/" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  Home
+                </Link>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <Link href="/portfolio" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  Portfolio
+                </Link>
+                {project.category && (
+                  <>
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <Link
+                      href={project.categorySlug ? `/portfolio?category=${project.categorySlug}` : '/portfolio'}
+                      className="hover:text-neutral-900 dark:hover:text-white transition-colors"
+                    >
+                      {project.category}
+                    </Link>
+                  </>
+                )}
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="text-[#d9287c] font-medium truncate max-w-[200px]">{project.title}</span>
+              </nav>
+            </div>
+          </ScrollReveal>
 
           {/* Main Case Study Card Container */}
-          <div className="bg-white dark:bg-neutral-900 rounded-[24px] sm:rounded-[36px] p-6 sm:p-10 md:p-14 border border-neutral-200/70 dark:border-neutral-800 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-8 sm:space-y-10">
+          <ScrollReveal direction="up" intensity="subtle">
+            <div className="bg-white dark:bg-neutral-900 rounded-[24px] sm:rounded-[36px] p-6 sm:p-10 md:p-14 border border-neutral-200/70 dark:border-neutral-800 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-8 sm:space-y-10">
             {/* Header Metadata & Headline */}
             <div className="space-y-5">
               <div className="flex flex-wrap items-center gap-3">
@@ -578,68 +582,72 @@ export default async function PortfolioProjectPage({ params }: PortfolioProjectP
               </aside>
             </div>
           </div>
-        </div>
-      </section>
+        </ScrollReveal>
+      </div>
+    </section>
 
       {/* ── 2. More Selected Works Section (Matching Section Size of Other Pages) ── */}
       {otherProjects.length > 0 && (
-        <section className="w-full py-8 sm:py-10 md:py-12">
+        <section className="w-full py-8 sm:py-10 md:py-12 relative overflow-x-clip">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-              <div className="space-y-1.5">
-                <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
-                  <span>Next Case Studies</span>
+            <ScrollReveal direction="up" intensity="subtle">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#d9287c] uppercase">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#d9287c]" />
+                    <span>Next Case Studies</span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                    Explore More Showcase Stores
+                  </h3>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
-                  Explore More Showcase Stores
-                </h3>
+                <Link
+                  href="/portfolio"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#d9287c] hover:underline"
+                >
+                  <span>View Full Showcase</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
               </div>
-              <Link
-                href="/portfolio"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#d9287c] hover:underline"
-              >
-                <span>View Full Showcase</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {otherProjects.map((other) => (
-                <Link
-                  key={other.id}
-                  href={`/portfolio/${other.slug}`}
-                  className="group block rounded-[22px] overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-xs hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="relative w-full h-[220px] sm:h-[240px] overflow-hidden bg-neutral-950">
-                    <Image
-                      src={other.imageUrl}
-                      alt={other.altText || other.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                    {other.category && (
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-md border border-white/20 uppercase tracking-wider">
-                        {other.category}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-5 space-y-2">
-                    <h4 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white group-hover:text-[#d9287c] transition-colors line-clamp-1">
-                      {other.title}
-                    </h4>
-                    {other.client && (
-                      <p className="text-xs text-neutral-500 line-clamp-1">{other.client}</p>
-                    )}
-                    {other.metrics && (
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
-                        {other.metrics}
-                      </p>
-                    )}
-                  </div>
-                </Link>
+              {otherProjects.map((other, idx) => (
+                <ScrollReveal key={other.id} direction="up" delay={idx * 80} intensity="subtle">
+                  <Link
+                    href={`/portfolio/${other.slug}`}
+                    className="h-full group block rounded-[22px] overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-xs hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="relative w-full h-[220px] sm:h-[240px] overflow-hidden bg-neutral-950">
+                      <Image
+                        src={other.imageUrl}
+                        alt={other.altText || other.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      {other.category && (
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-md border border-white/20 uppercase tracking-wider">
+                          {other.category}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <h4 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white group-hover:text-[#d9287c] transition-colors line-clamp-1">
+                        {other.title}
+                      </h4>
+                      {other.client && (
+                        <p className="text-xs text-neutral-500 line-clamp-1">{other.client}</p>
+                      )}
+                      {other.metrics && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
+                          {other.metrics}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -647,7 +655,11 @@ export default async function PortfolioProjectPage({ params }: PortfolioProjectP
       )}
 
       {/* ── 3. Global Conversion CTA Section (Clean Spacing, No Excess Top/Bottom Margins) ── */}
-      <CtaSection section={ctaSectionToRender} />
+      <section id="portfolio-project-cta" className="w-full relative overflow-x-clip">
+        <ScrollReveal direction="up" intensity="subtle" className="w-full">
+          <CtaSection section={ctaSectionToRender} />
+        </ScrollReveal>
+      </section>
     </div>
   );
 }

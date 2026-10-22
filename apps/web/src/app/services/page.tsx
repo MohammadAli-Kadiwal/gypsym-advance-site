@@ -285,50 +285,52 @@ export default async function ServicesPage() {
             </div>
           </ScrollReveal>
 
-          <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-card shadow-xs">
-            <table className="w-full text-left border-collapse min-w-[680px]">
-              <thead>
-                <tr className="border-b border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/50 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
-                  <th className="py-4 px-5 sm:px-6 w-[28%]">Key Criteria</th>
-                  <th className="py-4 px-5 sm:px-6 w-[36%] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300 font-bold border-x border-emerald-100/80 dark:border-emerald-900/40">
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Gypsym Technology</span>
-                    </div>
-                  </th>
-                  <th className="py-4 px-5 sm:px-6 w-[18%]">Traditional US/UK Agency</th>
-                  <th className="py-4 px-5 sm:px-6 w-[18%]">Freelance Platforms</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs sm:text-sm">
-                {activeComparisonPoints.map((pt, idx) => (
-                  <tr key={idx} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-800/30 transition-colors">
-                    <td className="py-4 px-5 sm:px-6 font-semibold text-neutral-900 dark:text-white">
-                      {pt.feature}
-                    </td>
-                    <td className="py-4 px-5 sm:px-6 bg-emerald-50/30 dark:bg-emerald-950/10 font-medium text-emerald-950 dark:text-emerald-200 border-x border-emerald-100/60 dark:border-emerald-900/30">
-                      <div className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{pt.gypsym}</span>
+          <ScrollReveal direction="up" delay={80} intensity="subtle">
+            <div className="overflow-x-auto rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-card shadow-xs">
+              <table className="w-full text-left border-collapse min-w-[680px]">
+                <thead>
+                  <tr className="border-b border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/50 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+                    <th className="py-4 px-5 sm:px-6 w-[28%]">Key Criteria</th>
+                    <th className="py-4 px-5 sm:px-6 w-[36%] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300 font-bold border-x border-emerald-100/80 dark:border-emerald-900/40">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Gypsym Technology</span>
                       </div>
-                    </td>
-                    <td className="py-4 px-5 sm:px-6 text-neutral-600 dark:text-neutral-400">
-                      <div className="flex items-start gap-2">
-                        <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0 mt-0.5" />
-                        <span>{pt.traditional}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-5 sm:px-6 text-neutral-600 dark:text-neutral-400">
-                      <div className="flex items-start gap-2">
-                        <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0 mt-0.5" />
-                        <span>{pt.freelance}</span>
-                      </div>
-                    </td>
+                    </th>
+                    <th className="py-4 px-5 sm:px-6 w-[18%]">Traditional US/UK Agency</th>
+                    <th className="py-4 px-5 sm:px-6 w-[18%]">Freelance Platforms</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs sm:text-sm">
+                  {activeComparisonPoints.map((pt, idx) => (
+                    <tr key={idx} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-800/30 transition-colors">
+                      <td className="py-4 px-5 sm:px-6 font-semibold text-neutral-900 dark:text-white">
+                        {pt.feature}
+                      </td>
+                      <td className="py-4 px-5 sm:px-6 bg-emerald-50/30 dark:bg-emerald-950/10 font-medium text-emerald-950 dark:text-emerald-200 border-x border-emerald-100/60 dark:border-emerald-900/30">
+                        <div className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                          <span>{pt.gypsym}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                        <div className="flex items-start gap-2">
+                          <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0 mt-0.5" />
+                          <span>{pt.traditional}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 sm:px-6 text-neutral-600 dark:text-neutral-400">
+                        <div className="flex items-start gap-2">
+                          <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0 mt-0.5" />
+                          <span>{pt.freelance}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 

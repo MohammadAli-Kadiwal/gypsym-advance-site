@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
@@ -25,43 +26,48 @@ export default function TermsOfServicePage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20">
+    <main className="min-h-screen bg-[#fcfcfb] text-neutral-900 pt-28 sm:pt-32 lg:pt-36 pb-20 relative overflow-x-clip">
       <JsonLd data={breadcrumbs} />
       <JsonLd data={webPageSchema} />
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumb */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-mono text-neutral-500 hover:text-neutral-900 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Gypsym Home</span>
-          </Link>
-        </div>
+        <ScrollReveal direction="down" delay={40}>
+          <div className="mb-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs font-mono text-neutral-500 hover:text-neutral-900 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Return to Gypsym Home</span>
+            </Link>
+          </div>
+        </ScrollReveal>
 
         {/* Header */}
-        <header className="border-b border-neutral-200 pb-10 mb-12">
-          <div className="flex flex-wrap items-center gap-2.5 mb-4">
-            <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-mono font-semibold flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              <span>Master Engineering Agreement</span>
-            </span>
-            <span className="text-xs font-mono text-neutral-400">
-              Effective Date: {lastUpdated}
-            </span>
-          </div>
+        <ScrollReveal direction="up" intensity="subtle">
+          <header className="border-b border-neutral-200 pb-10 mb-12">
+            <div className="flex flex-wrap items-center gap-2.5 mb-4">
+              <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-mono font-semibold flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Master Engineering Agreement</span>
+              </span>
+              <span className="text-xs font-mono text-neutral-400">
+                Effective Date: {lastUpdated}
+              </span>
+            </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900">
-            Terms of Service & Engineering Covenant
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-3xl leading-relaxed">
-            These terms govern enterprise engagements, customized Liquid / Hydrogen development, cloud architecture retainers, and use of digital services delivered by Gypsym Technology Inc.
-          </p>
-        </header>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900">
+              Terms of Service & Engineering Covenant
+            </h1>
+            <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-3xl leading-relaxed">
+              These terms govern enterprise engagements, customized Liquid / Hydrogen development, cloud architecture retainers, and use of digital services delivered by Gypsym Technology Inc.
+            </p>
+          </header>
+        </ScrollReveal>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <ScrollReveal direction="up" delay={80} intensity="subtle">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Quick Nav */}
           <aside className="lg:col-span-4 order-2 lg:order-1">
             <div className="sticky top-28 p-6 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-4">
@@ -189,6 +195,7 @@ export default function TermsOfServicePage() {
             </section>
           </article>
         </div>
+      </ScrollReveal>
       </div>
     </main>
   );
