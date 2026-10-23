@@ -26,9 +26,15 @@ export async function generateMetadata({ params }: DynamicPageProps): Promise<Me
   }
 
   const seo = page.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/${slugPath}`;
+
   return {
     title: seo?.metaTitle || page.title,
     description: seo?.metaDescription || page.description || undefined,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: seo?.ogTitle || seo?.metaTitle || page.title,
       description: seo?.ogDescription || seo?.metaDescription || page.description || undefined,
@@ -60,10 +66,22 @@ export default async function DynamicCmsPage({ params }: DynamicPageProps) {
     url: `${getSiteUrl()}/${slugPath}`,
   });
 
+  let customStructuredData = null;
+  if (page.seoMetadata?.structuredData) {
+    try {
+      customStructuredData =
+        typeof page.seoMetadata.structuredData === 'string'
+          ? JSON.parse(page.seoMetadata.structuredData)
+          : page.seoMetadata.structuredData;
+    } catch {
+      customStructuredData = null;
+    }
+  }
+
   return (
     <div className="w-full">
       <JsonLd data={breadcrumbSchema} />
-      <JsonLd data={webPageSchema} />
+      <JsonLd data={customStructuredData || webPageSchema} />
       <SectionRenderer sections={page.sections} />
     </div>
   );

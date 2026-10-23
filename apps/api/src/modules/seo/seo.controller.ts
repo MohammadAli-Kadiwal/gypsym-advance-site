@@ -71,12 +71,14 @@ export class SeoController {
   async getPages(
     @Query('search') search?: string,
     @Query('status') status?: string,
-    @Query('missingSeoOnly') missingSeoOnly?: string
+    @Query('missingSeoOnly') missingSeoOnly?: string,
+    @Query('type') type?: string,
   ) {
     return this.seoService.getPages({
       search,
       status,
       missingSeoOnly: missingSeoOnly === 'true',
+      type,
     });
   }
 
@@ -204,5 +206,38 @@ export class SeoController {
   @UseGuards(AuthGuard)
   async updateHreflang(@Body() body: any, @Req() req: any) {
     return this.seoService.updateHreflangConfig(body, req?.user);
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // SEED ENDPOINTS
+  // ────────────────────────────────────────────────────────────
+  @Post('aeo/seed')
+  @UseGuards(AuthGuard)
+  async seedAeo(@Req() req: any) {
+    return this.seoService.seedAeoData(req?.user);
+  }
+
+  @Post('geo/seed')
+  @UseGuards(AuthGuard)
+  async seedGeo(@Req() req: any) {
+    return this.seoService.seedGeoData(req?.user);
+  }
+
+  @Post('keywords/seed')
+  @UseGuards(AuthGuard)
+  async seedKeywords(@Req() req: any) {
+    return this.seoService.seedKeywordsData(req?.user);
+  }
+
+  @Post('schemas/seed')
+  @UseGuards(AuthGuard)
+  async seedPageSchemas(@Req() req: any) {
+    return this.seoService.seedPageSchemas(req?.user);
+  }
+
+  @Post('seed-all')
+  @UseGuards(AuthGuard)
+  async seedAll(@Req() req: any) {
+    return this.seoService.seedAllSeoData(req?.user);
   }
 }

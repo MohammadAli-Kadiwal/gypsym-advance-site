@@ -143,11 +143,12 @@ export const seoService = {
   },
 
   // 3. Page SEO
-  async getPages(params?: { search?: string; status?: string; missingSeoOnly?: boolean }): Promise<any[]> {
+  async getPages(params?: { search?: string; status?: string; missingSeoOnly?: boolean; type?: string }): Promise<any[]> {
     const query: Record<string, string> = {};
     if (params?.search) query.search = params.search;
     if (params?.status) query.status = params.status;
     if (params?.missingSeoOnly) query.missingSeoOnly = 'true';
+    if (params?.type && params.type !== 'ALL') query.type = params.type;
     const res = await api.get<any>('/seo/pages', query);
     return (res as any)?.data ?? res;
   },
@@ -259,6 +260,32 @@ export const seoService = {
 
   async updateHreflang(data: { locales: HreflangLocaleData[] }): Promise<any> {
     const res = await api.put<any>('/seo/hreflang', data);
+    return (res as any)?.data ?? res;
+  },
+
+  // 11. Seeding Engine
+  async seedAeo(): Promise<AeoItemData[]> {
+    const res = await api.post<any>('/seo/aeo/seed', {});
+    return (res as any)?.data ?? res;
+  },
+
+  async seedGeo(): Promise<GeoProfileData> {
+    const res = await api.post<any>('/seo/geo/seed', {});
+    return (res as any)?.data ?? res;
+  },
+
+  async seedKeywords(): Promise<{ totalKeywords: number; keywords: string[] }> {
+    const res = await api.post<any>('/seo/keywords/seed', {});
+    return (res as any)?.data ?? res;
+  },
+
+  async seedPageSchemas(): Promise<{ totalSeeded: number; pagesCount: number; servicesCount: number; blogsCount: number; portfolioCount: number }> {
+    const res = await api.post<any>('/seo/schemas/seed', {});
+    return (res as any)?.data ?? res;
+  },
+
+  async seedAll(): Promise<any> {
+    const res = await api.post<any>('/seo/seed-all', {});
     return (res as any)?.data ?? res;
   },
 };

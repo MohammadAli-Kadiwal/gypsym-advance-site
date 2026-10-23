@@ -198,12 +198,12 @@ export function AeoTab() {
                 Structure authoritative Q&A blocks, entities, and direct answer summaries for AI engines (Perplexity, ChatGPT, Google Search Generative Experience).
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadAeo} disabled={loading}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={loadAeo} disabled={loading} className="cursor-pointer">
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button size="sm" onClick={handleOpenAdd}>
+              <Button size="sm" onClick={handleOpenAdd} className="cursor-pointer">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Question
               </Button>
@@ -219,16 +219,16 @@ export function AeoTab() {
                 placeholder="Search questions, answers, topics or entities..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="pl-9"
+                className="pl-9 rounded-xl"
               />
             </div>
             {uniqueTopics.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
                 <select
                   value={topicFilter}
                   onChange={(e) => { setTopicFilter(e.target.value); setPage(1); }}
-                  className="h-9 px-3 rounded-md border bg-background text-sm"
+                  className="h-9 px-3 rounded-xl border border-border bg-background text-sm w-full sm:w-auto cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="all">All Topics ({items.length})</option>
                   {uniqueTopics.map((t) => (
@@ -247,7 +247,7 @@ export function AeoTab() {
               Loading AEO knowledge entries...
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="py-12 text-center border rounded-lg bg-muted/20">
+            <div className="py-12 text-center border border-border rounded-2xl bg-muted/20">
               <HelpCircle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
               <h3 className="font-semibold text-sm">No AEO entries found</h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
@@ -261,8 +261,8 @@ export function AeoTab() {
               )}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-2xl overflow-x-auto bg-card shadow-2xs">
+              <table className="w-full text-sm min-w-[760px]">
                 <thead className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground text-left">
                   <tr>
                     <th className="p-3">Question & Direct Answer</th>

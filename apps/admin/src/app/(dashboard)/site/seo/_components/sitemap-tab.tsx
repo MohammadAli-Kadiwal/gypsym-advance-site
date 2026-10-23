@@ -145,21 +145,22 @@ export function SitemapTab() {
                 Configure which CMS content types are dynamically indexed into <code>/sitemap.xml</code> for Google, Bing, and search crawlers.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="cursor-pointer"
                 onClick={() => window.open(`${getSiteUrl()}/sitemap.xml`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Live /sitemap.xml
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={handlePreviewXml} disabled={loadingXml}>
+              <Button type="button" variant="outline" size="sm" onClick={handlePreviewXml} disabled={loadingXml} className="cursor-pointer">
                 <Eye className="h-4 w-4 mr-2" />
                 Preview XML
               </Button>
-              <Button type="submit" size="sm" disabled={saving}>
+              <Button type="submit" size="sm" disabled={saving} className="cursor-pointer">
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? 'Saving...' : 'Save Settings'}
               </Button>

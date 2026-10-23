@@ -40,9 +40,15 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
     };
   }
 
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = (service as any).seoMetadata?.canonicalUrl || `${siteUrl}/services/${service.slug}`;
+
   return {
     title: `${service.title} | Shopify Plus Services | Gypsym Technology`,
     description: service.tagline || service.shortDescription,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: `${service.title} | Gypsym Technology`,
       description: service.tagline || service.shortDescription,
@@ -117,11 +123,23 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       )
     : null;
 
+  let customStructuredData = null;
+  if ((service as any).seoMetadata?.structuredData) {
+    try {
+      customStructuredData =
+        typeof (service as any).seoMetadata.structuredData === 'string'
+          ? JSON.parse((service as any).seoMetadata.structuredData)
+          : (service as any).seoMetadata.structuredData;
+    } catch {
+      customStructuredData = null;
+    }
+  }
+
   return (
     <div className="w-full bg-[#f4f3ef] min-h-screen">
       <JsonLd data={breadcrumbSchema} />
-      <JsonLd data={serviceSchema} />
-      {faqSchema && <JsonLd data={faqSchema} />}
+      <JsonLd data={customStructuredData || serviceSchema} />
+      {faqSchema && !customStructuredData && <JsonLd data={faqSchema} />}
       {/* ── 1. Editorial Hero Section using Standard SubpageHero ── */}
       <SubpageHero
         ariaLabel={`${service.title} Hero`}

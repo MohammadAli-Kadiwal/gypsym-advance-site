@@ -9,6 +9,12 @@ import { AppModule } from './app.module';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
+// Global BigInt serialization patch for Prisma models (e.g. BlogPost.viewCount, MediaItem.fileSizeBytes)
+(BigInt.prototype as any).toJSON = function () {
+  const int = Number.parseInt(this.toString(), 10);
+  return Number.isSafeInteger(int) ? int : this.toString();
+};
+
 // NestJS Application Bootstrap - Reloaded
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

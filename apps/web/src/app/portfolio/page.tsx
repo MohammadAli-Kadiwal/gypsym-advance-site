@@ -23,12 +23,17 @@ interface PortfolioPageProps {
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('portfolio');
   const seo = page?.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/portfolio`;
 
   return {
     title: seo?.metaTitle || 'Portfolio & Shopify Case Studies | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.',
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: seo?.ogTitle || seo?.metaTitle || 'Portfolio | Gypsym Technology',
       description:

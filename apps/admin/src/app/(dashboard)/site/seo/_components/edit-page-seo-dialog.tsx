@@ -102,7 +102,7 @@ export function EditPageSeoDialog({
             <span>Edit SEO & Discoverability — {page.title}</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500 font-mono">
-            Path: /{page.slug === 'home' ? '' : page.slug}
+            Path: {page.path || (page.slug === 'home' ? '/' : `/${page.slug}`)} • Type: {page.type || 'PAGE'}
           </DialogDescription>
         </DialogHeader>
 
@@ -152,15 +152,51 @@ export function EditPageSeoDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Canonical URL Override (Optional)</label>
-              <Input
-                value={canonicalUrl}
-                onChange={(e) => setCanonicalUrl(e.target.value)}
-                placeholder="Leave blank to use default normalized site URL..."
-                className="rounded-xl text-xs font-mono"
-              />
-            </div>
+            {/* Canonical URL */}
+            {(() => {
+              const normalizedPath = page.path || (page.slug === 'home' || page.slug === '/' ? '' : (page.slug.startsWith('/') ? page.slug : `/${page.slug}`));
+              const autoCanonicalUrl = page.autoCanonicalUrl || `https://gypsym.com${normalizedPath === '/' ? '' : normalizedPath}`;
+              const isCustom = Boolean(canonicalUrl.trim());
+
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">Canonical URL</label>
+                    <span className="text-[10px] font-mono">
+                      {isCustom ? (
+                        <span className="text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                          Custom Override
+                        </span>
+                      ) : (
+                        <span className="text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          Auto-Generated Active
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <Input
+                    value={canonicalUrl}
+                    onChange={(e) => setCanonicalUrl(e.target.value)}
+                    placeholder={autoCanonicalUrl}
+                    className="rounded-xl text-xs font-mono"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                    <span className="truncate">
+                      Default Auto Canonical: <code className="text-slate-700 font-semibold">{autoCanonicalUrl}</code>
+                    </span>
+                    {isCustom && (
+                      <button
+                        type="button"
+                        onClick={() => setCanonicalUrl('')}
+                        className="text-xs text-rose-600 hover:underline shrink-0 ml-2 cursor-pointer font-medium"
+                      >
+                        Reset to Auto
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-slate-50/50">

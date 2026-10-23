@@ -180,12 +180,12 @@ export function GeoTab() {
                 Define authoritative corporate entity attributes, core capabilities, and topical knowledge graphs consumed by LLMs.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={loadGeo}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={loadGeo} className="cursor-pointer">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reload
               </Button>
-              <Button type="submit" size="sm" disabled={saving}>
+              <Button type="submit" size="sm" disabled={saving} className="cursor-pointer">
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? 'Saving...' : 'Save Profile'}
               </Button>

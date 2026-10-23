@@ -123,14 +123,20 @@ export interface HreflangLocale {
 export interface PageSeoItem {
   id: string;
   slug: string;
+  path?: string;
+  type?: 'PAGE' | 'SERVICE' | 'BLOG' | 'PORTFOLIO' | string;
   title: string;
   status: string;
   layoutType: string;
   updatedAt: string;
+  autoCanonicalUrl?: string;
   seoMetadata: {
     metaTitle: string | null;
     metaDescription: string | null;
     canonicalUrl: string | null;
+    isAutoCanonical?: boolean;
+    explicitCanonicalUrl?: string | null;
+    autoCanonicalUrl?: string;
     robotsIndex: boolean;
     robotsFollow: boolean;
     ogTitle: string | null;
@@ -147,7 +153,9 @@ export interface PageSeoItem {
     descriptionLength: number;
     descriptionStatus: 'GOOD' | 'WARNING' | 'CRITICAL';
     hasCanonical: boolean;
+    isAutoCanonical?: boolean;
     hasOg: boolean;
     isIndexable: boolean;
+    hasStructuredData?: boolean;
   };
 }

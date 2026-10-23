@@ -30,6 +30,37 @@ interface PortfolioProjectPageProps {
   };
 }
 
+export async function generateMetadata({ params }: PortfolioProjectPageProps): Promise<Metadata> {
+  const project = await getPortfolioProjectBySlug(params.slug);
+  if (!project) {
+    return {
+      title: 'Case Study Not Found | Gypsym Technology',
+    };
+  }
+
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = `${siteUrl}/portfolio/${project.slug}`;
+
+  return {
+    title: `${project.title} | Case Study | Gypsym Technology`,
+    description: project.description ? stripHtml(project.description) : undefined,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: `${project.title} | Gypsym Technology`,
+      description: project.description ? stripHtml(project.description) : undefined,
+      images: project.imageUrl ? [{ url: project.imageUrl, alt: project.title }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: project.title,
+      description: project.description ? stripHtml(project.description) : undefined,
+      images: project.imageUrl ? [project.imageUrl] : undefined,
+    },
+  };
+}
+
 function stripHtml(html: string = ''): string {
   return html
     .replace(/<[^>]*>?/gm, '')
@@ -167,35 +198,6 @@ function parseRichContent(content: string = ''): string {
   if (inOl) htmlParts.push('</ol>');
 
   return htmlParts.join('\n');
-}
-
-export async function generateMetadata({ params }: PortfolioProjectPageProps): Promise<Metadata> {
-  const project = await getPortfolioProjectBySlug(params.slug);
-  if (!project) {
-    return {
-      title: 'Project Not Found | Gypsym Technology',
-    };
-  }
-
-  const plainDesc = stripHtml(project.description) || `${project.title} - Shopify Plus Showcase by Gypsym Technology`;
-  const snippet = plainDesc.length > 160 ? `${plainDesc.slice(0, 157)}...` : plainDesc;
-
-  return {
-    title: `${project.title} | Shopify Plus Case Study | Gypsym Technology`,
-    description: snippet,
-    openGraph: {
-      title: `${project.title} | Gypsym Technology Portfolio`,
-      description: snippet,
-      type: 'article',
-      images: project.imageUrl ? [{ url: project.imageUrl, alt: project.altText || project.title }] : undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: project.title,
-      description: snippet,
-      images: project.imageUrl ? [project.imageUrl] : undefined,
-    },
-  };
 }
 
 export default async function PortfolioProjectPage({ params }: PortfolioProjectPageProps) {

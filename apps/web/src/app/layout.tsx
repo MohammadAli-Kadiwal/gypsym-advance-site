@@ -37,6 +37,9 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: keywords.length > 0 ? keywords : undefined,
     authors: seo?.defaultAuthor ? [{ name: seo.defaultAuthor }] : [{ name: siteName }],
     metadataBase: new URL(baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`),
+    alternates: {
+      canonical: baseUrl,
+    },
     openGraph: {
       type: 'website',
       locale: seo?.defaultLocale || 'en_US',

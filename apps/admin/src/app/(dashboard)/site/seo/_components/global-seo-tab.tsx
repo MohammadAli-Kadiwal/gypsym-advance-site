@@ -189,7 +189,12 @@ export function GlobalSeoTab({
 
               {/* Keywords Tag Manager */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700">Topic Keywords (Planning & AEO Graph)</label>
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">Topic Keywords (Planning & AEO Graph)</label>
+                  <p className="text-[11px] text-slate-400">
+                    {(settings.defaultKeywords || []).length} keywords configured across headless, Shopify Plus, and migrations.
+                  </p>
+                </div>
                 <div className="flex gap-2">
                   <Input
                     value={newKeyword}

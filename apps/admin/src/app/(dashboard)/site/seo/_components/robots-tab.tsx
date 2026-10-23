@@ -206,21 +206,22 @@ export function RobotsTab() {
                 Define crawling permissions for search engine robots, AI web scrapers, and automated indexes.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="cursor-pointer"
                 onClick={() => window.open(`${getSiteUrl()}/robots.txt`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Live /robots.txt
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)}>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="cursor-pointer">
                 <Eye className="h-4 w-4 mr-2" />
                 {showPreview ? 'Hide Preview' : 'Preview Text'}
               </Button>
-              <Button type="submit" size="sm" disabled={saving}>
+              <Button type="submit" size="sm" disabled={saving} className="cursor-pointer">
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? 'Saving...' : 'Save Directives'}
               </Button>

@@ -15,19 +15,30 @@ import { getSiteUrl } from '@/lib/site-url';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPageBySlug('blog');
+  const seo = page?.seoMetadata;
   const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/blog`;
+
   return {
-    title: 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+    title: seo?.metaTitle || 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
     description:
+      seo?.metaDescription ||
       'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering from the Gypsym Technology engineering team.',
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      title: 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+      title: seo?.ogTitle || seo?.metaTitle || 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
       description:
+        seo?.ogDescription ||
+        seo?.metaDescription ||
         'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering.',
-      url: `${siteUrl}/blog`,
+      url: canonicalUrl,
       siteName: 'Gypsym Technology',
       type: 'website',
     },
+    robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };
 }
 

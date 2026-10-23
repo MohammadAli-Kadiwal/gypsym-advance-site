@@ -248,8 +248,8 @@ export function CanonicalsTab() {
               </Button>
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-2xl overflow-x-auto bg-card shadow-2xs">
+              <table className="w-full text-sm min-w-[650px]">
                 <thead className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground text-left">
                   <tr>
                     <th className="p-3">Language / Region</th>

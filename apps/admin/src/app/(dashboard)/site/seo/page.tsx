@@ -16,6 +16,7 @@ import {
   Sliders,
   RefreshCw,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,8 +41,65 @@ import { CanonicalsTab } from './_components/canonicals-tab';
 import { TemplatesSettingsTab } from './_components/templates-settings-tab';
 import { GlobalSeoSettings, PageSeoItem } from './_components/types';
 
-export default function SeoManagementPage() {
-  const [activeTab, setActiveTab] = React.useState('dashboard');
+const TAB_PARAM_MAP: Record<string, string> = {
+  dashboard: 'dashboard',
+  global: 'global-seo',
+  pages: 'page-seo',
+  aeo: 'aeo',
+  geo: 'geo',
+  redirects: 'redirects',
+  sitemap: 'sitemap',
+  robots: 'robots',
+  schema: 'schema',
+  previews: 'previews',
+  canonicals: 'canonicals',
+  settings: 'settings',
+};
+
+function resolveTabFromParam(param: string | null): string {
+  if (!param) return 'dashboard';
+  const clean = param.toLowerCase().trim().replace(/[\s_]+/g, '-');
+  if (['page-seo', 'pages-seo', 'pages', 'page', 'pageseo', 'page-by-page'].includes(clean)) return 'pages';
+  if (['global-seo', 'global', 'globalseo'].includes(clean)) return 'global';
+  if (['dashboard', 'dash'].includes(clean)) return 'dashboard';
+  if (['aeo', 'answer-engine'].includes(clean)) return 'aeo';
+  if (['geo', 'generative-engine'].includes(clean)) return 'geo';
+  if (['redirects', 'redirect'].includes(clean)) return 'redirects';
+  if (['sitemap', 'sitemaps'].includes(clean)) return 'sitemap';
+  if (['robots', 'robots-txt', 'robot'].includes(clean)) return 'robots';
+  if (['schema', 'structured-data', 'jsonld'].includes(clean)) return 'schema';
+  if (['previews', 'preview', 'social-previews'].includes(clean)) return 'previews';
+  if (['canonicals', 'canonical', 'hreflang'].includes(clean)) return 'canonicals';
+  if (['settings', 'templates', 'template'].includes(clean)) return 'settings';
+  return 'dashboard';
+}
+
+function SeoManagementContent() {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = React.useState<string>(() => resolveTabFromParam(searchParams.get('tab')));
+
+  React.useEffect(() => {
+    const rawTab = searchParams.get('tab');
+    if (rawTab) {
+      const fromUrl = resolveTabFromParam(rawTab);
+      if (fromUrl && fromUrl !== activeTab) {
+        setActiveTab(fromUrl);
+      }
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (val: string, rule?: string) => {
+    setActiveTab(val);
+    const paramVal = TAB_PARAM_MAP[val] || val;
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', paramVal);
+    if (rule) {
+      url.searchParams.set('rule', rule);
+    } else if (val !== 'pages') {
+      url.searchParams.delete('rule');
+    }
+    window.history.pushState({}, '', url.toString());
+  };
 
   // Dashboard & Global State
   const [dashboardData, setDashboardData] = React.useState<any>(null);
@@ -124,7 +182,18 @@ export default function SeoManagementPage() {
     try {
       setLoadingPages(true);
       const res = await seoService.getPages();
-      setPages(Array.isArray(res) ? res : []);
+      if (Array.isArray(res)) {
+        const unique = new Map<string, PageSeoItem>();
+        for (const item of res) {
+          const key = `${item.type || 'PAGE'}:${item.slug}`;
+          if (!unique.has(key)) {
+            unique.set(key, item);
+          }
+        }
+        setPages(Array.from(unique.values()));
+      } else {
+        setPages([]);
+      }
     } catch (err) {
       notify.error({ title: 'Failed to load pages for SEO', description: normalizeErrorMessage(err) });
     } finally {
@@ -222,56 +291,56 @@ export default function SeoManagementPage() {
       />
 
       {/* Main Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="overflow-x-auto pb-1">
-          <TabsList className="h-10 p-1 bg-muted/60 inline-flex w-auto min-w-full sm:min-w-0">
-            <TabsTrigger value="dashboard" className="flex items-center gap-1.5 text-xs">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <div className="w-full overflow-x-auto no-scrollbar scroll-smooth py-1">
+          <TabsList className="h-10 p-1 bg-muted/60 rounded-xl inline-flex w-max min-w-full sm:min-w-0 gap-1 border border-border/50">
+            <TabsTrigger value="dashboard" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Dashboard
+              <span>Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="global" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="global" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Globe className="h-3.5 w-3.5" />
-              Global SEO
+              <span>Global SEO</span>
             </TabsTrigger>
-            <TabsTrigger value="pages" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="pages" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <FileText className="h-3.5 w-3.5" />
-              Page SEO
+              <span>Page SEO</span>
             </TabsTrigger>
-            <TabsTrigger value="aeo" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="aeo" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Bot className="h-3.5 w-3.5" />
-              AEO
+              <span>AEO</span>
             </TabsTrigger>
-            <TabsTrigger value="geo" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="geo" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Sparkles className="h-3.5 w-3.5" />
-              GEO
+              <span>GEO</span>
             </TabsTrigger>
-            <TabsTrigger value="redirects" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="redirects" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <ArrowRight className="h-3.5 w-3.5" />
-              Redirects
+              <span>Redirects</span>
             </TabsTrigger>
-            <TabsTrigger value="sitemap" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="sitemap" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <FileCode className="h-3.5 w-3.5" />
-              Sitemap
+              <span>Sitemap</span>
             </TabsTrigger>
-            <TabsTrigger value="robots" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="robots" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Shield className="h-3.5 w-3.5" />
-              Robots.txt
+              <span>Robots.txt</span>
             </TabsTrigger>
-            <TabsTrigger value="schema" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="schema" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <FileJson className="h-3.5 w-3.5" />
-              Schema
+              <span>Schema</span>
             </TabsTrigger>
-            <TabsTrigger value="previews" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="previews" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Share2 className="h-3.5 w-3.5" />
-              Previews
+              <span>Previews</span>
             </TabsTrigger>
-            <TabsTrigger value="canonicals" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="canonicals" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Link2 className="h-3.5 w-3.5" />
-              Canonicals & Hreflang
+              <span>Canonicals & Hreflang</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="settings" className="flex items-center gap-1.5 text-xs rounded-lg shrink-0 px-3 font-medium transition-all">
               <Sliders className="h-3.5 w-3.5" />
-              Settings & Webmasters
+              <span>Settings & Webmasters</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -282,7 +351,7 @@ export default function SeoManagementPage() {
             data={dashboardData}
             loading={loadingDashboard}
             onRefresh={loadDashboard}
-            onNavigateTab={(tab) => setActiveTab(tab)}
+            onNavigateTab={(tab, rule) => handleTabChange(tab, rule)}
           />
         </TabsContent>
 
@@ -339,7 +408,7 @@ export default function SeoManagementPage() {
 
         {/* Tab 9: Schema / Structured Data */}
         <TabsContent value="schema" className="space-y-4">
-          <SchemaTab />
+          <SchemaTab onNavigateTab={handleTabChange} />
         </TabsContent>
 
         {/* Tab 10: Search & Social Previews */}
@@ -377,5 +446,21 @@ export default function SeoManagementPage() {
         }}
       />
     </AdminContentContainer>
+  );
+}
+
+export default function SeoManagementPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <AdminPageLoadingState
+          message="Loading SEO health metrics, AEO entity graphs, and search index status..."
+          description="Syncing state with Gypsym platform services..."
+          variant="wide"
+        />
+      }
+    >
+      <SeoManagementContent />
+    </React.Suspense>
   );
 }

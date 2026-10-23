@@ -16,6 +16,7 @@
     "db:seed": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed.ts",
     "db:seed:prod": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed.ts --mode=production",
     "db:seed:countries": "dotenv -e ../../.env -- ts-node --transpile-only prisma/seed-countries.ts",
+    "db:seed:seo": "ts-node --transpile-only prisma/seed-seo.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },

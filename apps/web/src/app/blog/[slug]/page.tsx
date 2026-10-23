@@ -36,9 +36,15 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     };
   }
 
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = (post as any).seoMetadata?.canonicalUrl || `${siteUrl}/blog/${post.slug}`;
+
   return {
     title: `${post.title} | Gypsym Technology Architecture`,
     description: post.excerpt,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt,
@@ -122,10 +128,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     articleSection: post.category?.name,
   });
 
+  let customStructuredData = null;
+  if ((post as any).seoMetadata?.structuredData) {
+    try {
+      customStructuredData =
+        typeof (post as any).seoMetadata.structuredData === 'string'
+          ? JSON.parse((post as any).seoMetadata.structuredData)
+          : (post as any).seoMetadata.structuredData;
+    } catch {
+      customStructuredData = null;
+    }
+  }
+
   return (
     <div className="w-full bg-[#f4f3ef] dark:bg-background pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
       <JsonLd data={breadcrumbSchema} />
-      <JsonLd data={articleSchema} />
+      <JsonLd data={customStructuredData || articleSchema} />
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Main Reading Area (Left Side) */}

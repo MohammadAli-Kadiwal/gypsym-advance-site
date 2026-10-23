@@ -17,9 +17,15 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   const seo = page.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || siteUrl;
+
   return {
     title: seo?.metaTitle || page.title,
     description: seo?.metaDescription || page.description || undefined,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: seo?.ogTitle || seo?.metaTitle || page.title,
       description: seo?.ogDescription || seo?.metaDescription || page.description || undefined,
@@ -51,12 +57,24 @@ export default async function HomePage() {
     },
   };
 
+  let customStructuredData = null;
+  if (page.seoMetadata?.structuredData) {
+    try {
+      customStructuredData =
+        typeof page.seoMetadata.structuredData === 'string'
+          ? JSON.parse(page.seoMetadata.structuredData)
+          : page.seoMetadata.structuredData;
+    } catch {
+      customStructuredData = null;
+    }
+  }
+
   const orgSchema = buildOrganizationSchema();
 
   return (
     <div className="w-full">
       <JsonLd data={orgSchema} />
-      <JsonLd data={homePageSchema} />
+      <JsonLd data={customStructuredData || homePageSchema} />
       <SectionRenderer sections={page.sections} />
     </div>
   );

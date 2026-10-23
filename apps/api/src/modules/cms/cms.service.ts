@@ -2564,6 +2564,20 @@ export class CmsService implements OnModuleInit {
     for (const item of coreLegalPages) {
       if (!pages.some((p) => p.slug === item.slug)) {
         try {
+          const existing = await this.prisma.page.findFirst({
+            where: { slug: item.slug, deletedAt: null },
+            include: {
+              sections: { orderBy: { displayOrder: 'asc' } },
+              seoMetadata: {
+                include: { ogImage: { select: { variants: true } } },
+              },
+            },
+          });
+          if (existing) {
+            pages.push(existing);
+            continue;
+          }
+
           const created = await this.prisma.page.create({
             data: {
               title: item.title,

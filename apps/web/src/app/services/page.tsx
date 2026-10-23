@@ -17,12 +17,17 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('services');
   const seo = page?.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/services`;
 
   return {
     title: seo?.metaTitle || 'Our Services | Shopify Plus & E-commerce Agency | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Explore our 7 core Shopify services: E-commerce Solutions, Web Design & Development, Technical SEO, Website Maintenance, Theme Customization, Store Optimization, and Turnkey Store Setup.',
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: seo?.ogTitle || seo?.metaTitle || 'Our Services | Gypsym Technology',
       description:

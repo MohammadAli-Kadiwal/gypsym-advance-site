@@ -30,7 +30,7 @@ interface SeoDashboardTabProps {
   data: any;
   loading: boolean;
   onRefresh: () => void;
-  onNavigateTab: (tab: string) => void;
+  onNavigateTab: (tab: string, rule?: string) => void;
 }
 
 // ── Circular SVG Gauge ──────────────────────────────────────────
@@ -69,25 +69,35 @@ function RuleRow({
   passed,
   total,
   iconClass,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
   passed: number;
   total: number;
   iconClass: string;
+  onClick?: () => void;
 }) {
   const pct = total > 0 ? Math.round((passed / total) * 100) : 100;
   const good = pct >= 80;
   const warn = pct >= 50 && pct < 80;
 
   return (
-    <div className="flex items-center gap-3">
+    <div
+      onClick={onClick}
+      title={onClick ? `Click to filter Page SEO for ${total - passed} missing pages` : undefined}
+      className={`flex items-center gap-2.5 p-1 -mx-1 rounded-lg transition-colors select-none ${
+        onClick ? 'hover:bg-slate-100/80 cursor-pointer group' : ''
+      }`}
+    >
       <div className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-semibold text-slate-700 truncate">{label}</span>
+        <div className="flex items-center justify-between mb-0.5">
+          <span className="text-[11px] font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">
+            {label}
+          </span>
           <span className={`text-[11px] font-bold ml-2 shrink-0 tabular-nums ${good ? 'text-emerald-600' : warn ? 'text-amber-600' : 'text-rose-600'}`}>
             {pct}%
           </span>
@@ -98,7 +108,10 @@ function RuleRow({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{passed}/{total} pages</div>
+        <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center justify-between">
+          <span>{passed}/{total} pages</span>
+          {onClick && <span className="text-[9px] text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Filter →</span>}
+        </div>
       </div>
       <div className="shrink-0">
         {good
@@ -227,10 +240,38 @@ export function SeoDashboardTab({
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Measurable Rules</span>
                 <span className="ml-auto text-[8px] font-mono text-slate-400">{total} × 4</span>
               </div>
-              <RuleRow icon={Type}      label="Page Title Set"       passed={titlesOk} total={total} iconClass="bg-blue-50 text-blue-600" />
-              <RuleRow icon={AlignLeft} label="Meta Description Set" passed={descsOk}  total={total} iconClass="bg-indigo-50 text-indigo-600" />
-              <RuleRow icon={Link2}     label="Explicit Canonical"   passed={canonOk}  total={total} iconClass="bg-teal-50 text-teal-600" />
-              <RuleRow icon={ImageIcon} label="OG / Social Image"    passed={ogOk}     total={total} iconClass="bg-pink-50 text-pink-600" />
+              <RuleRow
+                icon={Type}
+                label="Page Title Set"
+                passed={titlesOk}
+                total={total}
+                iconClass="bg-blue-50 text-blue-600"
+                onClick={() => onNavigateTab('pages', 'missing-title')}
+              />
+              <RuleRow
+                icon={AlignLeft}
+                label="Meta Description Set"
+                passed={descsOk}
+                total={total}
+                iconClass="bg-indigo-50 text-indigo-600"
+                onClick={() => onNavigateTab('pages', 'missing-desc')}
+              />
+              <RuleRow
+                icon={Link2}
+                label="Explicit Canonical"
+                passed={canonOk}
+                total={total}
+                iconClass="bg-teal-50 text-teal-600"
+                onClick={() => onNavigateTab('pages', 'missing-canonical')}
+              />
+              <RuleRow
+                icon={ImageIcon}
+                label="OG / Social Image"
+                passed={ogOk}
+                total={total}
+                iconClass="bg-pink-50 text-pink-600"
+                onClick={() => onNavigateTab('pages', 'missing-og')}
+              />
             </div>
           </div>
         </div>
@@ -266,10 +307,16 @@ export function SeoDashboardTab({
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">{data.totalTrackedUrls || 0}</div>
-          <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
             <span>{data.totalPages || 0} Pages</span>
             <span>•</span>
             <span>{data.totalServices || 0} Services</span>
+            {Boolean(data.totalBlogs) && (
+              <>
+                <span>•</span>
+                <span>{data.totalBlogs} Blogs</span>
+              </>
+            )}
             <span>•</span>
             <span>{data.totalPortfolio || 0} Portfolio</span>
           </div>

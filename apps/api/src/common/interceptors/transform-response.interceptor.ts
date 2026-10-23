@@ -10,6 +10,25 @@ import { Request } from 'express';
 import { ApiSuccessResponse } from '@gypsym/shared-types';
 import { CORRELATION_ID_HEADER, REQUEST_ID_HEADER } from '../middleware/correlation-id.middleware';
 
+function serializeBigInts(value: any): any {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'bigint') {
+    const num = Number(value);
+    return Number.isSafeInteger(num) ? num : value.toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map(serializeBigInts);
+  }
+  if (typeof value === 'object' && !(value instanceof Date)) {
+    const res: any = {};
+    for (const key of Object.keys(value)) {
+      res[key] = serializeBigInts(value[key]);
+    }
+    return res;
+  }
+  return value;
+}
+
 @Injectable()
 export class TransformResponseInterceptor<T>
   implements NestInterceptor<T, ApiSuccessResponse<T>>
@@ -24,12 +43,14 @@ export class TransformResponseInterceptor<T>
 
     return next.handle().pipe(
       map((data) => {
+        const sanitized = serializeBigInts(data);
+
         // If the controller already returned a structure with data & meta
-        if (data && typeof data === 'object' && 'data' in data && 'meta' in data) {
+        if (sanitized && typeof sanitized === 'object' && 'data' in sanitized && 'meta' in sanitized) {
           return {
             success: true,
-            data: data.data,
-            meta: data.meta,
+            data: sanitized.data,
+            meta: sanitized.meta,
             timestamp: new Date().toISOString(),
             requestId,
             correlationId,
@@ -38,7 +59,7 @@ export class TransformResponseInterceptor<T>
 
         return {
           success: true,
-          data,
+          data: sanitized,
           timestamp: new Date().toISOString(),
           requestId,
           correlationId,

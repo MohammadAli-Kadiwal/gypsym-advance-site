@@ -206,12 +206,12 @@ export function RedirectsTab() {
                 Configure HTTP 301, 302, 307, and 308 redirects to preserve SEO link equity and prevent 404 broken links.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadRedirects} disabled={loading}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={loadRedirects} disabled={loading} className="cursor-pointer">
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button size="sm" onClick={handleOpenAdd}>
+              <Button size="sm" onClick={handleOpenAdd} className="cursor-pointer">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Redirect
               </Button>
@@ -275,8 +275,8 @@ export function RedirectsTab() {
               )}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-2xl overflow-x-auto bg-card shadow-2xs">
+              <table className="w-full text-sm min-w-[700px]">
                 <thead className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground text-left">
                   <tr>
                     <th className="p-3">Source URL</th>
