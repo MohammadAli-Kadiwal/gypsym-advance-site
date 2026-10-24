@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Patch, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { RecaptchaService, UpdateRecaptchaDto } from './recaptcha.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -30,6 +30,13 @@ export class RecaptchaController {
   @Put()
   @UseGuards(AuthGuard)
   async updateConfig(@Body() dto: UpdateRecaptchaDto, @Req() req: Request) {
+    const actorId = (req as any).user?.id || (req as any).user?.sub;
+    return this.recaptchaService.saveConfig(dto, actorId);
+  }
+
+  @Patch()
+  @UseGuards(AuthGuard)
+  async patchConfig(@Body() dto: UpdateRecaptchaDto, @Req() req: Request) {
     const actorId = (req as any).user?.id || (req as any).user?.sub;
     return this.recaptchaService.saveConfig(dto, actorId);
   }

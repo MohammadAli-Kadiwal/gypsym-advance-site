@@ -64,15 +64,15 @@ import { SeoModule } from './modules/seo/seo.module';
     }),
     DatabaseModule,
     HealthModule,
-    CmsModule,
     EmailModule,
+    RecaptchaModule,
     InquiriesModule,
     PortfolioModule,
-    RecaptchaModule,
     BookingsModule,
     AuthModule,
     UsersModule,
     SeoModule,
+    CmsModule,
   ],
 })
 export class AppModule implements NestModule {

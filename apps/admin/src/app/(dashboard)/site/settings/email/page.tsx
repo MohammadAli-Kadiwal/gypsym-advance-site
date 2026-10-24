@@ -119,16 +119,14 @@ export default function EmailSmtpSettingsPage() {
         setAdminEmails(resolvedAdminList);
         setRecipientsInput(data.notificationRecipients?.join(', ') || '');
         setBookingRecipientsInput(data.bookingNotificationRecipients?.join(', ') || '');
-        if (!testEmailInput && data.fromEmail) {
-          setTestEmailInput(data.fromEmail);
-        }
+        setTestEmailInput((prev) => prev || data.fromEmail || '');
       }
     } catch {
       notify.error('Unable to load SMTP configuration.');
     } finally {
       setLoading(false);
     }
-  }, [testEmailInput]);
+  }, []);
 
   React.useEffect(() => {
     loadSettings();

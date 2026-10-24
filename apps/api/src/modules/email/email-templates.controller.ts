@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Post,
   Param,
   Body,
@@ -52,6 +53,18 @@ export class EmailTemplatesController {
 
   @Put(':key')
   async update(
+    @Param('key') key: string,
+    @Body() payload: { subject?: string; htmlContent?: string; isActive?: boolean }
+  ) {
+    const updated = await this.templatesService.updateTemplate(key, payload);
+    return {
+      success: true,
+      data: updated,
+    };
+  }
+
+  @Patch(':key')
+  async patch(
     @Param('key') key: string,
     @Body() payload: { subject?: string; htmlContent?: string; isActive?: boolean }
   ) {

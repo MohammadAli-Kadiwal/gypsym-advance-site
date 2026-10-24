@@ -3533,16 +3533,17 @@ export class CmsService implements OnModuleInit {
     category: string = 'system',
     isPublic: boolean = true
   ): Promise<any> {
+    const safeValue = value === undefined ? {} : value;
     return this.prisma.siteSetting.upsert({
       where: { key },
       create: {
         key,
         category,
-        value,
+        value: safeValue,
         isPublic,
       },
       update: {
-        value,
+        value: safeValue,
         isPublic,
       },
     });

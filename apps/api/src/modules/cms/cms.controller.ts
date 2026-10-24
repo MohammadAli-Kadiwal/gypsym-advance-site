@@ -255,6 +255,12 @@ export class CmsController {
     return this.cmsService.updateBrandSettings(body);
   }
 
+  @Patch('branding')
+  @UseGuards(AuthGuard)
+  async patchBranding(@Body() body: any): Promise<any> {
+    return this.cmsService.updateBrandSettings(body);
+  }
+
   @Get('socials')
   async getSocials(): Promise<any> {
     return this.cmsService.getSocialLinks();
@@ -262,8 +268,20 @@ export class CmsController {
 
   @Put('socials')
   @UseGuards(AuthGuard)
-  async updateSocials(@Body() body: { socialLinks: any[] }): Promise<any> {
-    return this.cmsService.updateSocialLinks(body.socialLinks);
+  async updateSocials(@Body() body: { socialLinks?: any[]; socials?: any[] }): Promise<any> {
+    return this.cmsService.updateSocialLinks(body.socialLinks || body.socials || []);
+  }
+
+  @Post('socials')
+  @UseGuards(AuthGuard)
+  async postSocials(@Body() body: { socialLinks?: any[]; socials?: any[] }): Promise<any> {
+    return this.cmsService.updateSocialLinks(body.socialLinks || body.socials || []);
+  }
+
+  @Patch('socials')
+  @UseGuards(AuthGuard)
+  async patchSocials(@Body() body: { socialLinks?: any[]; socials?: any[] }): Promise<any> {
+    return this.cmsService.updateSocialLinks(body.socialLinks || body.socials || []);
   }
 
   @Get('settings')
@@ -282,6 +300,18 @@ export class CmsController {
     return this.cmsService.updateSeoSettings(body);
   }
 
+  @Post('settings/seo')
+  @UseGuards(AuthGuard)
+  async postSeoSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateSeoSettings(body);
+  }
+
+  @Patch('settings/seo')
+  @UseGuards(AuthGuard)
+  async patchSeoSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateSeoSettings(body);
+  }
+
   @Get('settings/scripts')
   async getScriptSettings() {
     return this.cmsService.getScriptSettings();
@@ -294,10 +324,25 @@ export class CmsController {
     return this.cmsService.updateScriptSettings(body);
   }
 
+  @Post('settings/scripts')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN, RoleType.SYSTEM_ADMIN)
+  async postScriptSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateScriptSettings(body);
+  }
+
+  @Patch('settings/scripts')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleType.SUPER_ADMIN, RoleType.SYSTEM_ADMIN)
+  async patchScriptSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateScriptSettings(body);
+  }
+
   @Put('settings/:key')
   @UseGuards(AuthGuard)
-  async updateSetting(@Param('key') key: string, @Body() body: { value: any }): Promise<any> {
-    return this.cmsService.updateSiteSetting(key, body.value);
+  async updateSetting(@Param('key') key: string, @Body() body: any): Promise<any> {
+    const value = body && typeof body === 'object' && 'value' in body ? body.value : (body ?? {});
+    return this.cmsService.updateSiteSetting(key, value);
   }
 
   @Get('pages')
@@ -379,9 +424,21 @@ export class CmsController {
     return this.cmsService.updateFooterData(body);
   }
 
+  @Patch('admin/footer')
+  @UseGuards(AuthGuard)
+  async patchAdminFooter(@Body() body: { config?: any; navigation?: any; contact?: any }): Promise<any> {
+    return this.cmsService.updateFooterData(body);
+  }
+
   @Put('footer')
   @UseGuards(AuthGuard)
   async updateFooter(@Body() body: { config?: any; navigation?: any; contact?: any }): Promise<any> {
+    return this.cmsService.updateFooterData(body);
+  }
+
+  @Patch('footer')
+  @UseGuards(AuthGuard)
+  async patchFooter(@Body() body: { config?: any; navigation?: any; contact?: any }): Promise<any> {
     return this.cmsService.updateFooterData(body);
   }
 
