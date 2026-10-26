@@ -43,8 +43,11 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
   const siteUrl = getSiteUrl();
   const canonicalUrl = (service as any).seoMetadata?.canonicalUrl || `${siteUrl}/services/${service.slug}`;
 
+  const seo = (service as any).seoMetadata;
+  const customTitle = seo?.metaTitle;
+
   return {
-    title: `${service.title} | Shopify Plus Services | Gypsym Technology`,
+    title: customTitle ? { absolute: customTitle } : `${service.title} | Shopify Plus Services | Gypsym Technology`,
     description: service.tagline || service.shortDescription,
     alternates: {
       canonical: canonicalUrl,

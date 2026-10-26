@@ -41,8 +41,11 @@ export async function generateMetadata({ params }: PortfolioProjectPageProps): P
   const siteUrl = getSiteUrl();
   const canonicalUrl = `${siteUrl}/portfolio/${project.slug}`;
 
+  const seo = (project as any).seoMetadata;
+  const customTitle = seo?.metaTitle;
+
   return {
-    title: `${project.title} | Case Study | Gypsym Technology`,
+    title: customTitle ? { absolute: customTitle } : `${project.title} | Case Study | Gypsym Technology`,
     description: project.description ? stripHtml(project.description) : undefined,
     alternates: {
       canonical: canonicalUrl,

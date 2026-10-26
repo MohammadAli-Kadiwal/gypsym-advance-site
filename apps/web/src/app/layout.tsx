@@ -21,7 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const siteName = seo?.siteName || 'Gypsym Technology';
   const defaultTitle = seo?.defaultTitle || `${siteName} | Enterprise Architecture`;
-  const template = seo?.metaTitleTemplate || `%s | ${siteName}`;
+  let template = seo?.metaTitleTemplate || `%s | ${siteName}`;
+  if (template.includes('{pageTitle}')) {
+    template = template.replace('{pageTitle}', '%s').replace('{siteName}', siteName);
+  }
+  if (!template.includes('%s')) {
+    template = `%s | ${siteName}`;
+  }
   const description = seo?.defaultDescription || undefined;
   const keywords = seo?.defaultKeywords || [];
   const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || getSiteUrl();

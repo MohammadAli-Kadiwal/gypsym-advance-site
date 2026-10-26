@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = seo?.canonicalUrl || siteUrl;
 
   return {
-    title: seo?.metaTitle || page.title,
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : page.title,
     description: seo?.metaDescription || page.description || undefined,
     alternates: {
       canonical: canonicalUrl,

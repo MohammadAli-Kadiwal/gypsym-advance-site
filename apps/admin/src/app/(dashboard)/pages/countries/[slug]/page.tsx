@@ -92,7 +92,7 @@ export default function CountryStudioPage() {
         setPageStatus((data.status as any) || 'PUBLISHED');
 
         const seo = data.seoMetadata;
-        setMetaTitle(seo?.metaTitle || data.title || '');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDesc(seo?.metaDescription || data.description || '');
 
         // Extract Hero Section payload (ignore home-inherited sections)

@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: DynamicPageProps): Promise<Me
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/${slugPath}`;
 
   return {
-    title: seo?.metaTitle || page.title,
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : page.title,
     description: seo?.metaDescription || page.description || undefined,
     alternates: {
       canonical: canonicalUrl,

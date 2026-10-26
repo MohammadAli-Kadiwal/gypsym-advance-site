@@ -134,9 +134,8 @@ export function BookStudio({ onBack }: BookStudioProps) {
       if (page) {
         setPageData(page);
 
-        // SEO
         const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || page.title || 'Book a Discovery Call | Gypsym Technology');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDescription(
           seo?.metaDescription ||
             page.description ||

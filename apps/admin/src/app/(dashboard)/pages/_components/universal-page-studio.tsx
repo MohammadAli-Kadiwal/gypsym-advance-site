@@ -105,7 +105,7 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
         setPageDescription(loaded.description || '');
 
         const seo = loaded.seoMetadata;
-        setMetaTitle(seo?.metaTitle || loaded.title || '');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDescription(seo?.metaDescription || loaded.description || '');
         setCanonicalUrl(seo?.canonicalUrl || '');
         setOgImageUrl(seo?.ogImageUrl || '');

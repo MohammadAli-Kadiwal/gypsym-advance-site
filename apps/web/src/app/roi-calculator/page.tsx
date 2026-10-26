@@ -12,21 +12,36 @@ import { RevenueUpliftCalculator } from '@/components/calculator/revenue-calcula
 import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildFaqSchema, buildWebPageSchema } from '@/components/seo/json-ld';
+import { getPageBySlug } from '@/lib/api';
 import { getSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPageBySlug('roi-calculator').catch(() => null);
+  const seo = page?.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/roi-calculator`;
+
   return {
-    title: 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
+    title: seo?.metaTitle
+      ? { absolute: seo.metaTitle }
+      : 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
     description:
+      seo?.metaDescription ||
       'Simulate your store\'s projected annual revenue increase by switching to Gypsym\'s 42ms Next.js 15 Headless Edge architecture. Proven CRO conversion lift model.',
-    openGraph: {
-      title: 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
-      description:
-        'Calculate projected annual revenue lift and conversion expansion from sub-50ms TTFB Next.js headless storefronts.',
-      images: [{ url: '/assets/editorial/agency-hero-editorial.png' }],
+    alternates: {
+      canonical: canonicalUrl,
     },
+    openGraph: {
+      title: seo?.ogTitle || seo?.metaTitle || 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
+      description:
+        seo?.ogDescription ||
+        seo?.metaDescription ||
+        'Calculate projected annual revenue lift and conversion expansion from sub-50ms TTFB Next.js headless storefronts.',
+      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : [{ url: '/assets/editorial/agency-hero-editorial.png' }],
+    },
+    robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };
 }
 

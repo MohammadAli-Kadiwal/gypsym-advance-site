@@ -146,9 +146,8 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
       if (page) {
         setPageData(page);
 
-        // SEO
         const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || page.title || 'About Gypsym | Elite Shopify Plus Engineering');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDescription(
           seo?.metaDescription ||
             page.description ||

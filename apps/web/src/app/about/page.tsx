@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = page?.seoMetadata;
 
   return {
-    title: seo?.metaTitle || 'About Us | Shopify Plus & E-Commerce Engineering | Gypsym',
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'About Us | Shopify Plus & E-Commerce Engineering | Gypsym',
     description:
       seo?.metaDescription ||
       'Learn about Gypsym Technology, our engineering-first philosophy, senior specialists, and client-proven track record building high-growth Shopify Plus storefronts.',

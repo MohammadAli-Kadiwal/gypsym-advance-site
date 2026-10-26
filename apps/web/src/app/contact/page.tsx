@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('contact');
   const seo = page?.seoMetadata;
   return {
-    title: seo?.metaTitle || 'Contact Us | Gypsym Technology',
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Contact Us | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Reach out to Gypsym Technology for Shopify Plus development, custom theme engineering, D2C strategy, and e-commerce partnerships. We respond within one business day.',

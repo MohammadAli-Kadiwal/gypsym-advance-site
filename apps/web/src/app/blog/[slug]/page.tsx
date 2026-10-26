@@ -39,8 +39,11 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const siteUrl = getSiteUrl();
   const canonicalUrl = (post as any).seoMetadata?.canonicalUrl || `${siteUrl}/blog/${post.slug}`;
 
+  const seo = (post as any).seoMetadata;
+  const customTitle = seo?.metaTitle;
+
   return {
-    title: `${post.title} | Gypsym Technology Architecture`,
+    title: customTitle ? { absolute: customTitle } : `${post.title} | Gypsym Technology Architecture`,
     description: post.excerpt,
     alternates: {
       canonical: canonicalUrl,

@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/portfolio`;
 
   return {
-    title: seo?.metaTitle || 'Portfolio & Shopify Case Studies | Gypsym Technology',
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Portfolio & Shopify Case Studies | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.',

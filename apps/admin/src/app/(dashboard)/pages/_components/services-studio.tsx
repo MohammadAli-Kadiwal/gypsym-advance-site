@@ -175,7 +175,7 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
 
         // SEO
         const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || page.title || 'Our Services | Shopify Plus & E-commerce Agency');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDescription(
           seo?.metaDescription ||
             page.description ||

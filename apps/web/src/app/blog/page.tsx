@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/blog`;
 
   return {
-    title: seo?.metaTitle || 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering from the Gypsym Technology engineering team.',

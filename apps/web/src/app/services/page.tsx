@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/services`;
 
   return {
-    title: seo?.metaTitle || 'Our Services | Shopify Plus & E-commerce Agency | Gypsym Technology',
+    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Our Services | Shopify Plus & E-commerce Agency | Gypsym Technology',
     description:
       seo?.metaDescription ||
       'Explore our 7 core Shopify services: E-commerce Solutions, Web Design & Development, Technical SEO, Website Maintenance, Theme Customization, Store Optimization, and Turnkey Store Setup.',

@@ -12,17 +12,31 @@ import { getSiteUrl } from '@/lib/site-url';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPageBySlug('book').catch(() => null);
+  const seo = page?.seoMetadata;
   const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/book`;
+
   return {
-    title: 'Book a Discovery Call | Gypsym Technology',
+    title: seo?.metaTitle
+      ? { absolute: seo.metaTitle }
+      : 'Book a Discovery Call | Gypsym Technology',
     description:
+      seo?.metaDescription ||
       'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers. Live store audit, zero sales deck, actionable technical insights.',
-    openGraph: {
-      title: 'Book a Discovery Call | Gypsym Technology',
-      description:
-        'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.',
-      url: `${siteUrl}/book`,
+    alternates: {
+      canonical: canonicalUrl,
     },
+    openGraph: {
+      title: seo?.ogTitle || seo?.metaTitle || 'Book a Discovery Call | Gypsym Technology',
+      description:
+        seo?.ogDescription ||
+        seo?.metaDescription ||
+        'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.',
+      url: canonicalUrl,
+      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
+    },
+    robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };
 }
 

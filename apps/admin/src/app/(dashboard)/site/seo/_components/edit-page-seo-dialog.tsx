@@ -43,7 +43,7 @@ export function EditPageSeoDialog({
 
   React.useEffect(() => {
     if (page) {
-      setMetaTitle(page.seoMetadata.metaTitle || page.title || '');
+      setMetaTitle(page.seoMetadata.metaTitle || '');
       setMetaDescription(page.seoMetadata.metaDescription || '');
       setCanonicalUrl(page.seoMetadata.canonicalUrl || '');
       setRobotsIndex(page.seoMetadata.robotsIndex !== false);

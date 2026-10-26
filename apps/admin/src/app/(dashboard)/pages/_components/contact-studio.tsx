@@ -143,9 +143,8 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
       if (page) {
         setPageData(page);
 
-        // SEO
         const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || page.title || 'Contact Us | Gypsym Technology');
+        setMetaTitle(seo?.metaTitle || '');
         setMetaDescription(
           seo?.metaDescription ||
             page.description ||
