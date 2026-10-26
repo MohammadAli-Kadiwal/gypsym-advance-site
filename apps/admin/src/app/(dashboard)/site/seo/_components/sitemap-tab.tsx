@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Plus,
   Eye,
+  Globe,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export function SitemapTab() {
     includePortfolio: true,
     includeCategories: true,
     includeBlog: true,
+    includeLanguages: true,
     excludedSlugs: ['admin', 'login', 'draft', 'api'],
     defaultChangefreq: 'weekly',
     defaultPriority: 0.7,
@@ -49,6 +51,7 @@ export function SitemapTab() {
           includePortfolio: data.includePortfolio ?? true,
           includeCategories: data.includeCategories ?? true,
           includeBlog: data.includeBlog ?? true,
+          includeLanguages: data.includeLanguages ?? true,
           excludedSlugs: Array.isArray(data.excludedSlugs) ? data.excludedSlugs : [],
           defaultChangefreq: data.defaultChangefreq || 'weekly',
           defaultPriority: data.defaultPriority ?? 0.7,
@@ -102,16 +105,21 @@ export function SitemapTab() {
       setShowXmlPreview(true);
       const res = await fetch('/api/v1/seo/public/sitemap-urls');
       const data = await res.json();
-      const urls: Array<{ url: string; lastModified?: string; changeFrequency?: string; priority?: number }> =
-        data?.data?.urls || [];
+      const urls: Array<{
+        url: string;
+        lastModified?: string;
+        changeFrequency?: string;
+        priority?: number;
+        alternates?: { languages?: Record<string, string> };
+      }> = data?.data?.urls || [];
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
       urls.forEach((u) => {
         xml += `  <url>\n`;
         xml += `    <loc>${u.url}</loc>\n`;
-        if (u.lastModified) xml += `    <lastmod>${u.lastModified}</lastmod>\n`;
+        if (u.priority !== undefined) xml += `    <priority>${Number(u.priority).toFixed(1)}</priority>\n`;
         if (u.changeFrequency) xml += `    <changefreq>${u.changeFrequency}</changefreq>\n`;
-        if (u.priority !== undefined) xml += `    <priority>${u.priority}</priority>\n`;
+        if (u.lastModified) xml += `    <lastmod>${u.lastModified}</lastmod>\n`;
         xml += `  </url>\n`;
       });
       xml += `</urlset>`;
@@ -229,6 +237,21 @@ export function SitemapTab() {
                   id="inc-blog"
                   checked={config.includeBlog}
                   onCheckedChange={(checked) => setConfig((p) => ({ ...p, includeBlog: checked }))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 rounded-lg border bg-primary/5 border-primary/20">
+                <div className="space-y-0.5">
+                  <Label htmlFor="inc-languages" className="font-semibold cursor-pointer flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-primary" />
+                    Language Alternates
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Include Google xhtml:link hreflang</p>
+                </div>
+                <Switch
+                  id="inc-languages"
+                  checked={config.includeLanguages ?? true}
+                  onCheckedChange={(checked) => setConfig((p) => ({ ...p, includeLanguages: checked }))}
                 />
               </div>
             </div>

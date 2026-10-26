@@ -234,7 +234,7 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
     setSaving(true);
     try {
       // 1. Update Page SEO
-      await fetchApi('/pages/about', {
+      const pagePromise = fetchApi('/pages/about', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'About',
@@ -262,27 +262,26 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
         stats,
       };
 
-      if (heroId && !heroId.startsWith('local-')) {
-        await fetchApi(`/sections/${heroId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/about/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'about-hero',
-            componentType: 'HERO',
-            displayOrder: 1,
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-        if (created?.id) setHeroId(created.id);
-      }
+      const heroPromise = (heroId && !heroId.startsWith('local-'))
+        ? fetchApi(`/sections/${heroId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          })
+        : fetchApi<any>('/pages/about/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'about-hero',
+              componentType: 'HERO',
+              displayOrder: 1,
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setHeroId(res.id);
+          });
 
       // 3. Save Story Section
       const storyPayload = {
@@ -292,27 +291,26 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
         pillars,
       };
 
-      if (storyId && !storyId.startsWith('local-')) {
-        await fetchApi(`/sections/${storyId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: storyPayload,
-            isActive: storyActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/about/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'about-story',
-            componentType: 'FEATURE_GRID',
-            displayOrder: 2,
-            contentPayload: storyPayload,
-            isActive: storyActive,
-          }),
-        });
-        if (created?.id) setStoryId(created.id);
-      }
+      const storyPromise = (storyId && !storyId.startsWith('local-'))
+        ? fetchApi(`/sections/${storyId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: storyPayload,
+              isActive: storyActive,
+            }),
+          })
+        : fetchApi<any>('/pages/about/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'about-story',
+              componentType: 'FEATURE_GRID',
+              displayOrder: 2,
+              contentPayload: storyPayload,
+              isActive: storyActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setStoryId(res.id);
+          });
 
       // 4. Save Team Section metadata
       const teamPayload = {
@@ -322,27 +320,26 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
         description: teamDescription,
       };
 
-      if (teamId && !teamId.startsWith('local-')) {
-        await fetchApi(`/sections/${teamId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: teamPayload,
-            isActive: teamActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/about/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'about-team',
-            componentType: 'TEAM',
-            displayOrder: 3,
-            contentPayload: teamPayload,
-            isActive: teamActive,
-          }),
-        });
-        if (created?.id) setTeamId(created.id);
-      }
+      const teamPromise = (teamId && !teamId.startsWith('local-'))
+        ? fetchApi(`/sections/${teamId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: teamPayload,
+              isActive: teamActive,
+            }),
+          })
+        : fetchApi<any>('/pages/about/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'about-team',
+              componentType: 'FEATURE_GRID',
+              displayOrder: 3,
+              contentPayload: teamPayload,
+              isActive: teamActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setTeamId(res.id);
+          });
 
       // 5. Save CTA Section
       const ctaPayload = {
@@ -353,27 +350,28 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
         buttonUrl: ctaButtonUrl,
       };
 
-      if (ctaId && !ctaId.startsWith('local-')) {
-        await fetchApi(`/sections/${ctaId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/about/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'about-cta',
-            componentType: 'CTA',
-            displayOrder: 4,
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-        if (created?.id) setCtaId(created.id);
-      }
+      const ctaPromise = (ctaId && !ctaId.startsWith('local-'))
+        ? fetchApi(`/sections/${ctaId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          })
+        : fetchApi<any>('/pages/about/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'about-cta',
+              componentType: 'CTA',
+              displayOrder: 4,
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setCtaId(res.id);
+          });
+
+      await Promise.all([pagePromise, heroPromise, storyPromise, teamPromise, ctaPromise]);
 
       notify.success('All About Page sections saved successfully.');
     } catch (err: any) {

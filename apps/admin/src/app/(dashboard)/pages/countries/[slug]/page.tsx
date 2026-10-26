@@ -168,7 +168,7 @@ export default function CountryStudioPage() {
         content: heroContent.trim() || undefined,
         country: {
           ...curPayload.country,
-          flag: curPayload.country?.flag || meta.flag || '🌐',
+          flag: (curPayload.country?.flag && curPayload.country?.flag !== '🌐') ? curPayload.country.flag : (meta.flag && meta.flag !== '🌐' ? meta.flag : '🌐'),
           content: heroContent.trim() || undefined,
           currency: heroCurrency,
           timezone: heroTimezone,

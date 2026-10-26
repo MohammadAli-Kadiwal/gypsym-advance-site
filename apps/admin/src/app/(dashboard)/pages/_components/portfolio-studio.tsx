@@ -62,7 +62,7 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
           // Fallback defaults
           setSection({
             id: 'local-portfolio',
-            componentType: 'PORTFOLIO',
+            componentType: 'FEATURE_GRID',
             isActive: true,
             contentPayload: {
               eyebrow: 'SELECTED D2C WORKS',
@@ -115,7 +115,7 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
         const created = await fetchApi<{ id: string }>('/pages/portfolio/sections', {
           method: 'POST',
           body: JSON.stringify({
-            componentType: 'PORTFOLIO',
+            componentType: 'FEATURE_GRID',
             sectionIdentifier: 'portfolio-showcase',
             contentPayload: section.contentPayload,
             isActive: true,

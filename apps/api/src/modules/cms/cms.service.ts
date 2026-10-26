@@ -2806,7 +2806,15 @@ export class CmsService implements OnModuleInit {
       }
     }
 
-    return this.getPageBySlug(updated.slug);
+    return this.prisma.page.findUnique({
+      where: { id: updated.id },
+      include: {
+        sections: {
+          orderBy: { displayOrder: 'asc' },
+        },
+        seoMetadata: true,
+      },
+    });
   }
 
   async deletePage(slug: string): Promise<void> {
@@ -2873,8 +2881,8 @@ export class CmsService implements OnModuleInit {
 
     // Load live dependencies concurrently
     const [liveClients, livePartners, livePortfolioProjects, siteSettingsRow, brandSettingsRow] = await Promise.all([
-      this.getClients('PUBLISHED'),
-      this.getPartners({ status: 'PUBLISHED', showOnHomepage: true }),
+      this.getClients('PUBLISHED').catch(() => []),
+      this.getPartners({ status: 'PUBLISHED', showOnHomepage: true }).catch(() => []),
       (this.prisma as any).portfolioProjectItem?.findMany
         ? (this.prisma as any).portfolioProjectItem.findMany({
             where: { status: 'PUBLISHED' },
@@ -3600,18 +3608,55 @@ export class CmsService implements OnModuleInit {
     return this.getNavigationByKey(key);
   }
 
+  private normalizeComponentType(type: any): any {
+    const valid = new Set([
+      'HERO',
+      'FEATURE_GRID',
+      'METRICS_BANNER',
+      'CTA_STRIP',
+      'LOGO_CLOUD',
+      'TESTIMONIAL_SLIDER',
+      'ACCORDION_FAQ',
+      'TABBED_SOLUTIONS',
+      'CUSTOM_HTML',
+      'CONTACT',
+      'CTA',
+    ]);
+    const normalized = (type || '').toString().toUpperCase().trim();
+    if (valid.has(normalized)) {
+      return normalized;
+    }
+    const map: Record<string, string> = {
+      TEAM: 'FEATURE_GRID',
+      CAPABILITIES: 'FEATURE_GRID',
+      CLIENT_OUTCOMES: 'TESTIMONIAL_SLIDER',
+      PORTFOLIO: 'FEATURE_GRID',
+      SERVICES: 'TABBED_SOLUTIONS',
+      REVENUE_CALCULATOR: 'CUSTOM_HTML',
+      BOOKING_CALENDAR: 'CUSTOM_HTML',
+      METRICS: 'METRICS_BANNER',
+      FAQ: 'ACCORDION_FAQ',
+    };
+    return map[normalized] || 'FEATURE_GRID';
+  }
+
   async updateSection(id: string, payload: any): Promise<any> {
     const section = await this.prisma.pageSection.findUnique({ where: { id } });
     if (!section) throw new NotFoundException(`Section '${id}' not found`);
 
+    const data: any = {
+      ...(payload.contentPayload !== undefined ? { contentPayload: payload.contentPayload } : {}),
+      ...(payload.stylesOverride !== undefined ? { stylesOverride: payload.stylesOverride } : {}),
+      ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
+      ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
+    };
+    if (payload.componentType !== undefined) {
+      data.componentType = this.normalizeComponentType(payload.componentType);
+    }
+
     return this.prisma.pageSection.update({
       where: { id },
-      data: {
-        ...(payload.contentPayload !== undefined ? { contentPayload: payload.contentPayload } : {}),
-        ...(payload.stylesOverride !== undefined ? { stylesOverride: payload.stylesOverride } : {}),
-        ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
-        ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
-      },
+      data,
     });
   }
 
@@ -3625,11 +3670,35 @@ export class CmsService implements OnModuleInit {
     });
     if (!page) throw new NotFoundException(`Page '${slug}' not found`);
 
+    const componentType = this.normalizeComponentType(payload.componentType);
+    const identifier = payload.sectionIdentifier || `sec-${Date.now()}`;
+
+    // Prevent duplicate sections if one already exists for this page
+    const existingSection = await this.prisma.pageSection.findFirst({
+      where: {
+        pageId: page.id,
+        sectionIdentifier: identifier,
+      },
+    });
+
+    if (existingSection) {
+      return this.prisma.pageSection.update({
+        where: { id: existingSection.id },
+        data: {
+          componentType,
+          ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
+          ...(payload.contentPayload !== undefined ? { contentPayload: payload.contentPayload } : {}),
+          ...(payload.stylesOverride !== undefined ? { stylesOverride: payload.stylesOverride } : {}),
+          ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
+        },
+      });
+    }
+
     return this.prisma.pageSection.create({
       data: {
         pageId: page.id,
-        sectionIdentifier: payload.sectionIdentifier || `sec-${Date.now()}`,
-        componentType: payload.componentType,
+        sectionIdentifier: identifier,
+        componentType,
         displayOrder: payload.displayOrder ?? 0,
         contentPayload: payload.contentPayload || {},
         stylesOverride: payload.stylesOverride || null,

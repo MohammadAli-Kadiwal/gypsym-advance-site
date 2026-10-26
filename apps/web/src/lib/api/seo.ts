@@ -46,6 +46,9 @@ export interface SitemapUrlItem {
   lastModified: string | Date;
   changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
   priority: number;
+  alternates?: {
+    languages?: Record<string, string>;
+  };
 }
 
 export interface RobotsRuleItem {

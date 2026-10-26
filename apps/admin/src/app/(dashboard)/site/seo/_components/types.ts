@@ -64,6 +64,7 @@ export interface SitemapConfig {
   includePortfolio: boolean;
   includeCategories: boolean;
   includeBlog: boolean;
+  includeLanguages?: boolean;
   excludedSlugs: string[];
   defaultChangefreq: string;
   defaultPriority: number;

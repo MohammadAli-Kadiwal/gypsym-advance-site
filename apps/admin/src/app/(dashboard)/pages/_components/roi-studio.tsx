@@ -372,27 +372,26 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         credentials: heroCredentials,
       };
 
-      if (heroId && !heroId.startsWith('local-')) {
-        await fetchApi(`/sections/${heroId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/roi-calculator/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'roi-hero',
-            componentType: 'HERO',
-            displayOrder: 1,
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-        if (created?.id) setHeroId(created.id);
-      }
+      const heroPromise = (heroId && !heroId.startsWith('local-'))
+        ? fetchApi(`/sections/${heroId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          })
+        : fetchApi<any>('/pages/roi-calculator/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'roi-hero',
+              componentType: 'HERO',
+              displayOrder: 1,
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setHeroId(res.id);
+          });
 
       // 3. Save Calculator Section
       const calcPayload = {
@@ -406,27 +405,26 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         defaultTtfb,
       };
 
-      if (calcId && !calcId.startsWith('local-')) {
-        await fetchApi(`/sections/${calcId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: calcPayload,
-            isActive: calcActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/roi-calculator/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'roi-calculator',
-            componentType: 'REVENUE_CALCULATOR',
-            displayOrder: 2,
-            contentPayload: calcPayload,
-            isActive: calcActive,
-          }),
-        });
-        if (created?.id) setCalcId(created.id);
-      }
+      const calcPromise = (calcId && !calcId.startsWith('local-'))
+        ? fetchApi(`/sections/${calcId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: calcPayload,
+              isActive: calcActive,
+            }),
+          })
+        : fetchApi<any>('/pages/roi-calculator/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'roi-calculator',
+              componentType: 'CUSTOM_HTML',
+              displayOrder: 2,
+              contentPayload: calcPayload,
+              isActive: calcActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setCalcId(res.id);
+          });
 
       // 4. Save Telemetry Metrics Section
       const metricsPayload = {
@@ -437,27 +435,26 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         metrics: metricsList,
       };
 
-      if (metricsId && !metricsId.startsWith('local-')) {
-        await fetchApi(`/sections/${metricsId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: metricsPayload,
-            isActive: metricsActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/roi-calculator/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'roi-metrics',
-            componentType: 'METRICS',
-            displayOrder: 3,
-            contentPayload: metricsPayload,
-            isActive: metricsActive,
-          }),
-        });
-        if (created?.id) setMetricsId(created.id);
-      }
+      const metricsPromise = (metricsId && !metricsId.startsWith('local-'))
+        ? fetchApi(`/sections/${metricsId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: metricsPayload,
+              isActive: metricsActive,
+            }),
+          })
+        : fetchApi<any>('/pages/roi-calculator/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'roi-metrics',
+              componentType: 'METRICS_BANNER',
+              displayOrder: 3,
+              contentPayload: metricsPayload,
+              isActive: metricsActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setMetricsId(res.id);
+          });
 
       // 5. Save FAQ Section
       const faqPayload = {
@@ -468,27 +465,26 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         faqs,
       };
 
-      if (faqId && !faqId.startsWith('local-')) {
-        await fetchApi(`/sections/${faqId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: faqPayload,
-            isActive: faqActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/roi-calculator/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'roi-faq',
-            componentType: 'FAQ',
-            displayOrder: 4,
-            contentPayload: faqPayload,
-            isActive: faqActive,
-          }),
-        });
-        if (created?.id) setFaqId(created.id);
-      }
+      const faqPromise = (faqId && !faqId.startsWith('local-'))
+        ? fetchApi(`/sections/${faqId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: faqPayload,
+              isActive: faqActive,
+            }),
+          })
+        : fetchApi<any>('/pages/roi-calculator/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'roi-faq',
+              componentType: 'ACCORDION_FAQ',
+              displayOrder: 4,
+              contentPayload: faqPayload,
+              isActive: faqActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setFaqId(res.id);
+          });
 
       // 6. Save CTA Section
       const ctaPayload = {
@@ -501,27 +497,28 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         button2Url: ctaButton2Url,
       };
 
-      if (ctaId && !ctaId.startsWith('local-')) {
-        await fetchApi(`/sections/${ctaId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/roi-calculator/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'roi-cta',
-            componentType: 'CTA',
-            displayOrder: 5,
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-        if (created?.id) setCtaId(created.id);
-      }
+      const ctaPromise = (ctaId && !ctaId.startsWith('local-'))
+        ? fetchApi(`/sections/${ctaId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          })
+        : fetchApi<any>('/pages/roi-calculator/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'roi-cta',
+              componentType: 'CTA',
+              displayOrder: 5,
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setCtaId(res.id);
+          });
+
+      await Promise.all([heroPromise, calcPromise, metricsPromise, faqPromise, ctaPromise]);
 
       notify.success('All ROI Calculator page sections saved successfully.');
     } catch (err: any) {

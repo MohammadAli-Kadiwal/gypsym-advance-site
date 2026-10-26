@@ -268,7 +268,7 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
     setSaving(true);
     try {
       // 1. Update Page SEO
-      await fetchApi('/pages/services', {
+      const pagePromise = fetchApi('/pages/services', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'Services',
@@ -298,27 +298,26 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
         secondaryCta: { label: heroSecondaryLabel, url: heroSecondaryUrl },
       };
 
-      if (heroId && !heroId.startsWith('local-')) {
-        await fetchApi(`/sections/${heroId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/services/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'services-hero',
-            componentType: 'SERVICES',
-            displayOrder: 1,
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-        if (created?.id) setHeroId(created.id);
-      }
+      const heroPromise = (heroId && !heroId.startsWith('local-'))
+        ? fetchApi(`/sections/${heroId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          })
+        : fetchApi<any>('/pages/services/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'services-hero',
+              componentType: 'HERO',
+              displayOrder: 1,
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setHeroId(res.id);
+          });
 
       // 3. Save / Create Capabilities Grid Section
       const gridPayload = {
@@ -328,27 +327,26 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
         description: gridDescription,
       };
 
-      if (gridId && !gridId.startsWith('local-')) {
-        await fetchApi(`/sections/${gridId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: gridPayload,
-            isActive: gridActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/services/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'services-grid',
-            componentType: 'CAPABILITIES',
-            displayOrder: 2,
-            contentPayload: gridPayload,
-            isActive: gridActive,
-          }),
-        });
-        if (created?.id) setGridId(created.id);
-      }
+      const gridPromise = (gridId && !gridId.startsWith('local-'))
+        ? fetchApi(`/sections/${gridId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: gridPayload,
+              isActive: gridActive,
+            }),
+          })
+        : fetchApi<any>('/pages/services/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'services-grid',
+              componentType: 'FEATURE_GRID',
+              displayOrder: 2,
+              contentPayload: gridPayload,
+              isActive: gridActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setGridId(res.id);
+          });
 
       // 4. Save / Create Advantage Section
       const advantagePayload = {
@@ -358,27 +356,26 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
         comparisonPoints,
       };
 
-      if (advantageId && !advantageId.startsWith('local-')) {
-        await fetchApi(`/sections/${advantageId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: advantagePayload,
-            isActive: advantageActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/services/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'services-advantage',
-            componentType: 'FEATURE_GRID',
-            displayOrder: 3,
-            contentPayload: advantagePayload,
-            isActive: advantageActive,
-          }),
-        });
-        if (created?.id) setAdvantageId(created.id);
-      }
+      const advantagePromise = (advantageId && !advantageId.startsWith('local-'))
+        ? fetchApi(`/sections/${advantageId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: advantagePayload,
+              isActive: advantageActive,
+            }),
+          })
+        : fetchApi<any>('/pages/services/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'services-advantage',
+              componentType: 'FEATURE_GRID',
+              displayOrder: 3,
+              contentPayload: advantagePayload,
+              isActive: advantageActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setAdvantageId(res.id);
+          });
 
       // 5. Save / Create CTA Section
       const ctaPayload = {
@@ -389,27 +386,28 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
         primaryButton: { label: ctaButtonLabel, url: ctaButtonUrl },
       };
 
-      if (ctaId && !ctaId.startsWith('local-')) {
-        await fetchApi(`/sections/${ctaId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/services/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'services-cta',
-            componentType: 'CTA',
-            displayOrder: 4,
-            contentPayload: ctaPayload,
-            isActive: ctaActive,
-          }),
-        });
-        if (created?.id) setCtaId(created.id);
-      }
+      const ctaPromise = (ctaId && !ctaId.startsWith('local-'))
+        ? fetchApi(`/sections/${ctaId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          })
+        : fetchApi<any>('/pages/services/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'services-cta',
+              componentType: 'CTA',
+              displayOrder: 4,
+              contentPayload: ctaPayload,
+              isActive: ctaActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setCtaId(res.id);
+          });
+
+      await Promise.all([pagePromise, heroPromise, gridPromise, advantagePromise, ctaPromise]);
 
       notify.success('All Services Page sections saved successfully.');
     } catch (err: any) {

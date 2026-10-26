@@ -227,7 +227,7 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
     setSaving(true);
     try {
       // 1. Update Page SEO
-      await fetchApi('/pages/contact', {
+      const pagePromise = fetchApi('/pages/contact', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'Contact',
@@ -255,27 +255,26 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
         credentials,
       };
 
-      if (heroId && !heroId.startsWith('local-')) {
-        await fetchApi(`/sections/${heroId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/contact/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'contact-hero',
-            componentType: 'HERO',
-            displayOrder: 1,
-            contentPayload: heroPayload,
-            isActive: heroActive,
-          }),
-        });
-        if (created?.id) setHeroId(created.id);
-      }
+      const heroPromise = (heroId && !heroId.startsWith('local-'))
+        ? fetchApi(`/sections/${heroId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          })
+        : fetchApi<any>('/pages/contact/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'contact-hero',
+              componentType: 'HERO',
+              displayOrder: 1,
+              contentPayload: heroPayload,
+              isActive: heroActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setHeroId(res.id);
+          });
 
       // 3. Save Form & Info Section
       const formPayload = {
@@ -292,27 +291,26 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
         },
       };
 
-      if (formId && !formId.startsWith('local-')) {
-        await fetchApi(`/sections/${formId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: formPayload,
-            isActive: formActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/contact/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'contact-form',
-            componentType: 'CONTACT',
-            displayOrder: 2,
-            contentPayload: formPayload,
-            isActive: formActive,
-          }),
-        });
-        if (created?.id) setFormId(created.id);
-      }
+      const formPromise = (formId && !formId.startsWith('local-'))
+        ? fetchApi(`/sections/${formId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: formPayload,
+              isActive: formActive,
+            }),
+          })
+        : fetchApi<any>('/pages/contact/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'contact-form',
+              componentType: 'CONTACT',
+              displayOrder: 2,
+              contentPayload: formPayload,
+              isActive: formActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setFormId(res.id);
+          });
 
       // 4. Save Outcomes Section
       const outcomesPayload = {
@@ -321,27 +319,28 @@ export function ContactStudio({ onBack }: ContactStudioProps) {
         outcomes,
       };
 
-      if (outcomesId && !outcomesId.startsWith('local-')) {
-        await fetchApi(`/sections/${outcomesId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: outcomesPayload,
-            isActive: outcomesActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<any>('/pages/contact/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            sectionIdentifier: 'client-outcomes',
-            componentType: 'CLIENT_OUTCOMES',
-            displayOrder: 3,
-            contentPayload: outcomesPayload,
-            isActive: outcomesActive,
-          }),
-        });
-        if (created?.id) setOutcomesId(created.id);
-      }
+      const outcomesPromise = (outcomesId && !outcomesId.startsWith('local-'))
+        ? fetchApi(`/sections/${outcomesId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: outcomesPayload,
+              isActive: outcomesActive,
+            }),
+          })
+        : fetchApi<any>('/pages/contact/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              sectionIdentifier: 'client-outcomes',
+              componentType: 'TESTIMONIAL_SLIDER',
+              displayOrder: 3,
+              contentPayload: outcomesPayload,
+              isActive: outcomesActive,
+            }),
+          }).then((res) => {
+            if (res?.id) setOutcomesId(res.id);
+          });
+
+      await Promise.all([pagePromise, heroPromise, formPromise, outcomesPromise]);
 
       notify.success('All Contact Page sections saved successfully.');
     } catch (err: any) {

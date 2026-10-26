@@ -285,7 +285,7 @@ export function BookStudio({ onBack }: BookStudioProps) {
           method: 'POST',
           body: JSON.stringify({
             sectionIdentifier: 'book-discovery',
-            componentType: 'BOOKING_CALENDAR',
+            componentType: 'CUSTOM_HTML',
             displayOrder: 2,
             contentPayload: bookingPayload,
             isActive: bookingActive,
@@ -314,7 +314,7 @@ export function BookStudio({ onBack }: BookStudioProps) {
           method: 'POST',
           body: JSON.stringify({
             sectionIdentifier: 'client-outcomes',
-            componentType: 'CLIENT_OUTCOMES',
+            componentType: 'TESTIMONIAL_SLIDER',
             displayOrder: 3,
             contentPayload: outcomesPayload,
             isActive: outcomesActive,

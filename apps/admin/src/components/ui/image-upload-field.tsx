@@ -58,13 +58,66 @@ export function ImageUploadField({
       return;
     }
 
+    // For SVGs or ICOs, keep as-is
+    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg') || file.name.endsWith('.ico')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (result) {
+          onChange(result);
+          notify.success(`Uploaded: ${file.name}`);
+        }
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // For standard raster images (PNG, JPEG, WEBP): compress & downscale to prevent huge base64 strings
     const reader = new FileReader();
     reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        onChange(result);
+      const rawDataUrl = e.target?.result as string;
+      if (!rawDataUrl) return;
+
+      const img = new window.Image();
+      img.onload = () => {
+        const MAX_DIM = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          onChange(rawDataUrl);
+          notify.success(`Uploaded: ${file.name}`);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          const optimizedUrl = canvas.toDataURL('image/webp', 0.85);
+          onChange(optimizedUrl && optimizedUrl.length < rawDataUrl.length ? optimizedUrl : rawDataUrl);
+        } catch {
+          onChange(rawDataUrl);
+        }
         notify.success(`Uploaded: ${file.name}`);
-      }
+      };
+      img.onerror = () => {
+        onChange(rawDataUrl);
+        notify.success(`Uploaded: ${file.name}`);
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
   };

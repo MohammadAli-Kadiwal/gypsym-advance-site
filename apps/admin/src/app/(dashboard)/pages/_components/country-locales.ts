@@ -431,7 +431,84 @@ export const REGIONAL_SUBDIVISIONS: Record<
   // UAE Emirates & Metros -> United Arab Emirates (🇦🇪 / AE)
   dubai: { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
   'abu-dhabi': { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+  abudhabi: { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
   sharjah: { country: 'United Arab Emirates', flag: '🇦🇪', isoCode: 'AE', currency: 'AED', timezone: 'Asia/Dubai', region: 'Middle East / GCC' },
+
+  // India States, Union Territories & Metros -> India (🇮🇳 / IN)
+  maharashtra: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  karnataka: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  delhi: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'delhi-ncr': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  delhincr: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'new-delhi': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  newdelhi: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  mumbai: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  bangalore: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  bengaluru: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  hyderabad: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  chennai: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  kolkata: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  pune: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  gujarat: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  ahmedabad: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'tamil-nadu': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  tamilnadu: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  telangana: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  rajasthan: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  punjab: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'west-bengal': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  westbengal: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  kerala: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  haryana: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  gurgaon: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  gurugram: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  noida: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'uttar-pradesh': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  uttarpradesh: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'andhra-pradesh': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  andhrapradesh: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  'madhya-pradesh': { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  madhyapradesh: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  goa: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  chandigarh: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  jaipur: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  surat: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  kochi: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  lucknow: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+  indore: { country: 'India', flag: '🇮🇳', isoCode: 'IN', currency: 'INR', timezone: 'Asia/Kolkata', region: 'Asia Pacific' },
+
+  // Germany States & Metros -> Germany (🇩🇪 / DE)
+  bavaria: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  bayern: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  berlin: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  munich: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  muenchen: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  hamburg: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  frankfurt: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  cologne: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  koeln: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  stuttgart: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  dusseldorf: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  duesseldorf: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  'baden-wuerttemberg': { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  badenwuerttemberg: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  hessen: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  hesse: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  'north-rhine-westphalia': { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  northrhinewestphalia: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  nrw: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  saxony: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  sachsen: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  leipzig: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  dresden: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  hannover: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  hanover: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  nuernberg: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  nuremberg: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  bremen: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  dortmund: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  essen: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
+  bonn: { country: 'Germany', flag: '🇩🇪', isoCode: 'DE', currency: 'EUR', timezone: 'Europe/Berlin', region: 'Europe' },
 };
 
 /**
@@ -441,18 +518,24 @@ const COUNTRY_ALIASES: Record<string, string> = {
   usa: 'united-states',
   america: 'united-states',
   us: 'united-states',
+  unitedstates: 'united-states',
   uk: 'united-kingdom',
   britain: 'united-kingdom',
   'great-britain': 'united-kingdom',
+  greatbritain: 'united-kingdom',
   england: 'united-kingdom',
   gb: 'united-kingdom',
+  unitedkingdom: 'united-kingdom',
   uae: 'united-arab-emirates',
   dubai: 'united-arab-emirates',
   'abu-dhabi': 'united-arab-emirates',
+  abudhabi: 'united-arab-emirates',
   emirates: 'united-arab-emirates',
+  unitedarabemirates: 'united-arab-emirates',
   ae: 'united-arab-emirates',
   ksa: 'saudi-arabia',
   saudi: 'saudi-arabia',
+  saudiarabia: 'saudi-arabia',
   sa: 'saudi-arabia',
   deutschland: 'germany',
   de: 'germany',
@@ -462,6 +545,7 @@ const COUNTRY_ALIASES: Record<string, string> = {
   holland: 'netherlands',
   nl: 'netherlands',
   korea: 'south-korea',
+  southkorea: 'south-korea',
   kr: 'south-korea',
   turkiye: 'turkey',
   tr: 'turkey',
@@ -479,6 +563,11 @@ const COUNTRY_ALIASES: Record<string, string> = {
   au: 'australia',
   canada: 'canada',
   ca: 'canada',
+  britishcolumbia: 'british-columbia',
+  newsouthwales: 'new-south-wales',
+  newzealand: 'new-zealand',
+  southafrica: 'south-africa',
+  hongkong: 'hong-kong',
   france: 'france',
   fr: 'france',
   japan: 'japan',
@@ -515,9 +604,13 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
   if (!raw) return null;
 
   const normalized = raw.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const unhyphenated = normalized.replace(/-/g, '');
 
-  // 1. Regional Subdivisions (e.g. California, New York State, Texas, Dubai, Ontario, Sydney)
-  const sub = REGIONAL_SUBDIVISIONS[normalized] || REGIONAL_SUBDIVISIONS[raw];
+  // 1. Regional Subdivisions (e.g. Maharashtra, Karnataka, Delhi, Bavaria, Berlin, California, etc.)
+  const sub =
+    REGIONAL_SUBDIVISIONS[normalized] ||
+    REGIONAL_SUBDIVISIONS[unhyphenated] ||
+    REGIONAL_SUBDIVISIONS[raw];
   if (sub) {
     return {
       name: sub.country,
@@ -530,36 +623,58 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
   }
 
   // 2. Direct key match in KNOWN_COUNTRIES
-  if (KNOWN_COUNTRIES[normalized]) {
-    const k = KNOWN_COUNTRIES[normalized];
+  const known = KNOWN_COUNTRIES[normalized] || KNOWN_COUNTRIES[unhyphenated];
+  if (known) {
     return {
-      name: k.name,
-      slug: normalized.length <= 3 ? k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : normalized,
-      flag: k.flag,
-      currency: k.currency,
-      timezone: k.timezone,
-      region: k.region,
+      name: known.name,
+      slug: normalized.length <= 3 ? known.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : normalized,
+      flag: known.flag,
+      currency: known.currency,
+      timezone: known.timezone,
+      region: known.region,
     };
   }
 
   // 3. Direct match in COUNTRY_ALIASES
-  const aliasTarget = COUNTRY_ALIASES[raw] || COUNTRY_ALIASES[normalized];
-  if (aliasTarget && KNOWN_COUNTRIES[aliasTarget]) {
+  const aliasTarget =
+    COUNTRY_ALIASES[raw] ||
+    COUNTRY_ALIASES[normalized] ||
+    COUNTRY_ALIASES[unhyphenated];
+  if (aliasTarget) {
     const k = KNOWN_COUNTRIES[aliasTarget];
-    return {
-      name: k.name,
-      slug: aliasTarget,
-      flag: k.flag,
-      currency: k.currency,
-      timezone: k.timezone,
-      region: k.region,
-    };
+    if (k) {
+      return {
+        name: k.name,
+        slug: aliasTarget,
+        flag: k.flag,
+        currency: k.currency,
+        timezone: k.timezone,
+        region: k.region,
+      };
+    }
+    const subTarget = REGIONAL_SUBDIVISIONS[aliasTarget];
+    if (subTarget) {
+      return {
+        name: subTarget.country,
+        slug: subTarget.country.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        flag: subTarget.flag,
+        currency: subTarget.currency,
+        timezone: subTarget.timezone,
+        region: subTarget.region,
+      };
+    }
   }
 
   // 4. Exact or prefix match against country name in COUNTRY_PRESETS
   for (const item of COUNTRY_PRESETS) {
-    const itemNorm = item.name.toLowerCase();
-    if (itemNorm === raw || item.slug === normalized) {
+    const itemNorm = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const itemUnhyphen = itemNorm.replace(/-/g, '');
+    if (
+      itemNorm === normalized ||
+      itemUnhyphen === unhyphenated ||
+      item.slug === normalized ||
+      item.slug.replace(/-/g, '') === unhyphenated
+    ) {
       return item;
     }
   }
@@ -572,7 +687,21 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     }
   }
 
-  // 6. Check if query matches an ISO 3166-1 alpha-2 code directly (e.g. "KW", "IN", "US")
+  // 6. Substring match across regional subdivisions (e.g. "shopify-agency-in-maharashtra" contains "maharashtra")
+  for (const [subKey, subVal] of Object.entries(REGIONAL_SUBDIVISIONS)) {
+    if (normalized.includes(subKey) || unhyphenated.includes(subKey.replace(/-/g, ''))) {
+      return {
+        name: subVal.country,
+        slug: subVal.country.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        flag: subVal.flag,
+        currency: subVal.currency,
+        timezone: subVal.timezone,
+        region: subVal.region,
+      };
+    }
+  }
+
+  // 7. Check if query matches an ISO 3166-1 alpha-2 code directly (e.g. "KW", "IN", "US", "DE")
   if (raw.length === 2 && /^[a-z]{2}$/.test(raw)) {
     const flag = getFlagEmojiFromCountryCode(raw);
     if (flag) {
@@ -593,7 +722,7 @@ export function findCountryLocale(query: string): CountryPresetItem | null {
     }
   }
 
-  // 7. Check Intl.DisplayNames reverse lookup (all 249 ISO regions)
+  // 8. Check Intl.DisplayNames reverse lookup (all 249 ISO regions)
   const isoFromRegion = REGION_NAMES_TO_ISO[raw] || REGION_NAMES_TO_ISO[normalized];
   if (isoFromRegion) {
     const flag = getFlagEmojiFromCountryCode(isoFromRegion);
@@ -625,19 +754,21 @@ export function getCountryMeta(slug?: string, title?: string, heroPayload?: Reco
   const countryName = heroPayload?.country?.name ? cleanLocationQuery(heroPayload.country.name) : cleanTitle;
 
   const matchedLocale =
-    findCountryLocale(heroPayload?.country?.flag ? getCountryCodeFromFlagEmoji(heroPayload.country.flag) : '') ||
     findCountryLocale(countryName) ||
     findCountryLocale(cleanTitle) ||
     findCountryLocale(normalizedSlug) ||
-    findCountryLocale(slug || '');
+    findCountryLocale(slug || '') ||
+    findCountryLocale(rawTitle) ||
+    findCountryLocale(heroPayload?.country?.flag ? getCountryCodeFromFlagEmoji(heroPayload.country.flag) : '');
 
-  // 1. Explicit flag in heroPayload
+  // 1. Explicit flag in heroPayload if it's a real flag (not '🌐' and not empty)
   let flag = heroPayload?.country?.flag;
   let isoCode = '';
   if (flag && flag !== '🌐' && flag.trim() !== '') {
     isoCode = getCountryCodeFromFlagEmoji(flag);
   }
 
+  // 2. If no valid flag or flag is '🌐', use matchedLocale
   if (!flag || flag === '🌐' || flag.trim() === '') {
     flag = matchedLocale?.flag;
     isoCode = matchedLocale ? getCountryCodeFromFlagEmoji(matchedLocale.flag) || (matchedLocale.slug.length === 2 ? matchedLocale.slug.toUpperCase() : '') : '';

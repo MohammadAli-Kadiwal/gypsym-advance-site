@@ -228,7 +228,7 @@ export function HomeSectionsStudio({ onBack }: HomeSectionsStudioProps) {
         } else {
           setCapabilitiesSection({
             id: 'local-capabilities',
-            componentType: 'CAPABILITIES',
+            componentType: 'FEATURE_GRID',
             isActive: true,
             contentPayload: {
               eyebrow: 'OUR CAPABILITIES',

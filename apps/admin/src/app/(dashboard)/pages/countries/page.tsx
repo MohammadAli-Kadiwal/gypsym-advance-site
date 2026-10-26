@@ -55,6 +55,7 @@ import {
   getCountryCodeFromFlagEmoji,
 } from '../_components/country-locales';
 import { CountryFlag } from '../_components/country-flag';
+import { CountryFlagPicker } from '../_components/country-flag-picker';
 import { TimezoneSearchSelect } from '../_components/timezone-search-select';
 
 // ─── Edit/Create Dialog ───────────────────────────────────────────────────────
@@ -134,7 +135,7 @@ function CountryEditDialog({
             {/* TAB 1: Hero & Copy */}
             <TabsContent value="hero" className="space-y-4">
               <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-6 space-y-1">
+                <div className="col-span-5 space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700">Country Name</label>
                     {autoMatchedNotice && (
@@ -154,9 +155,7 @@ function CountryEditDialog({
                       if (matched) {
                         setFormCurrency(matched.currency);
                         setFormTimezone(matched.timezone);
-                        if (!formFlag || formFlag === '🌐') {
-                          setFormFlag(matched.flag);
-                        }
+                        setFormFlag(matched.flag);
                         setAutoMatchedNotice(`Auto-set: ${matched.flag} ${matched.timezone} (${matched.currency})`);
                       } else {
                         setAutoMatchedNotice(null);
@@ -173,19 +172,21 @@ function CountryEditDialog({
                     ))}
                   </datalist>
                 </div>
-                <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Flag</label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-2.5 flex items-center pointer-events-none">
-                      <CountryFlag code={getCountryCodeFromFlagEmoji(formFlag)} flag={formFlag} size="sm" />
-                    </div>
-                    <Input
-                      value={formFlag}
-                      onChange={(e) => setFormFlag(e.target.value)}
-                      placeholder="🇺🇸"
-                      className="h-9 rounded-xl text-xs pl-8 font-medium"
-                    />
-                  </div>
+                <div className="col-span-3 space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Flag / Icon</label>
+                  <CountryFlagPicker
+                    value={formFlag}
+                    onChange={(flag, preset) => {
+                      setFormFlag(flag);
+                      if (preset) {
+                        setFormCurrency(preset.currency);
+                        setFormTimezone(preset.timezone);
+                        setAutoMatchedNotice(`Auto-set: ${preset.flag} ${preset.timezone} (${preset.currency})`);
+                      }
+                    }}
+                    countryName={formCountryName}
+                    slug={formSlug}
+                  />
                 </div>
                 <div className="col-span-4 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">URL Route Slug</label>
@@ -193,7 +194,18 @@ function CountryEditDialog({
                     <span className="absolute left-3 top-2.5 text-xs font-mono text-slate-400">/</span>
                     <Input
                       value={formSlug}
-                      onChange={(e) => setFormSlug(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormSlug(val);
+                        if (!formFlag || formFlag === '🌐') {
+                          const matched = findCountryLocale(val);
+                          if (matched) {
+                            setFormFlag(matched.flag);
+                            setFormCurrency(matched.currency);
+                            setFormTimezone(matched.timezone);
+                          }
+                        }
+                      }}
                       placeholder="united-states"
                       className="h-9 rounded-xl text-xs font-mono pl-6"
                     />
@@ -564,8 +576,12 @@ export default function CountryPagesManagementPage() {
     const heroSection = fullPage.sections?.find((s) => s.componentType === 'HERO');
     const heroPayload = (heroSection?.contentPayload as Record<string, any>) || {};
 
+    const resolvedHeroFlag = (heroPayload.country?.flag && heroPayload.country?.flag !== '🌐')
+      ? heroPayload.country.flag
+      : (meta.flag !== '🌐' ? meta.flag : (findCountryLocale(heroPayload.country?.name || page.title || page.slug)?.flag || '🌐'));
+
     setFormCountryName(heroPayload.country?.name || meta.name);
-    setFormFlag(heroPayload.country?.flag || meta.flag || '🌐');
+    setFormFlag(resolvedHeroFlag);
     setFormCurrency(heroPayload.country?.currency || meta.currency || 'USD');
     setFormTimezone(heroPayload.country?.timezone || meta.timezone || 'America/New_York');
     setFormSlug(fullPage.slug || '');
@@ -1171,8 +1187,8 @@ export default function CountryPagesManagementPage() {
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3.5">
-            <div className="grid grid-cols-4 gap-2.5">
-              <div className="col-span-3 space-y-1">
+            <div className="grid grid-cols-12 gap-3">
+              <div className="col-span-7 space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-slate-700">Country Name *</label>
                   {createAutoMatchedNotice && (
@@ -1213,19 +1229,21 @@ export default function CountryPagesManagementPage() {
                   ))}
                 </datalist>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Flag</label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-2.5 flex items-center pointer-events-none">
-                    <CountryFlag code={getCountryCodeFromFlagEmoji(createFlag)} flag={createFlag} size="sm" />
-                  </div>
-                  <Input
-                    value={createFlag}
-                    onChange={(e) => setCreateFlag(e.target.value)}
-                    placeholder="🇩🇪"
-                    className="h-9 rounded-xl text-xs pl-8 font-medium"
-                  />
-                </div>
+              <div className="col-span-5 space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Flag / Icon</label>
+                <CountryFlagPicker
+                  value={createFlag}
+                  onChange={(flag, preset) => {
+                    setCreateFlag(flag);
+                    if (preset) {
+                      setCreateCurrency(preset.currency);
+                      setCreateTimezone(preset.timezone);
+                      setCreateAutoMatchedNotice(`Auto-set: ${preset.flag} ${preset.name} (${preset.timezone} · ${preset.currency})`);
+                    }
+                  }}
+                  countryName={createCountryName}
+                  slug={createSlug}
+                />
               </div>
             </div>
 
@@ -1233,7 +1251,24 @@ export default function CountryPagesManagementPage() {
               <label className="text-xs font-semibold text-slate-700">URL Route Slug *</label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-xs font-mono text-slate-400">/</span>
-                <Input value={createSlug} onChange={(e) => setCreateSlug(e.target.value)} placeholder="germany" className="h-9 rounded-xl text-xs font-mono pl-6" />
+                <Input
+                  value={createSlug}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCreateSlug(val);
+                    if (!createFlag || createFlag === '🌐') {
+                      const matched = findCountryLocale(val);
+                      if (matched) {
+                        setCreateFlag(matched.flag);
+                        setCreateCurrency(matched.currency);
+                        setCreateTimezone(matched.timezone);
+                        setCreateAutoMatchedNotice(`Auto-set: ${matched.flag} ${matched.name} (${matched.timezone} · ${matched.currency})`);
+                      }
+                    }
+                  }}
+                  placeholder="germany"
+                  className="h-9 rounded-xl text-xs font-mono pl-6"
+                />
               </div>
             </div>
 

@@ -69,6 +69,7 @@ export interface SitemapConfigDto {
   includePortfolio: boolean;
   includeCategories: boolean;
   includeBlog: boolean;
+  includeLanguages?: boolean;
   excludedSlugs: string[];
   defaultChangefreq: string;
   defaultPriority: number;
@@ -1536,6 +1537,7 @@ export class SeoService implements OnModuleInit {
       includePortfolio: true,
       includeCategories: true,
       includeBlog: true,
+      includeLanguages: true,
       excludedSlugs: ['admin', 'login', 'dashboard', '404', '500'],
       defaultChangefreq: 'weekly',
       defaultPriority: 0.8,
@@ -1979,9 +1981,10 @@ export class SeoService implements OnModuleInit {
   }
 
   async getPublicSitemapUrls() {
-    const [config, globalSeo, pages, services, portfolio, blogPosts] = await Promise.all([
+    const [config, globalSeo, hreflangConfig, pages, services, portfolio, blogPosts] = await Promise.all([
       this.getSitemapConfig(),
       this.getGlobalSeo(),
+      this.getHreflangConfig(),
       (this.prisma as any).page.findMany({
         where: { deletedAt: null, status: 'PUBLISHED' },
         include: { seoMetadata: true },
@@ -2002,7 +2005,77 @@ export class SeoService implements OnModuleInit {
     const baseUrl = (globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
     const excluded = new Set((config.excludedSlugs || []).map((s) => s.toLowerCase().trim()));
 
-    const urls: Array<{ url: string; lastModified: Date; changeFrequency: string; priority: number }> = [];
+    const urls: Array<{
+      url: string;
+      lastModified: Date;
+      changeFrequency: string;
+      priority: number;
+      alternates?: { languages?: Record<string, string> };
+    }> = [];
+
+    // Helper to compute language-wise hreflang alternates (Google xhtml:link compliant)
+    const buildAlternates = (relPath: string) => {
+      if (config.includeLanguages === false) return undefined;
+      const locales = hreflangConfig?.locales || [];
+      if (!locales.length) return undefined;
+
+      const languages: Record<string, string> = {};
+      const cleanPath = relPath.replace(/^\/+/, '');
+
+      for (const loc of locales) {
+        const langCode = (loc.hreflangCode || loc.code || '').trim();
+        if (!langCode) continue;
+
+        let locUrl = '';
+        if (loc.isDefault) {
+          locUrl = cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl;
+          languages['x-default'] = locUrl;
+        } else {
+          const prefix = loc.code.toLowerCase().trim();
+          locUrl = cleanPath ? `${baseUrl}/${prefix}/${cleanPath}` : `${baseUrl}/${prefix}`;
+        }
+        languages[langCode] = locUrl;
+      }
+
+      return Object.keys(languages).length > 0 ? { languages } : undefined;
+    };
+
+    // Helper to add a URL and its localized variations
+    const addUrlWithLanguages = (
+      relPath: string,
+      lastModified: Date,
+      changeFrequency: string,
+      priority: number
+    ) => {
+      const cleanPath = relPath.replace(/^\/+/, '');
+      const alternates = buildAlternates(cleanPath);
+
+      // Default URL (Canonical)
+      urls.push({
+        url: cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl,
+        lastModified,
+        changeFrequency,
+        priority,
+        alternates,
+      });
+
+      // Also index language-prefixed URLs (e.g. /de/..., /fr/..., etc.)
+      if (config.includeLanguages !== false && hreflangConfig?.locales) {
+        for (const loc of hreflangConfig.locales) {
+          if (loc.isDefault) continue;
+          const prefix = loc.code.toLowerCase().trim();
+          if (!prefix) continue;
+          const locUrl = cleanPath ? `${baseUrl}/${prefix}/${cleanPath}` : `${baseUrl}/${prefix}`;
+          urls.push({
+            url: locUrl,
+            lastModified,
+            changeFrequency,
+            priority: Math.max(0.1, Math.round((priority - 0.05) * 100) / 100),
+            alternates,
+          });
+        }
+      }
+    };
 
     // 1. Pages
     if (config.includePages) {
@@ -2017,12 +2090,12 @@ export class SeoService implements OnModuleInit {
         const slug = p.slug === 'home' ? '' : p.slug;
         if (excluded.has(p.slug.toLowerCase())) continue;
 
-        urls.push({
-          url: slug ? `${baseUrl}/${slug}` : baseUrl,
-          lastModified: p.updatedAt || new Date(),
-          changeFrequency: slug === '' ? 'daily' : config.defaultChangefreq || 'weekly',
-          priority: slug === '' ? 1.0 : config.defaultPriority || 0.8,
-        });
+        addUrlWithLanguages(
+          slug,
+          p.updatedAt || new Date(),
+          slug === '' ? 'daily' : config.defaultChangefreq || 'weekly',
+          slug === '' ? 1.0 : config.defaultPriority || 0.8
+        );
       }
     }
 
@@ -2032,12 +2105,12 @@ export class SeoService implements OnModuleInit {
         if (s.seoMetadata?.robotsIndex === false) continue;
         if (excluded.has(`services/${s.slug}`.toLowerCase())) continue;
 
-        urls.push({
-          url: `${baseUrl}/services/${s.slug}`,
-          lastModified: s.updatedAt || new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.85,
-        });
+        addUrlWithLanguages(
+          `services/${s.slug}`,
+          s.updatedAt || new Date(),
+          'weekly',
+          0.85
+        );
       }
     }
 
@@ -2046,12 +2119,12 @@ export class SeoService implements OnModuleInit {
       for (const pr of portfolio) {
         if (excluded.has(`portfolio/${pr.slug}`.toLowerCase())) continue;
 
-        urls.push({
-          url: `${baseUrl}/portfolio/${pr.slug}`,
-          lastModified: pr.updatedAt || new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.8,
-        });
+        addUrlWithLanguages(
+          `portfolio/${pr.slug}`,
+          pr.updatedAt || new Date(),
+          'weekly',
+          0.8
+        );
       }
     }
 
@@ -2061,12 +2134,12 @@ export class SeoService implements OnModuleInit {
         if (b.seoMetadata?.robotsIndex === false) continue;
         if (excluded.has(`blog/${b.slug}`.toLowerCase())) continue;
 
-        urls.push({
-          url: `${baseUrl}/blog/${b.slug}`,
-          lastModified: b.updatedAt || new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.75,
-        });
+        addUrlWithLanguages(
+          `blog/${b.slug}`,
+          b.updatedAt || new Date(),
+          'weekly',
+          0.75
+        );
       }
     }
 
