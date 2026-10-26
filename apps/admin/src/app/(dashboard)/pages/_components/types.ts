@@ -232,6 +232,8 @@ export interface PortfolioProject {
 export interface PortfolioCredential {
   label?: string;
   desc?: string;
+  value?: string;
+  sub?: string;
 }
 
 export interface PortfolioPayload {
@@ -239,6 +241,18 @@ export interface PortfolioPayload {
   title?: string;
   titleHighlight?: string;
   description?: string;
+
+  // Hero custom fields
+  heroEyebrow?: string;
+  heroTitlePrefix?: string;
+  heroTitleHighlight?: string;
+  heroTitleSuffix?: string;
+  heroDescription?: string;
+
+  // Hero background image
+  heroBackgroundImage?: string;
+  backgroundImageUrl?: string;
+  backgroundImage?: string;
 
   // Hero strip credentials settings
   showHeroStrip?: boolean;

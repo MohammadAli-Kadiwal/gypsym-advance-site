@@ -17,14 +17,20 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('about');
   const seo = page?.seoMetadata;
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/about`;
+  const resolvedTitle = seo?.metaTitle || 'About Us | Shopify Plus & E-Commerce Engineering | Gypsym Technology';
 
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'About Us | Shopify Plus & E-Commerce Engineering | Gypsym',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Learn about Gypsym Technology, our engineering-first philosophy, senior specialists, and client-proven track record building high-growth Shopify Plus storefronts.',
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'About Us | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||

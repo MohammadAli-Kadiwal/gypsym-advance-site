@@ -43,16 +43,17 @@ export async function generateMetadata({ params }: PortfolioProjectPageProps): P
 
   const seo = (project as any).seoMetadata;
   const customTitle = seo?.metaTitle;
+  const resolvedTitle = customTitle || `${project.title} | Case Study | Gypsym Technology`;
 
   return {
-    title: customTitle ? { absolute: customTitle } : `${project.title} | Case Study | Gypsym Technology`,
-    description: project.description ? stripHtml(project.description) : undefined,
+    title: { absolute: resolvedTitle },
+    description: seo?.metaDescription || (project.description ? stripHtml(project.description) : undefined),
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${project.title} | Gypsym Technology`,
-      description: project.description ? stripHtml(project.description) : undefined,
+      title: seo?.ogTitle || resolvedTitle,
+      description: seo?.ogDescription || seo?.metaDescription || (project.description ? stripHtml(project.description) : undefined),
       images: project.imageUrl ? [{ url: project.imageUrl, alt: project.title }] : undefined,
     },
     twitter: {

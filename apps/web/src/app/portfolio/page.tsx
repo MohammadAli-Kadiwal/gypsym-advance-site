@@ -25,9 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = page?.seoMetadata;
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/portfolio`;
+  const resolvedTitle = seo?.metaTitle || 'Portfolio & Shopify Case Studies | Gypsym Technology';
 
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Portfolio & Shopify Case Studies | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.',
@@ -35,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Portfolio | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||
@@ -167,7 +168,11 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
   const showHeroStrip = cmsPayload.showHeroStrip !== false;
   const credentials =
     Array.isArray(cmsPayload.heroCredentials) && cmsPayload.heroCredentials.length > 0
-      ? cmsPayload.heroCredentials
+      ? cmsPayload.heroCredentials.map((c: any) => ({
+          label: c.label || '',
+          value: c.value || c.label || '',
+          sub: c.sub || c.desc || '',
+        }))
       : [
           { label: 'Shopify Plus Partner', value: 'Official Agency', sub: 'Enterprise D2C Specialists' },
           { label: 'Cost Advantage', value: '40–60%', sub: 'Less than US/UK agencies' },
@@ -200,15 +205,19 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
         backgroundImageUrl={
           cmsPayload.heroBackgroundImage ||
           cmsPayload.backgroundImageUrl ||
+          cmsPayload.backgroundImage ||
           'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop'
         }
         imageAlt="Gypsym Shopify Plus Agency Stores Portfolio Background"
-        eyebrow="Shopify Plus Agency · D2C Portfolio"
+        eyebrow={cmsPayload.heroEyebrow || 'Shopify Plus Agency · D2C Portfolio'}
         eyebrowBulletColor="bg-emerald-400"
-        titlePrefix="High-Converting Shopify Plus Stores &"
-        titleHighlight="Digital"
-        titleSuffix="Commerce"
-        description="Explore a showcase of bespoke Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built for scaling brands."
+        titlePrefix={cmsPayload.heroTitlePrefix || 'High-Converting Shopify Plus Stores &'}
+        titleHighlight={cmsPayload.heroTitleHighlight || 'Digital'}
+        titleSuffix={cmsPayload.heroTitleSuffix || 'Commerce'}
+        description={
+          cmsPayload.heroDescription ||
+          'Explore a showcase of bespoke Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built for scaling brands.'
+        }
         credentials={credentials}
         showHeroStrip={showHeroStrip}
         actions={

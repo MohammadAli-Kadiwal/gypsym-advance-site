@@ -1,7 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Briefcase, Palette, SlidersHorizontal, Layers, MessageSquare, Megaphone, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import {
+  Layers,
+  MessageSquare,
+  Megaphone,
+  ExternalLink,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,7 +18,7 @@ import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 import type { PortfolioSection, PortfolioPayload, PageData } from './types';
 import { SectionsHeader } from './sections-header';
-import Link from 'next/link';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 
 const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
   <label className={`block text-xs font-semibold text-slate-700 ${className}`} {...props} />
@@ -23,10 +29,10 @@ export interface PortfolioStudioProps {
 }
 
 const defaultHeroCredentials = [
-  { label: 'Shopify Plus Partner', desc: 'Official eCommerce Agency' },
-  { label: '40–60% Cost Advantage', desc: 'Elite Engineering Efficiency' },
-  { label: '< 0.8s Store Speed', desc: 'Core Web Vitals Optimized' },
-  { label: '25+ Specialists', desc: 'Dedicated Liquid & Headless Team' },
+  { value: 'Official Agency', label: 'Shopify Plus Partner', sub: 'Enterprise D2C Specialists' },
+  { value: '40–60%', label: 'Cost Advantage', sub: 'Less than US/UK agencies' },
+  { value: '< 0.8s', label: 'Mobile Store Speed', sub: 'Core Web Vitals optimized' },
+  { value: '25+', label: 'Dedicated Specialists', sub: 'Liquid, CRO & Theme leads' },
 ];
 
 export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
@@ -35,6 +41,13 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
   const [pageData, setPageData] = React.useState<PageData | null>(null);
   const [section, setSection] = React.useState<PortfolioSection | null>(null);
 
+  // SEO State
+  const [metaTitle, setMetaTitle] = React.useState('');
+  const [metaDescription, setMetaDescription] = React.useState('');
+  const [canonicalUrl, setCanonicalUrl] = React.useState('');
+  const [ogImageUrl, setOgImageUrl] = React.useState('');
+  const [noIndex, setNoIndex] = React.useState(false);
+
   // ── Load Our Work page data ──────────────────────────────────────────────
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -42,6 +55,19 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
       const res = await fetchApi<PageData>('/pages/portfolio');
       if (res) {
         setPageData(res);
+
+        // SEO
+        const seo = res.seoMetadata;
+        setMetaTitle(seo?.metaTitle || '');
+        setMetaDescription(
+          seo?.metaDescription ||
+            res.description ||
+            'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.'
+        );
+        setCanonicalUrl(seo?.canonicalUrl || '');
+        setOgImageUrl(seo?.ogImageUrl || '');
+        setNoIndex(Boolean(seo?.noIndex));
+
         const raw = res.sections?.find(
           (s) =>
             s.sectionIdentifier === 'our-work-portfolio' ||
@@ -56,7 +82,29 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
             id: raw.id,
             componentType: raw.componentType,
             isActive: raw.isActive,
-            contentPayload: p,
+            contentPayload: {
+              ...p,
+              heroBackgroundImage:
+                p.heroBackgroundImage ||
+                p.backgroundImageUrl ||
+                p.backgroundImage ||
+                'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop',
+              heroEyebrow: p.heroEyebrow || 'Shopify Plus Agency · D2C Portfolio',
+              heroTitlePrefix: p.heroTitlePrefix || 'High-Converting Shopify Plus Stores &',
+              heroTitleHighlight: p.heroTitleHighlight || 'Digital',
+              heroTitleSuffix: p.heroTitleSuffix || 'Commerce',
+              heroDescription:
+                p.heroDescription ||
+                'Explore a showcase of bespoke Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built for scaling brands.',
+              heroCredentials:
+                Array.isArray(p.heroCredentials) && p.heroCredentials.length > 0
+                  ? p.heroCredentials.map((c: any) => ({
+                      value: c.value || c.label || '',
+                      label: c.label || '',
+                      sub: c.sub || c.desc || '',
+                    }))
+                  : defaultHeroCredentials,
+            },
           });
         } else {
           // Fallback defaults
@@ -70,6 +118,14 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               titleHighlight: 'proud',
               description:
                 'A curated collection of high-growth Shopify Plus storefronts, custom Liquid architectures, and high-conversion D2C experiences engineered by Gypsym.',
+              heroEyebrow: 'Shopify Plus Agency · D2C Portfolio',
+              heroTitlePrefix: 'High-Converting Shopify Plus Stores &',
+              heroTitleHighlight: 'Digital',
+              heroTitleSuffix: 'Commerce',
+              heroDescription:
+                'Explore a showcase of bespoke Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built for scaling brands.',
+              heroBackgroundImage:
+                'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop',
               showHeroStrip: true,
               heroCredentials: defaultHeroCredentials,
               hoverEffectsEnabled: true,
@@ -88,7 +144,7 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
         }
       }
     } catch {
-      notify.error('Could not load Our Work page from the backend.');
+      notify.error('Could not load Portfolio page from the backend.');
     } finally {
       setLoading(false);
     }
@@ -103,30 +159,50 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
     if (!section) return;
     setSaving(true);
     try {
-      if (!section.id.startsWith('local-')) {
-        await fetchApi(`/sections/${section.id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            contentPayload: section.contentPayload,
-            isActive: section.isActive,
-          }),
-        });
-      } else {
-        const created = await fetchApi<{ id: string }>('/pages/portfolio/sections', {
-          method: 'POST',
-          body: JSON.stringify({
-            componentType: 'FEATURE_GRID',
-            sectionIdentifier: 'portfolio-showcase',
-            contentPayload: section.contentPayload,
-            isActive: true,
-            displayOrder: 1,
-          }),
-        });
-        if (created?.id) {
-          setSection((prev) => prev ? { ...prev, id: created.id } : prev);
-        }
-      }
-      notify.success('Portfolio page settings saved successfully.');
+      // 1. Update Page SEO
+      const pagePromise = fetchApi('/pages/portfolio', {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: 'Portfolio',
+          description: metaDescription,
+          seoMetadata: {
+            metaTitle,
+            metaDescription,
+            canonicalUrl: canonicalUrl || null,
+            ogTitle: metaTitle,
+            ogDescription: metaDescription,
+            ogImageUrl: ogImageUrl || null,
+            noIndex,
+          },
+        }),
+      });
+
+      // 2. Save Section Payload
+      const sectionPromise = !section.id.startsWith('local-')
+        ? fetchApi(`/sections/${section.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              contentPayload: section.contentPayload,
+              isActive: section.isActive,
+            }),
+          })
+        : fetchApi<{ id: string }>('/pages/portfolio/sections', {
+            method: 'POST',
+            body: JSON.stringify({
+              componentType: 'FEATURE_GRID',
+              sectionIdentifier: 'portfolio-showcase',
+              contentPayload: section.contentPayload,
+              isActive: section.isActive,
+              displayOrder: 1,
+            }),
+          }).then((created) => {
+            if (created?.id) {
+              setSection((prev) => (prev ? { ...prev, id: created.id } : prev));
+            }
+          });
+
+      await Promise.all([pagePromise, sectionPromise]);
+      notify.success('Portfolio page & hero settings saved successfully.');
     } catch {
       notify.error('Unable to save Portfolio page settings.');
     } finally {
@@ -141,18 +217,8 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
     setSection({ ...section, contentPayload: { ...p, ...partial } });
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4 animate-in fade-in-50 duration-200">
-        <div className="h-8 w-56 bg-slate-200/60 rounded-xl animate-pulse" />
-        <div className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse" />
-        <div className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse" />
-      </div>
-    );
-  }
-
   const activeCredentials =
-    p.heroCredentials && p.heroCredentials.length > 0
+    Array.isArray(p.heroCredentials) && p.heroCredentials.length > 0
       ? p.heroCredentials
       : defaultHeroCredentials;
 
@@ -169,15 +235,25 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-in fade-in-50 duration-200">
+        <div className="h-8 w-56 bg-slate-200/60 rounded-xl animate-pulse" />
+        <div className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse" />
+        <div className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-200">
+    <div className="space-y-6 pb-20 animate-in fade-in-50 duration-200">
       {/* ── Studio Header — shared SectionsHeader UI ── */}
       <SectionsHeader
         saving={saving}
         loading={loading}
         pageTitle="Portfolio"
         pageRoute="/portfolio"
-        layoutLabel="PORTFOLIO PAGE"
+        layoutLabel="PORTFOLIO ARCHITECTURE"
         sectionCount={pageData?.sections?.filter((s) => s.isActive).length}
         status={pageData?.status || 'PUBLISHED'}
         onStatusChange={handleStatusChange}
@@ -187,106 +263,208 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
       />
 
       {/* ── Section Editor Tabs ── */}
-      <Tabs defaultValue="content" className="w-full space-y-4">
-        <TabsList className="p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 h-auto gap-1 w-fit">
+      <Tabs defaultValue="hero" className="w-full space-y-6">
+        <TabsList className="bg-slate-100 p-1.5 rounded-2xl h-auto flex flex-wrap gap-1.5 border border-slate-200/80">
           <TabsTrigger
-            value="content"
-            className="inline-flex items-center gap-1.5 rounded-xl py-2 px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all"
+            value="hero"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
-            <Briefcase className="h-3.5 w-3.5" />
-            Content
+            1. Hero &amp; Metrics
+          </TabsTrigger>
+          <TabsTrigger
+            value="grid"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
+          >
+            2. Showcase &amp; Grid
           </TabsTrigger>
           <TabsTrigger
             value="display"
-            className="inline-flex items-center gap-1.5 rounded-xl py-2 px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
-            <Palette className="h-3.5 w-3.5" />
-            Display
-          </TabsTrigger>
-          <TabsTrigger
-            value="effects"
-            className="inline-flex items-center gap-1.5 rounded-xl py-2 px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Animations
+            3. Display &amp; Animations
           </TabsTrigger>
           <TabsTrigger
             value="homepage-sections"
-            className="inline-flex items-center gap-1.5 rounded-xl py-2 px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs transition-all"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
-            <Layers className="h-3.5 w-3.5" />
-            Homepage Sections
+            4. Direct Consultation &amp; CTA
+          </TabsTrigger>
+          <TabsTrigger
+            value="seo"
+            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
+          >
+            5. SEO &amp; OpenGraph
           </TabsTrigger>
         </TabsList>
 
-        {/* Content Tab */}
-        <TabsContent value="content" className="focus-visible:outline-none space-y-5">
+        {/* ── TAB 1: HERO & METRICS ── */}
+        <TabsContent value="hero" className="focus-visible:outline-none space-y-6">
           <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900">Page Content</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Edit the heading, eyebrow label, and description shown at the top of the Portfolio page.
+            <CardHeader className="p-6 pb-4 border-b border-slate-100">
+              <CardTitle className="text-base font-bold text-slate-900">Portfolio Hero Banner</CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Configure the headline, editorial artwork background image, and proof credentials strip.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-5 space-y-5">
-              {/* Eyebrow */}
+            <CardContent className="p-6 space-y-5">
+              {/* Hero Eyebrow */}
               <div className="space-y-1.5">
-                <Label htmlFor="ow-eyebrow">Eyebrow Label</Label>
+                <Label htmlFor="hero-eyebrow">Eyebrow Label</Label>
                 <Input
-                  id="ow-eyebrow"
-                  value={p.eyebrow || ''}
-                  onChange={(e) => update({ eyebrow: e.target.value })}
-                  placeholder="SELECTED D2C WORKS"
-                  className="h-9 rounded-xl border-slate-200 text-sm"
+                  id="hero-eyebrow"
+                  value={p.heroEyebrow || ''}
+                  onChange={(e) => update({ heroEyebrow: e.target.value })}
+                  placeholder="Shopify Plus Agency · D2C Portfolio"
+                  className="h-10 text-xs rounded-xl border-slate-200"
                 />
               </div>
 
-              {/* Title */}
-              <div className="space-y-1.5">
-                <Label htmlFor="ow-title">Page Headline</Label>
-                <Input
-                  id="ow-title"
-                  value={p.title || ''}
-                  onChange={(e) => update({ title: e.target.value })}
-                  placeholder="Stores we are proud of."
-                  className="h-9 rounded-xl border-slate-200 text-sm"
-                />
-              </div>
-
-              {/* Title Highlight */}
-              <div className="space-y-1.5">
-                <Label htmlFor="ow-highlight">Accent Highlight Word (Instrument Serif Italic)</Label>
-                <Input
-                  id="ow-highlight"
-                  value={p.titleHighlight || ''}
-                  onChange={(e) => update({ titleHighlight: e.target.value })}
-                  placeholder="proud"
-                  className="h-9 rounded-xl border-slate-200 text-sm font-serif italic text-base"
-                />
-                <p className="text-[11px] text-slate-400">
-                  Must be an exact substring of the headline above to render in elegant Instrument Serif italic accent font (matching homepage sections).
-                </p>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <Label htmlFor="ow-desc">Description</Label>
-                <Textarea
-                  id="ow-desc"
-                  value={p.description || ''}
-                  onChange={(e) => update({ description: e.target.value })}
-                  rows={3}
-                  placeholder="A curated collection of high-growth Shopify Plus storefronts..."
-                  className="rounded-xl border-slate-200 text-sm"
-                />
-              </div>
-
-              {/* Section Active */}
-              <div className="flex items-center justify-between py-3 border-t border-slate-100">
-                <div>
-                  <p className="text-xs font-semibold text-slate-700">Section Visible</p>
-                  <p className="text-[11px] text-slate-400">Toggle the portfolio section on the page</p>
+              {/* Title Prefix & Highlight & Suffix */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="hero-prefix">Title Prefix</Label>
+                  <Input
+                    id="hero-prefix"
+                    value={p.heroTitlePrefix || ''}
+                    onChange={(e) => update({ heroTitlePrefix: e.target.value })}
+                    placeholder="High-Converting Shopify Plus Stores &"
+                    className="h-10 text-xs rounded-xl border-slate-200"
+                  />
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hero-highlight">Title Highlight (Italic Accent)</Label>
+                  <Input
+                    id="hero-highlight"
+                    value={p.heroTitleHighlight || ''}
+                    onChange={(e) => update({ heroTitleHighlight: e.target.value })}
+                    placeholder="Digital"
+                    className="h-10 text-xs rounded-xl border-slate-200 font-serif italic"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hero-suffix">Title Suffix</Label>
+                  <Input
+                    id="hero-suffix"
+                    value={p.heroTitleSuffix || ''}
+                    onChange={(e) => update({ heroTitleSuffix: e.target.value })}
+                    placeholder="Commerce"
+                    className="h-10 text-xs rounded-xl border-slate-200"
+                  />
+                </div>
+              </div>
+
+              {/* Hero Description */}
+              <div className="space-y-1.5">
+                <Label htmlFor="hero-desc">Hero Description</Label>
+                <Textarea
+                  id="hero-desc"
+                  value={p.heroDescription || ''}
+                  onChange={(e) => update({ heroDescription: e.target.value })}
+                  rows={3}
+                  placeholder="Explore a showcase of bespoke Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built for scaling brands."
+                  className="text-xs rounded-xl border-slate-200"
+                />
+              </div>
+
+              {/* Hero Background Artwork / Image Upload */}
+              <div className="pt-2">
+                <ImageUploadField
+                  label="Portfolio Page Hero Background Image / Artwork"
+                  description="Upload a high-resolution editorial photograph or artwork for the hero background banner."
+                  value={p.heroBackgroundImage || p.backgroundImageUrl || p.backgroundImage || ''}
+                  onChange={(val) =>
+                    update({
+                      heroBackgroundImage: val,
+                      backgroundImageUrl: val,
+                      backgroundImage: val,
+                    })
+                  }
+                  placeholder="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop"
+                />
+              </div>
+
+              {/* Hero Credentials Strip Card */}
+              <div className="pt-4 border-t border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Hero Credentials Strip</h4>
+                    <p className="text-[11px] text-slate-500">
+                      High-impact agency proof metrics displayed at the base of the hero.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={p.showHeroStrip !== false}
+                    onCheckedChange={(v) => update({ showHeroStrip: v })}
+                  />
+                </div>
+
+                {p.showHeroStrip !== false && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {activeCredentials.map((cred: any, idx: number) => (
+                      <div key={idx} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Metric #{idx + 1}
+                        </span>
+                        <div className="space-y-1">
+                          <Label>Value / Metric</Label>
+                          <Input
+                            value={cred.value || ''}
+                            onChange={(e) => {
+                              const updated = [...activeCredentials];
+                              updated[idx] = { ...updated[idx], value: e.target.value };
+                              update({ heroCredentials: updated });
+                            }}
+                            className="h-8 rounded-lg border-slate-200 text-xs bg-white font-bold"
+                            placeholder="e.g. Official Agency"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Label / Title</Label>
+                          <Input
+                            value={cred.label || ''}
+                            onChange={(e) => {
+                              const updated = [...activeCredentials];
+                              updated[idx] = { ...updated[idx], label: e.target.value };
+                              update({ heroCredentials: updated });
+                            }}
+                            className="h-8 rounded-lg border-slate-200 text-xs bg-white"
+                            placeholder="e.g. Shopify Plus Partner"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Subtext</Label>
+                          <Input
+                            value={cred.sub || cred.desc || ''}
+                            onChange={(e) => {
+                              const updated = [...activeCredentials];
+                              updated[idx] = { ...updated[idx], sub: e.target.value, desc: e.target.value };
+                              update({ heroCredentials: updated });
+                            }}
+                            className="h-8 rounded-lg border-slate-200 text-xs bg-white text-slate-600"
+                            placeholder="e.g. Enterprise D2C Specialists"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB 2: SHOWCASE & GRID ── */}
+        <TabsContent value="grid" className="focus-visible:outline-none space-y-6">
+          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
+            <CardHeader className="p-6 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-900">Showcase Grid Header &amp; Filters</CardTitle>
+                <CardDescription className="text-xs text-slate-500 mt-0.5">
+                  Headline, description, and filter controls for the interactive portfolio grid.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">Active</span>
                 <Switch
                   checked={section?.isActive ?? true}
                   onCheckedChange={(v) => {
@@ -294,82 +472,62 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                   }}
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Hero Strip Settings Card */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-sm font-bold text-slate-900">Hero Credentials Strip</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Low-profile Shopify agency trust credentials displayed in the hero area of the Portfolio page.
-                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              {/* Eyebrow */}
+              <div className="space-y-1.5">
+                <Label htmlFor="ow-eyebrow">Grid Eyebrow Label</Label>
+                <Input
+                  id="ow-eyebrow"
+                  value={p.eyebrow || ''}
+                  onChange={(e) => update({ eyebrow: e.target.value })}
+                  placeholder="SELECTED D2C WORKS"
+                  className="h-10 text-xs rounded-xl border-slate-200"
+                />
               </div>
-              <Switch
-                checked={p.showHeroStrip !== false}
-                onCheckedChange={(v) => update({ showHeroStrip: v })}
-              />
-            </CardHeader>
-            {p.showHeroStrip !== false && (
-              <CardContent className="pt-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {activeCredentials.map((cred, idx) => (
-                    <div key={idx} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                        Credential #{idx + 1}
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`cred-label-${idx}`}>Metric / Title</Label>
-                        <Input
-                          id={`cred-label-${idx}`}
-                          value={cred.label || ''}
-                          onChange={(e) => {
-                            const updated = [...activeCredentials];
-                            updated[idx] = { ...updated[idx], label: e.target.value };
-                            update({ heroCredentials: updated });
-                          }}
-                          className="h-8 rounded-lg border-slate-200 text-xs bg-white font-medium"
-                          placeholder="e.g. Shopify Plus Partner"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`cred-desc-${idx}`}>Subtext / Description</Label>
-                        <Input
-                          id={`cred-desc-${idx}`}
-                          value={cred.desc || ''}
-                          onChange={(e) => {
-                            const updated = [...activeCredentials];
-                            updated[idx] = { ...updated[idx], desc: e.target.value };
-                            update({ heroCredentials: updated });
-                          }}
-                          className="h-8 rounded-lg border-slate-200 text-xs bg-white text-slate-600"
-                          placeholder="e.g. Official eCommerce Agency"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        </TabsContent>
 
-        {/* Display Tab */}
-        <TabsContent value="display" className="focus-visible:outline-none">
-          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900">Display Settings</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Control how the portfolio grid is presented to visitors.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5 space-y-4">
-              {/* Category Filter */}
-              <div className="flex items-center justify-between py-2">
+              {/* Title & Highlight */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ow-title">Grid Headline</Label>
+                  <Input
+                    id="ow-title"
+                    value={p.title || ''}
+                    onChange={(e) => update({ title: e.target.value })}
+                    placeholder="Stores we are proud of."
+                    className="h-10 text-xs rounded-xl border-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ow-highlight">Accent Highlight Word (Italic)</Label>
+                  <Input
+                    id="ow-highlight"
+                    value={p.titleHighlight || ''}
+                    onChange={(e) => update({ titleHighlight: e.target.value })}
+                    placeholder="proud"
+                    className="h-10 text-xs rounded-xl border-slate-200 font-serif italic"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <Label htmlFor="ow-desc">Grid Description</Label>
+                <Textarea
+                  id="ow-desc"
+                  value={p.description || ''}
+                  onChange={(e) => update({ description: e.target.value })}
+                  rows={3}
+                  placeholder="A curated collection of high-growth Shopify Plus storefronts, custom Liquid architectures, and high-conversion D2C experiences engineered by Gypsym."
+                  className="text-xs rounded-xl border-slate-200"
+                />
+              </div>
+
+              {/* Category Filter Bar */}
+              <div className="flex items-center justify-between py-3 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Category Filter Bar</p>
-                  <p className="text-[11px] text-slate-400">Show the category filter tabs above the grid</p>
+                  <p className="text-xs font-semibold text-slate-800">Category Filter Bar</p>
+                  <p className="text-[11px] text-slate-500">Show dynamic category filter tabs above the portfolio grid</p>
                 </div>
                 <Switch
                   checked={(p as any).showCategoryFilter !== false}
@@ -378,10 +536,10 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               </div>
 
               {/* View Button */}
-              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+              <div className="flex items-center justify-between py-3 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">View Button on Cards</p>
-                  <p className="text-[11px] text-slate-400">Show a "View" button on project cards</p>
+                  <p className="text-xs font-semibold text-slate-800">View Button on Cards</p>
+                  <p className="text-[11px] text-slate-500">Show a hover CTA button on project cards</p>
                 </div>
                 <Switch
                   checked={p.viewButtonEnabled !== false}
@@ -389,7 +547,6 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                 />
               </div>
 
-              {/* View Button Label */}
               {p.viewButtonEnabled !== false && (
                 <div className="space-y-1.5 pl-1">
                   <Label htmlFor="ow-btn-label">View Button Label</Label>
@@ -397,16 +554,44 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                     id="ow-btn-label"
                     value={p.viewButtonLabel || 'View'}
                     onChange={(e) => update({ viewButtonLabel: e.target.value })}
-                    className="h-8 rounded-xl border-slate-200 text-sm max-w-[200px]"
+                    className="h-9 rounded-xl border-slate-200 text-xs max-w-[200px]"
                   />
                 </div>
               )}
 
-              {/* Overlay */}
-              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+              {/* Project Manager Quick Jump */}
+              <div className="p-4 bg-violet-50/60 border border-violet-200/60 rounded-xl text-xs text-violet-900 flex items-center justify-between mt-2">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Card Overlay</p>
-                  <p className="text-[11px] text-slate-400">Dark overlay on hover</p>
+                  <span className="font-bold">Manage Individual Case Studies &amp; Projects</span>
+                  <p className="text-[11px] text-violet-700 mt-0.5">
+                    Individual portfolio projects, screenshots, live store URLs, and tags are managed in Content → Portfolio.
+                  </p>
+                </div>
+                <Link href="/content/portfolio">
+                  <Button size="sm" variant="outline" className="text-xs bg-white border-violet-300">
+                    Go to Portfolio Items
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB 3: DISPLAY & ANIMATIONS ── */}
+        <TabsContent value="display" className="focus-visible:outline-none space-y-6">
+          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
+            <CardHeader className="p-6 pb-4 border-b border-slate-100">
+              <CardTitle className="text-base font-bold text-slate-900">3D Tilt &amp; Motion Settings</CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Configure card hover physics, depth effects, and scroll gestures.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {/* Card Overlay */}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Card Dark Overlay</p>
+                  <p className="text-[11px] text-slate-500">Dark aesthetic overlay upon card hover</p>
                 </div>
                 <Switch
                   checked={p.overlayEnabled !== false}
@@ -417,8 +602,8 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               {/* Backdrop Blur */}
               <div className="flex items-center justify-between py-2 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Backdrop Blur</p>
-                  <p className="text-[11px] text-slate-400">Blur effect behind the overlay text</p>
+                  <p className="text-xs font-semibold text-slate-800">Backdrop Blur</p>
+                  <p className="text-[11px] text-slate-500">Blur effect behind card details</p>
                 </div>
                 <Switch
                   checked={p.backdropBlurEnabled !== false}
@@ -429,70 +614,20 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               {/* Image Zoom */}
               <div className="flex items-center justify-between py-2 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Image Zoom on Hover</p>
-                  <p className="text-[11px] text-slate-400">Scale up the image when hovering</p>
+                  <p className="text-xs font-semibold text-slate-800">Image Zoom on Hover</p>
+                  <p className="text-[11px] text-slate-500">Smooth scale animation on project preview images</p>
                 </div>
                 <Switch
                   checked={p.imageZoomEnabled !== false}
                   onCheckedChange={(v) => update({ imageZoomEnabled: v })}
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Homepage Sections Card in Display Tab */}
-          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-blue-600" />
-                <CardTitle className="text-sm font-bold text-slate-900">
-                  Homepage Section Integrations
-                </CardTitle>
-              </div>
-              <CardDescription className="text-xs text-slate-500">
-                Control visibility of the DIRECT ENGAGEMENT (Contact) and CTA sections on the Portfolio page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5 space-y-4">
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-xs font-semibold text-slate-700">DIRECT ENGAGEMENT (Contact Section)</p>
-                  <p className="text-[11px] text-slate-400">Enterprise briefing and contact form from homepage</p>
-                </div>
-                <Switch
-                  checked={p.showContactSection !== false}
-                  onCheckedChange={(v) => update({ showContactSection: v })}
-                />
-              </div>
+              {/* 3D Scroll */}
               <div className="flex items-center justify-between py-2 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Call to Action (CTA Banner)</p>
-                  <p className="text-[11px] text-slate-400">Conversion banner with primary buttons from homepage</p>
-                </div>
-                <Switch
-                  checked={p.showCtaSection !== false}
-                  onCheckedChange={(v) => update({ showCtaSection: v })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Animations Tab */}
-        <TabsContent value="effects" className="focus-visible:outline-none">
-          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900">3D & Motion Effects</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Premium animation and parallax settings for the portfolio grid.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5 space-y-4">
-              {/* 3D Scroll */}
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-xs font-semibold text-slate-700">3D Scroll Effect</p>
-                  <p className="text-[11px] text-slate-400">Cards tilt in 3D as user scrolls</p>
+                  <p className="text-xs font-semibold text-slate-800">3D Scroll Tilt</p>
+                  <p className="text-[11px] text-slate-500">Cards tilt in 3D perspective as the visitor scrolls</p>
                 </div>
                 <Switch
                   checked={p.threeDScrollEnabled !== false}
@@ -526,8 +661,8 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               {/* Mouse Parallax */}
               <div className="flex items-center justify-between py-2 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Mouse Parallax</p>
-                  <p className="text-[11px] text-slate-400">Cards shift with mouse cursor position</p>
+                  <p className="text-xs font-semibold text-slate-800">Mouse Parallax</p>
+                  <p className="text-[11px] text-slate-500">Interactive card tilt responding to pointer movement</p>
                 </div>
                 <Switch
                   checked={p.mouseParallaxEnabled !== false}
@@ -538,8 +673,8 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               {/* Hover Effects */}
               <div className="flex items-center justify-between py-2 border-t border-slate-100">
                 <div>
-                  <p className="text-xs font-semibold text-slate-700">Hover Effects</p>
-                  <p className="text-[11px] text-slate-400">Enable interactive hover states on cards</p>
+                  <p className="text-xs font-semibold text-slate-800">Interactive Hover States</p>
+                  <p className="text-[11px] text-slate-500">Enable micro-animations on cards</p>
                 </div>
                 <Switch
                   checked={p.hoverEffectsEnabled !== false}
@@ -550,21 +685,21 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
           </Card>
         </TabsContent>
 
-        {/* Homepage Sections Tab */}
-        <TabsContent value="homepage-sections" className="focus-visible:outline-none space-y-5">
+        {/* ── TAB 4: HOMEPAGE SECTIONS ── */}
+        <TabsContent value="homepage-sections" className="focus-visible:outline-none space-y-6">
           <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="pb-3 border-b border-slate-100">
+            <CardHeader className="p-6 pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-600" />
-                <CardTitle className="text-sm font-bold text-slate-900">
-                  Homepage Section Integrations (Direct Components)
+                <CardTitle className="text-base font-bold text-slate-900">
+                  Homepage Section Integrations
                 </CardTitle>
               </div>
-              <CardDescription className="text-xs text-slate-500">
-                Display verified Homepage sections directly at the bottom of the Portfolio page. Only enable/disable is configured here; all content, typography, and form fields are synchronized from the Home Page Studio.
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Display verified Homepage sections directly at the bottom of the Portfolio page.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-5 space-y-5">
+            <CardContent className="p-6 space-y-4">
               {/* DIRECT ENGAGEMENT (Contact Section) */}
               <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors">
                 <div className="space-y-1 pr-4">
@@ -573,15 +708,9 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                     <span className="text-xs font-bold text-slate-900">
                       DIRECT ENGAGEMENT (Contact Inquiries)
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
-                      Home Section 11
-                    </span>
                   </div>
                   <p className="text-[12px] text-slate-600 leading-relaxed">
-                    Direct technical consultation &amp; briefing form with enterprise inquiry routing, contact phone/email channels, and Google reCAPTCHA.
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    Component: &lt;ContactSection&gt; · Eyebrow: DIRECT ENGAGEMENT
+                    Direct technical consultation &amp; briefing form with enterprise inquiry routing, phone/email channels, and reCAPTCHA.
                   </p>
                 </div>
                 <Switch
@@ -598,15 +727,9 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                     <span className="text-xs font-bold text-slate-900">
                       Call To Action (CTA Banner)
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
-                      Home Section 12
-                    </span>
                   </div>
                   <p className="text-[12px] text-slate-600 leading-relaxed">
-                    High-impact conversion CTA strip with glow ambient effects, strategic booking buttons, and enterprise scaling messaging.
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    Component: &lt;CtaSection&gt; · Identifier: homepage-cta
+                    High-impact conversion CTA strip with glow ambient effects and strategic booking buttons.
                   </p>
                 </div>
                 <Switch
@@ -619,7 +742,7 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
               <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/40 flex items-center justify-between text-xs text-blue-900">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span>Content and settings are managed directly in the Home Page Studio.</span>
+                  <span>Section content and buttons are managed directly in the Home Page Studio.</span>
                 </div>
                 <button
                   type="button"
@@ -633,29 +756,72 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      {/* ── Portfolio Management Link ── */}
-      <Card className="rounded-2xl border-slate-200/90 bg-gradient-to-r from-violet-50 to-blue-50 shadow-xs">
-        <CardContent className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-900">Manage Portfolio Projects &amp; Categories</p>
-            <p className="text-xs text-slate-500">
-              Add, edit, reorder projects and manage portfolio categories from the dedicated Portfolio section.
-            </p>
-          </div>
-          <Button
-            asChild
-            variant="outline"
-            className="shrink-0 rounded-xl border-violet-200 bg-white text-violet-700 hover:bg-violet-50 text-xs font-semibold"
-          >
-            <Link href="/content/portfolio" className="inline-flex items-center gap-1.5">
-              <Briefcase className="h-3.5 w-3.5" />
-              Go to Portfolio Manager
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+        {/* ── TAB 5: SEO & OPENGRAPH ── */}
+        <TabsContent value="seo" className="focus-visible:outline-none space-y-6">
+          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
+            <CardHeader className="p-6 pb-4 border-b border-slate-100">
+              <CardTitle className="text-base font-bold text-slate-900">Portfolio SEO &amp; OpenGraph Metadata</CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Search engine title tags, meta descriptions, and social media share previews.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="meta-title">Page Meta Title</Label>
+                <Input
+                  id="meta-title"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder="Portfolio & Shopify Case Studies | Gypsym Technology"
+                  className="h-10 text-xs rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="meta-desc">Page Meta Description</Label>
+                <Textarea
+                  id="meta-desc"
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology."
+                  className="text-xs rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="canonical-url">Canonical URL</Label>
+                <Input
+                  id="canonical-url"
+                  value={canonicalUrl}
+                  onChange={(e) => setCanonicalUrl(e.target.value)}
+                  placeholder="https://gypsym.com/portfolio"
+                  className="h-10 text-xs font-mono rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="pt-2">
+                <ImageUploadField
+                  label="Social OpenGraph (OG) Image"
+                  description="Upload directly or specify a URL (1200x630 recommended for LinkedIn, X, and WhatsApp previews)."
+                  value={ogImageUrl}
+                  onChange={setOgImageUrl}
+                  placeholder="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <div>
+                  <span className="text-xs font-bold text-slate-800">Prevent Search Indexing (noindex)</span>
+                  <p className="text-[11px] text-slate-500">Keep this off for production search visibility.</p>
+                </div>
+                <Switch checked={noIndex} onCheckedChange={setNoIndex} />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

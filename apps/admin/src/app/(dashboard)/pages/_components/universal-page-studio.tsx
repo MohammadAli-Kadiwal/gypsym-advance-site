@@ -470,6 +470,21 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
                           className="mt-1 text-xs"
                         />
                       </div>
+
+                      {sec.componentType === 'HERO' && (
+                        <div className="pt-2">
+                          <ImageUploadField
+                            label="Hero Background Artwork / Image"
+                            description="Upload or enter URL for the hero section background visual."
+                            value={payload.backgroundImage || payload.heroBackgroundImage || payload.backgroundImageUrl || ''}
+                            onChange={(val) => {
+                              updateSectionPayload(idx, 'backgroundImage', val);
+                              updateSectionPayload(idx, 'heroBackgroundImage', val);
+                            }}
+                            placeholder="/assets/editorial/agency-hero-editorial.png"
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

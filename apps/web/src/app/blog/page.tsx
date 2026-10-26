@@ -20,8 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/blog`;
 
+  const resolvedTitle = seo?.metaTitle || 'Engineering Publications & Architecture Deep Dives | Gypsym Technology';
+
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering from the Gypsym Technology engineering team.',
@@ -29,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Engineering Publications & Architecture Deep Dives | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||
@@ -43,26 +45,46 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogPage() {
-  const [posts, categories, homePage] = await Promise.all([
+  const [posts, categories, blogPage, homePage] = await Promise.all([
     getBlogPosts(),
     getBlogCategories(),
-    getPageBySlug('home'),
+    getPageBySlug('blog').catch(() => null),
+    getPageBySlug('home').catch(() => null),
   ]);
 
-  // Extract Homepage DIRECT ENGAGEMENT (Contact) and CTA sections
-  const rawContactSection = homePage?.sections?.find(
-    (s: any) =>
-      s.componentType === 'CONTACT' ||
-      s.sectionIdentifier === 'contact-inquiry' ||
-      s.sectionIdentifier === 'contact'
+  const rawHeroSection = blogPage?.sections?.find(
+    (s: any) => s.sectionIdentifier === 'blog-hero' || s.componentType === 'HERO'
   );
+  const heroPayload = (rawHeroSection?.contentPayload as any) || {};
 
-  const rawCtaSection = homePage?.sections?.find(
-    (s: any) =>
-      s.componentType === 'CTA' ||
-      s.sectionIdentifier === 'homepage-cta' ||
-      s.sectionIdentifier === 'cta-banner'
-  );
+  const heroBackgroundImage =
+    heroPayload.backgroundImage ||
+    heroPayload.heroBackgroundImage ||
+    heroPayload.backgroundImageUrl ||
+    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80';
+
+  // Extract DIRECT ENGAGEMENT (Contact) and CTA sections (from blogPage or fallback to homePage)
+  const rawContactSection =
+    blogPage?.sections?.find(
+      (s: any) => s.sectionIdentifier === 'blog-contact' || s.componentType === 'CONTACT'
+    ) ||
+    homePage?.sections?.find(
+      (s: any) =>
+        s.componentType === 'CONTACT' ||
+        s.sectionIdentifier === 'contact-inquiry' ||
+        s.sectionIdentifier === 'contact'
+    );
+
+  const rawCtaSection =
+    blogPage?.sections?.find(
+      (s: any) => s.sectionIdentifier === 'blog-cta' || s.componentType === 'CTA'
+    ) ||
+    homePage?.sections?.find(
+      (s: any) =>
+        s.componentType === 'CTA' ||
+        s.sectionIdentifier === 'homepage-cta' ||
+        s.sectionIdentifier === 'cta-banner'
+    );
 
   const contactSectionToRender: PageSectionDto = rawContactSection || {
     id: 'blog-contact-section',
@@ -100,12 +122,17 @@ export default async function BlogPage() {
     },
   };
 
-  const credentials = [
+  const defaultCredentials = [
     { label: 'Technical Depth', value: `${posts.length}+ Articles`, sub: 'Peer-reviewed architecture' },
     { label: 'Engineering Domains', value: `${categories.length} Categories`, sub: 'From Commerce to Sovereign AI' },
     { label: 'Edge Latency', value: '< 50ms', sub: 'Sub-second global TTFB' },
     { label: 'Technical Signal', value: '100% Free', sub: 'Zero paywalls or sales gates' },
   ];
+
+  const credentials =
+    Array.isArray(heroPayload.credentials) && heroPayload.credentials.length > 0
+      ? heroPayload.credentials
+      : defaultCredentials;
 
   const breadcrumbSchema = buildBreadcrumbsSchema([
     { name: 'Home', item: '/' },
@@ -141,16 +168,19 @@ export default async function BlogPage() {
       {/* ── 1. Editorial Image-Based Hero Section (Exact Site Identity) ── */}
       <SubpageHero
         ariaLabel="Editorial Architecture Hero"
-        backgroundImageUrl="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80"
+        backgroundImageUrl={heroBackgroundImage}
         imageAlt="Gypsym Systems Architecture Server Racks Background"
-        eyebrow="Systems Architecture · Technical Editorial"
+        eyebrow={heroPayload.eyebrow || "Systems Architecture · Technical Editorial"}
         eyebrowBulletColor="bg-emerald-400"
-        titlePrefix="Engineering Insights &"
-        titleHighlight="Architecture"
-        titleSuffix="Blueprints"
-        description="A curated repository of deep-dive architectural blueprints, headless commerce benchmarks, and sovereign AI telemetry engineered by Gypsym systems architects."
+        titlePrefix={heroPayload.titlePrefix || heroPayload.title || "Engineering Insights &"}
+        titleHighlight={heroPayload.titleHighlight || "Architecture"}
+        titleSuffix={heroPayload.titleSuffix !== undefined ? heroPayload.titleSuffix : "Blueprints"}
+        description={
+          heroPayload.description ||
+          "A curated repository of deep-dive architectural blueprints, headless commerce benchmarks, and sovereign AI telemetry engineered by Gypsym systems architects."
+        }
         credentials={credentials}
-        showHeroStrip={true}
+        showHeroStrip={heroPayload.showHeroStrip !== undefined ? heroPayload.showHeroStrip : true}
         actions={
           <>
             <a

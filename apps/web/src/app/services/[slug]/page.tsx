@@ -45,31 +45,64 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
 
   const seo = (service as any).seoMetadata;
   const customTitle = seo?.metaTitle;
+  const resolvedTitle = customTitle || `${service.title} | Shopify Plus Services | Gypsym Technology`;
 
   return {
-    title: customTitle ? { absolute: customTitle } : `${service.title} | Shopify Plus Services | Gypsym Technology`,
-    description: service.tagline || service.shortDescription,
+    title: { absolute: resolvedTitle },
+    description: seo?.metaDescription || service.tagline || service.shortDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${service.title} | Gypsym Technology`,
-      description: service.tagline || service.shortDescription,
-      images: [{ url: '/assets/editorial/agency-hero-editorial.png' }],
+      title: seo?.ogTitle || resolvedTitle,
+      description: seo?.ogDescription || seo?.metaDescription || service.tagline || service.shortDescription,
+      images: [
+        {
+          url:
+            seo?.ogImageUrl ||
+            (service as any).heroBackgroundImage ||
+            (service as any).imageUrl ||
+            (service as any).backgroundImage ||
+            '/assets/editorial/agency-hero-editorial.png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo?.ogTitle || resolvedTitle,
+      description: seo?.ogDescription || seo?.metaDescription || service.tagline || service.shortDescription,
     },
   };
 }
 
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
-  const [service, allServices, homePage] = await Promise.all([
+  const [service, allServices, homePage, servicesPage] = await Promise.all([
     getServiceBySlug(params.slug),
     getServices(),
     getPageBySlug('home'),
+    getPageBySlug('services').catch(() => null),
   ]);
 
   if (!service) {
     notFound();
   }
+
+  const servicesHero = servicesPage?.sections?.find(
+    (s: any) =>
+      s.sectionIdentifier === 'services-hero' ||
+      s.componentType === 'HERO' ||
+      s.componentType === 'SERVICES' ||
+      s.sectionIdentifier === 'services'
+  );
+  const servicesHeroPayload = (servicesHero?.contentPayload as any) || {};
+
+  const heroBackgroundImage =
+    (service as any).heroBackgroundImage ||
+    (service as any).imageUrl ||
+    (service as any).backgroundImage ||
+    (service as any).backgroundImageUrl ||
+    servicesHeroPayload.innerHeroBackgroundImage ||
+    '/assets/editorial/agency-hero-editorial.png';
 
   // Filter out current service for "Other Services" section
   const otherServices = allServices.filter((s) => s.slug !== service.slug);
@@ -109,7 +142,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     name: service.title,
     description: service.tagline || service.shortDescription || service.detailedContent || service.title,
     url: `${getSiteUrl()}/services/${service.slug}`,
-    image: '/assets/editorial/agency-hero-editorial.png',
+    image: heroBackgroundImage,
     offers: service.pricing?.map((t) => ({
       name: t.name,
       price: t.prices?.[0]?.amount ? t.prices[0].amount.replace(/[^0-9.]/g, '') : undefined,
@@ -146,7 +179,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       {/* ── 1. Editorial Hero Section using Standard SubpageHero ── */}
       <SubpageHero
         ariaLabel={`${service.title} Hero`}
-        backgroundImageUrl="/assets/editorial/agency-hero-editorial.png"
+        backgroundImageUrl={heroBackgroundImage}
         imageAlt={service.title}
         eyebrow={service.category || 'Specialized Capability'}
         titlePrefix={service.title}

@@ -22,11 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = page?.seoMetadata;
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/roi-calculator`;
+  const resolvedTitle = seo?.metaTitle || 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology';
 
   return {
-    title: seo?.metaTitle
-      ? { absolute: seo.metaTitle }
-      : 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Simulate your store\'s projected annual revenue increase by switching to Gypsym\'s 42ms Next.js 15 Headless Edge architecture. Proven CRO conversion lift model.',
@@ -34,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||
@@ -97,7 +96,24 @@ const FAQS = [
   },
 ];
 
-export default function RoiCalculatorPage() {
+export default async function RoiCalculatorPage() {
+  const page = await getPageBySlug('roi-calculator').catch(() => null);
+  const heroSection = page?.sections?.find(
+    (s: any) => s.sectionIdentifier === 'roi-hero' || s.componentType === 'HERO'
+  );
+  const heroPayload = (heroSection?.contentPayload as any) || {};
+
+  const heroBackgroundImage =
+    heroPayload.backgroundImage ||
+    heroPayload.heroBackgroundImage ||
+    heroPayload.backgroundImageUrl ||
+    '/assets/editorial/agency-hero-editorial.png';
+
+  const credentials =
+    Array.isArray(heroPayload.credentials) && heroPayload.credentials.length > 0
+      ? heroPayload.credentials
+      : HERO_CREDENTIALS;
+
   const breadcrumbSchema = buildBreadcrumbsSchema([
     { name: 'Home', item: '/' },
     { name: 'ROI Calculator', item: '/roi-calculator' },
@@ -126,14 +142,17 @@ export default function RoiCalculatorPage() {
       {/* ── 1. SubpageHero — same outer bg-[#f4f3ef] flows from here ─── */}
       <SubpageHero
         ariaLabel="ROI Calculator Hero"
-        backgroundImageUrl="/assets/editorial/agency-hero-editorial.png"
+        backgroundImageUrl={heroBackgroundImage}
         imageAlt="Gypsym Headless ROI Revenue Calculator"
-        eyebrow="Interactive Financial Model · 2026 Edition"
+        eyebrow={heroPayload.eyebrow || "Interactive Financial Model · 2026 Edition"}
         eyebrowBulletColor="bg-primary"
-        titlePrefix="Calculate Your"
-        titleHighlight="Revenue Lift"
-        description="Drag the sliders to simulate how decoupling from slow Shopify Liquid monoliths to Gypsym's 42ms Next.js Edge accelerates your annual bottom line. Supports USD, EUR, GBP, INR, AED & AUD."
-        credentials={HERO_CREDENTIALS}
+        titlePrefix={heroPayload.titlePrefix || heroPayload.title || "Calculate Your"}
+        titleHighlight={heroPayload.highlight || heroPayload.titleHighlight || "Revenue Lift"}
+        description={
+          heroPayload.description ||
+          "Drag the sliders to simulate how decoupling from slow Shopify Liquid monoliths to Gypsym's 42ms Next.js Edge accelerates your annual bottom line. Supports USD, EUR, GBP, INR, AED & AUD."
+        }
+        credentials={credentials}
         showHeroStrip={true}
         actions={
           <>

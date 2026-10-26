@@ -267,6 +267,10 @@ export interface ServiceItemDto {
   detailedContent: string;
   category?: string;
   iconName?: string;
+  imageUrl?: string;
+  heroBackgroundImage?: string;
+  backgroundImage?: string;
+  backgroundImageUrl?: string;
   keyFeatures?: string[];
   deliverables?: string[];
   technologies?: string[];
@@ -274,6 +278,16 @@ export interface ServiceItemDto {
   benefits?: ServiceBenefit[];
   faqs?: ServiceFaq[];
   pricing?: ServicePriceTier[];
+  seoMetadata?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    canonicalUrl?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImageUrl?: string;
+    noIndex?: boolean;
+    structuredData?: any;
+  } | null;
 }
 
 export async function getServices(): Promise<ServiceItemDto[]> {

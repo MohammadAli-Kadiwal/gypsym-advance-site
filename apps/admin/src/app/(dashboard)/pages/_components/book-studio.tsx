@@ -73,6 +73,9 @@ export function BookStudio({ onBack }: BookStudioProps) {
   const [heroDescription, setHeroDescription] = React.useState(
     'Connect directly with our lead Shopify Plus architects. Live review of your store, zero sales pitch, and tailored recommendations.'
   );
+  const [heroBackgroundImage, setHeroBackgroundImage] = React.useState(
+    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2200&auto=format&fit=crop'
+  );
   const [hostTimezone, setHostTimezone] = React.useState('Host Time: Gujarat, India (IST)');
   const [credentials, setCredentials] = React.useState<CredentialItem[]>(defaultCredentials);
 
@@ -157,6 +160,9 @@ export function BookStudio({ onBack }: BookStudioProps) {
           if (p.headline) setHeroHeadline(p.headline);
           if (p.highlight) setHeroHighlight(p.highlight);
           if (p.description) setHeroDescription(p.description);
+          if (p.backgroundImage || p.heroBackgroundImage || p.backgroundImageUrl) {
+            setHeroBackgroundImage(p.backgroundImage || p.heroBackgroundImage || p.backgroundImageUrl);
+          }
           if (p.hostTimezone) setHostTimezone(p.hostTimezone);
           if (Array.isArray(p.credentials) && p.credentials.length > 0) setCredentials(p.credentials);
         }
@@ -235,6 +241,8 @@ export function BookStudio({ onBack }: BookStudioProps) {
         headline: heroHeadline,
         highlight: heroHighlight,
         description: heroDescription,
+        backgroundImage: heroBackgroundImage,
+        heroBackgroundImage,
         hostTimezone,
         credentials,
       };
@@ -448,6 +456,16 @@ export function BookStudio({ onBack }: BookStudioProps) {
                   onChange={(e) => setHeroDescription(e.target.value)}
                   rows={3}
                   className="mt-1 text-xs"
+                />
+              </div>
+
+              <div className="pt-2">
+                <ImageUploadField
+                  label="Hero Background Artwork / Image"
+                  description="Upload or enter URL for the discovery booking hero banner visual."
+                  value={heroBackgroundImage}
+                  onChange={setHeroBackgroundImage}
+                  placeholder="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2200&auto=format&fit=crop"
                 />
               </div>
 

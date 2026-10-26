@@ -17,10 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/book`;
 
+  const resolvedTitle = seo?.metaTitle || 'Book a Discovery Call | Gypsym Technology';
+
   return {
-    title: seo?.metaTitle
-      ? { absolute: seo.metaTitle }
-      : 'Book a Discovery Call | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers. Live store audit, zero sales deck, actionable technical insights.',
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Book a Discovery Call | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||
@@ -85,6 +85,7 @@ export default async function BookPage() {
   const heroBackgroundImage =
     heroPayload.backgroundImage ||
     heroPayload.heroBackgroundImage ||
+    heroPayload.backgroundImageUrl ||
     'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2200&auto=format&fit=crop';
 
   const credentials =

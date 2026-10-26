@@ -19,9 +19,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = page?.seoMetadata;
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/services`;
+  const resolvedTitle = seo?.metaTitle || 'Our Services | Shopify Plus & E-commerce Agency | Gypsym Technology';
 
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Our Services | Shopify Plus & E-commerce Agency | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Explore our 7 core Shopify services: E-commerce Solutions, Web Design & Development, Technical SEO, Website Maintenance, Theme Customization, Store Optimization, and Turnkey Store Setup.',
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Our Services | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||

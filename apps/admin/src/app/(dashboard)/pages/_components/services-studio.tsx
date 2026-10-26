@@ -97,6 +97,7 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
     'From bespoke Shopify Plus builds to sub-second speed optimization and ongoing 24/7 engineering retainers — we help ambitious brands outpace competition at 40–60% less cost than traditional US/UK agencies.'
   );
   const [heroBackgroundImage, setHeroBackgroundImage] = React.useState('/assets/editorial/agency-hero-editorial.png');
+  const [innerHeroBackgroundImage, setInnerHeroBackgroundImage] = React.useState('/assets/editorial/agency-hero-editorial.png');
   const [showHeroStrip, setShowHeroStrip] = React.useState(true);
   const [credentials, setCredentials] = React.useState<CredentialItem[]>(defaultCredentials);
   const [heroPrimaryLabel, setHeroPrimaryLabel] = React.useState('Schedule Strategy Call');
@@ -196,8 +197,12 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
           if (p.eyebrow) setHeroEyebrow(p.eyebrow);
           if (p.titlePrefix) setHeroTitlePrefix(p.titlePrefix);
           if (p.titleHighlight) setHeroTitleHighlight(p.titleHighlight);
-          if (p.description) setHeroDescription(p.description);
-          if (p.heroBackgroundImage) setHeroBackgroundImage(p.heroBackgroundImage);
+          if (p.heroBackgroundImage || p.backgroundImage || p.backgroundImageUrl) {
+            setHeroBackgroundImage(p.heroBackgroundImage || p.backgroundImage || p.backgroundImageUrl);
+          }
+          if (p.innerHeroBackgroundImage) {
+            setInnerHeroBackgroundImage(p.innerHeroBackgroundImage);
+          }
           if (p.showHeroStrip !== undefined) setShowHeroStrip(p.showHeroStrip);
           if (Array.isArray(p.credentials) && p.credentials.length > 0) setCredentials(p.credentials);
           if (p.primaryCta?.label) setHeroPrimaryLabel(p.primaryCta.label);
@@ -292,6 +297,9 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
         titleHighlight: heroTitleHighlight,
         description: heroDescription,
         heroBackgroundImage,
+        backgroundImage: heroBackgroundImage,
+        backgroundImageUrl: heroBackgroundImage,
+        innerHeroBackgroundImage,
         showHeroStrip,
         credentials,
         primaryCta: { label: heroPrimaryLabel, url: heroPrimaryUrl },
@@ -537,12 +545,19 @@ export function ServicesStudio({ onBack }: ServicesStudioProps) {
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <ImageUploadField
-                  label="Hero Background Image / Artwork"
-                  description="Upload an editorial photograph or asset for the hero background."
+                  label="Services Main Page Hero Background Image"
+                  description="Upload an editorial photograph or asset for the /services overview hero."
                   value={heroBackgroundImage}
                   onChange={setHeroBackgroundImage}
+                  placeholder="/assets/editorial/agency-hero-editorial.png"
+                />
+                <ImageUploadField
+                  label="Services Inner Pages Default Hero Background Image"
+                  description="Default hero banner visual applied across all service detail subpages (/services/[slug]). Can be overridden per service in Content → Services."
+                  value={innerHeroBackgroundImage}
+                  onChange={setInnerHeroBackgroundImage}
                   placeholder="/assets/editorial/agency-hero-editorial.png"
                 />
               </div>

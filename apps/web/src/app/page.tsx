@@ -19,15 +19,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = page.seoMetadata;
   const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || siteUrl;
+  const resolvedTitle = seo?.metaTitle || page.title || 'Gypsym Technology | Enterprise Architecture';
 
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : page.title,
+    title: { absolute: resolvedTitle },
     description: seo?.metaDescription || page.description || undefined,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || page.title,
+      title: seo?.ogTitle || resolvedTitle,
       description: seo?.ogDescription || seo?.metaDescription || page.description || undefined,
       images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
     },

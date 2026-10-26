@@ -21,13 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const siteName = seo?.siteName || 'Gypsym Technology';
   const defaultTitle = seo?.defaultTitle || `${siteName} | Enterprise Architecture`;
-  let template = seo?.metaTitleTemplate || `%s | ${siteName}`;
-  if (template.includes('{pageTitle}')) {
-    template = template.replace('{pageTitle}', '%s').replace('{siteName}', siteName);
-  }
-  if (!template.includes('%s')) {
-    template = `%s | ${siteName}`;
-  }
   const description = seo?.defaultDescription || undefined;
   const keywords = seo?.defaultKeywords || [];
   const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || getSiteUrl();
@@ -37,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
       default: defaultTitle,
-      template: template,
+      template: '%s',
     },
     description,
     keywords: keywords.length > 0 ? keywords : undefined,

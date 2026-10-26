@@ -16,13 +16,15 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('contact');
   const seo = page?.seoMetadata;
+  const resolvedTitle = seo?.metaTitle || 'Contact Us | Gypsym Technology';
+
   return {
-    title: seo?.metaTitle ? { absolute: seo.metaTitle } : 'Contact Us | Gypsym Technology',
+    title: { absolute: resolvedTitle },
     description:
       seo?.metaDescription ||
       'Reach out to Gypsym Technology for Shopify Plus development, custom theme engineering, D2C strategy, and e-commerce partnerships. We respond within one business day.',
     openGraph: {
-      title: seo?.ogTitle || seo?.metaTitle || 'Contact | Gypsym Technology',
+      title: seo?.ogTitle || resolvedTitle,
       description:
         seo?.ogDescription ||
         seo?.metaDescription ||
@@ -211,7 +213,7 @@ export default async function ContactPage() {
       <JsonLd data={contactSchema} />
       <SubpageHero
         ariaLabel="Contact Hero"
-        backgroundImageUrl={heroPayload.backgroundImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2200&auto=format&fit=crop"}
+        backgroundImageUrl={heroPayload.backgroundImage || heroPayload.heroBackgroundImage || heroPayload.backgroundImageUrl || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2200&auto=format&fit=crop"}
         imageAlt="Gypsym Technology — Modern collaborative workspace"
         eyebrow={heroPayload.eyebrow || "Gypsym Technology · Get In Touch"}
         eyebrowBulletColor="bg-[#d9287c]"

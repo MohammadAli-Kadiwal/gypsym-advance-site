@@ -22,6 +22,7 @@ import {
   FileCheck,
   FileClock,
   X,
+  BookOpen,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,6 +102,8 @@ function getPageIcon(slug?: string) {
       return <Calendar className="h-4 w-4" />;
     case 'roi-calculator':
       return <Calculator className="h-4 w-4" />;
+    case 'blog':
+      return <BookOpen className="h-4 w-4" />;
     default:
       return <FileText className="h-4 w-4" />;
   }
@@ -601,6 +604,17 @@ export function PagesTable({
                         </Link>
                       ) : page.slug === 'roi-calculator' ? (
                         <Link href="/pages/roi-calculator">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                          >
+                            <span>Studio</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      ) : page.slug === 'blog' ? (
+                        <Link href="/pages/blog">
                           <Button
                             variant="ghost"
                             size="sm"

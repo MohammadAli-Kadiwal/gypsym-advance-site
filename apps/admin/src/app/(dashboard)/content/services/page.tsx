@@ -43,6 +43,7 @@ import { formatDate } from '@/lib/utils';
 import { notify } from '@/lib/notifications';
 import { fetchApi } from '@/lib/api-client';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 
 export interface ServiceProcessStep {
   step: string;
@@ -84,6 +85,9 @@ export interface ServiceRecord extends BaseRecord {
   category: string;
   iconName?: string;
   displayOrder: number;
+  imageUrl?: string;
+  heroBackgroundImage?: string;
+  backgroundImageUrl?: string;
   technologies?: string[];
   deliverables?: string[];
   process?: ServiceProcessStep[];
@@ -139,6 +143,7 @@ interface ServiceFormState {
   tagline: string;
   shortDescription: string;
   detailedContent: string;
+  heroBackgroundImage: string;
   displayOrder: number;
   status: ItemStatus;
   technologiesText: string;
@@ -230,6 +235,7 @@ const DEFAULT_FORM: ServiceFormState = {
   tagline: '',
   shortDescription: '',
   detailedContent: '',
+  heroBackgroundImage: '/assets/editorial/agency-hero-editorial.png',
   displayOrder: 1,
   status: 'PUBLISHED',
   technologiesText: 'Shopify Plus, Liquid, Hydrogen, React, TypeScript',
@@ -332,6 +338,11 @@ export default function ServicesAdminPage() {
       tagline: item.tagline || '',
       shortDescription: item.shortDescription || '',
       detailedContent: item.detailedContent || '',
+      heroBackgroundImage:
+        item.heroBackgroundImage ||
+        item.imageUrl ||
+        (item as any).backgroundImage ||
+        '/assets/editorial/agency-hero-editorial.png',
       displayOrder: item.displayOrder ?? 1,
       status: (item.status || 'PUBLISHED') as ItemStatus,
       technologiesText: (item.technologies || []).join(', '),
@@ -387,6 +398,8 @@ export default function ServicesAdminPage() {
       tagline: form.tagline.trim(),
       shortDescription: form.shortDescription.trim(),
       detailedContent: form.detailedContent.trim(),
+      imageUrl: form.heroBackgroundImage,
+      heroBackgroundImage: form.heroBackgroundImage,
       displayOrder: Number(form.displayOrder) || 1,
       status: form.status,
       technologies: techArray,
@@ -849,6 +862,16 @@ export default function ServicesAdminPage() {
                     onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
                     placeholder="Or enter custom category..."
                     className="text-sm"
+                  />
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <ImageUploadField
+                    label="Service Page Hero Background Image"
+                    description="Upload an editorial photograph or banner visual for this service's subpage hero header."
+                    value={form.heroBackgroundImage}
+                    onChange={(url) => setForm((prev) => ({ ...prev, heroBackgroundImage: url }))}
+                    placeholder="/assets/editorial/agency-hero-editorial.png"
                   />
                 </div>
 

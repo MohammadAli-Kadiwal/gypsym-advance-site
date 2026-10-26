@@ -41,15 +41,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   const seo = (post as any).seoMetadata;
   const customTitle = seo?.metaTitle;
+  const resolvedTitle = customTitle || `${post.title} | Gypsym Technology Architecture`;
 
   return {
-    title: customTitle ? { absolute: customTitle } : `${post.title} | Gypsym Technology Architecture`,
-    description: post.excerpt,
+    title: { absolute: resolvedTitle },
+    description: seo?.metaDescription || post.excerpt,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: post.title,
+      title: seo?.ogTitle || resolvedTitle,
       description: post.excerpt,
       type: 'article',
       publishedTime: post.publishedAt,

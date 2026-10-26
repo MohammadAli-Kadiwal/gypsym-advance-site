@@ -45,6 +45,7 @@ export class CmsService implements OnModuleInit {
     }
     const services = await this.prisma.service.findMany({
       where,
+      include: { seoMetadata: true },
       orderBy: { displayOrder: 'asc' },
     });
 
@@ -71,6 +72,10 @@ export class CmsService implements OnModuleInit {
         displayOrder: s.displayOrder,
         category: mergedMeta.category || 'Specialized Capability',
         iconName: mergedMeta.iconName || 'ShoppingBag',
+        imageUrl: mergedMeta.imageUrl || mergedMeta.heroBackgroundImage || null,
+        heroBackgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+        backgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+        backgroundImageUrl: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
         keyFeatures: mergedMeta.keyFeatures || [],
         deliverables: mergedMeta.deliverables || [],
         technologies: mergedMeta.technologies || [],
@@ -78,6 +83,7 @@ export class CmsService implements OnModuleInit {
         benefits: mergedMeta.benefits || [],
         faqs: mergedMeta.faqs || [],
         pricing: mergedMeta.pricing || [],
+        seoMetadata: (s as any).seoMetadata || null,
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
       };
@@ -91,6 +97,7 @@ export class CmsService implements OnModuleInit {
     }
     const s = await this.prisma.service.findFirst({
       where,
+      include: { seoMetadata: true },
     });
     if (!s) throw new NotFoundException(`Service '${slug}' not found`);
 
@@ -116,6 +123,10 @@ export class CmsService implements OnModuleInit {
       displayOrder: s.displayOrder,
       category: mergedMeta.category || 'Specialized Capability',
       iconName: mergedMeta.iconName || 'ShoppingBag',
+      imageUrl: mergedMeta.imageUrl || mergedMeta.heroBackgroundImage || null,
+      heroBackgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+      backgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+      backgroundImageUrl: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
       keyFeatures: mergedMeta.keyFeatures || [],
       deliverables: mergedMeta.deliverables || [],
       technologies: mergedMeta.technologies || [],
@@ -123,6 +134,7 @@ export class CmsService implements OnModuleInit {
       benefits: mergedMeta.benefits || [],
       faqs: mergedMeta.faqs || [],
       pricing: mergedMeta.pricing || [],
+      seoMetadata: (s as any).seoMetadata || null,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     };
@@ -136,6 +148,8 @@ export class CmsService implements OnModuleInit {
     detailedContent?: string;
     category?: string;
     iconName?: string;
+    imageUrl?: string;
+    heroBackgroundImage?: string;
     displayOrder?: number;
     status?: any;
     deliverables?: string[];
@@ -179,6 +193,8 @@ export class CmsService implements OnModuleInit {
     const metaValue = {
       category: body.category || 'Specialized Capability',
       iconName: body.iconName || 'ShoppingBag',
+      imageUrl: body.imageUrl || body.heroBackgroundImage || null,
+      heroBackgroundImage: body.heroBackgroundImage || body.imageUrl || null,
       keyFeatures: body.keyFeatures || [],
       deliverables: body.deliverables || [],
       technologies: body.technologies || [],
@@ -215,6 +231,8 @@ export class CmsService implements OnModuleInit {
       detailedContent?: string;
       category?: string;
       iconName?: string;
+      imageUrl?: string;
+      heroBackgroundImage?: string;
       displayOrder?: number;
       status?: any;
       deliverables?: string[];
@@ -259,6 +277,8 @@ export class CmsService implements OnModuleInit {
       ...existingMeta,
       ...(body.category !== undefined && { category: body.category }),
       ...(body.iconName !== undefined && { iconName: body.iconName }),
+      ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
+      ...(body.heroBackgroundImage !== undefined && { heroBackgroundImage: body.heroBackgroundImage }),
       ...(body.keyFeatures !== undefined && { keyFeatures: body.keyFeatures }),
       ...(body.deliverables !== undefined && { deliverables: body.deliverables }),
       ...(body.technologies !== undefined && { technologies: body.technologies }),
@@ -2559,6 +2579,11 @@ export class CmsService implements OnModuleInit {
         title: 'ROI Calculator',
         description: "Simulate your store's projected annual revenue increase by switching to Gypsym's 42ms Next.js 15 Headless Edge architecture.",
       },
+      {
+        slug: 'blog',
+        title: 'Publications & Insights',
+        description: 'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering.',
+      },
     ];
 
     for (const item of coreLegalPages) {
@@ -2818,7 +2843,7 @@ export class CmsService implements OnModuleInit {
   }
 
   async deletePage(slug: string): Promise<void> {
-    if (slug === 'home' || slug === 'services' || slug === 'portfolio' || slug === 'contact' || slug === 'book') {
+    if (slug === 'home' || slug === 'services' || slug === 'portfolio' || slug === 'contact' || slug === 'book' || slug === 'blog' || slug === 'roi-calculator' || slug === 'about') {
       throw new BadRequestException(API_MESSAGES.PAGE_PROTECTED(slug));
     }
 
@@ -2864,6 +2889,45 @@ export class CmsService implements OnModuleInit {
           status: 'PUBLISHED',
           locale: 'en',
           publishedAt: new Date(),
+        },
+        include: {
+          sections: {
+            where: { isActive: true },
+            orderBy: { displayOrder: 'asc' },
+          },
+          seoMetadata: true,
+        },
+      });
+    }
+
+    if (!page && candidateSlugs.includes('blog')) {
+      page = await this.prisma.page.create({
+        data: {
+          slug: 'blog',
+          title: 'Publications & Insights',
+          description: 'Peer-reviewed systems architecture, headless commerce topologies, and sovereign AI telemetry engineered by Gypsym systems architects.',
+          layoutType: 'DEFAULT',
+          status: 'PUBLISHED',
+          locale: 'en',
+          publishedAt: new Date(),
+          sections: {
+            create: [
+              {
+                sectionIdentifier: 'blog-hero',
+                componentType: 'HERO',
+                displayOrder: 1,
+                isActive: true,
+                contentPayload: {
+                  eyebrow: 'Systems Architecture · Technical Editorial',
+                  title: 'Engineering Insights & Architecture Blueprints',
+                  titleHighlight: 'Architecture',
+                  description: 'A curated repository of deep-dive architectural blueprints, headless commerce benchmarks, and sovereign AI telemetry engineered by Gypsym systems architects.',
+                  backgroundImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80',
+                  heroBackgroundImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80',
+                },
+              },
+            ],
+          },
         },
         include: {
           sections: {

@@ -114,6 +114,7 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
   const [heroDescription, setHeroDescription] = React.useState(
     "Drag the sliders to simulate how decoupling from slow Shopify Liquid monoliths to Gypsym's 42ms Next.js Edge accelerates your annual bottom line. Supports USD, EUR, GBP, INR, AED & AUD."
   );
+  const [heroBackgroundImage, setHeroBackgroundImage] = React.useState('/assets/editorial/agency-hero-editorial.png');
   const [heroCredentials, setHeroCredentials] = React.useState<CredentialItem[]>(defaultCredentials);
 
   // ── Simulator / Calculator Settings State ──
@@ -256,6 +257,9 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
           if (p.titlePrefix) setHeroTitlePrefix(p.titlePrefix);
           if (p.highlight) setHeroHighlight(p.highlight);
           if (p.description) setHeroDescription(p.description);
+          if (p.backgroundImage || p.heroBackgroundImage || p.backgroundImageUrl) {
+            setHeroBackgroundImage(p.backgroundImage || p.heroBackgroundImage || p.backgroundImageUrl);
+          }
           if (Array.isArray(p.credentials) && p.credentials.length > 0) {
             setHeroCredentials(p.credentials);
           }
@@ -369,6 +373,8 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
         titlePrefix: heroTitlePrefix,
         highlight: heroHighlight,
         description: heroDescription,
+        backgroundImage: heroBackgroundImage,
+        heroBackgroundImage,
         credentials: heroCredentials,
       };
 
@@ -678,6 +684,16 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
                     rows={3}
                     placeholder="Enter value proposition paragraph..."
                     className="rounded-xl"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <ImageUploadField
+                    label="Hero Background Artwork / Image"
+                    description="Upload or enter URL for the ROI calculator hero banner visual."
+                    value={heroBackgroundImage}
+                    onChange={setHeroBackgroundImage}
+                    placeholder="/assets/editorial/agency-hero-editorial.png"
                   />
                 </div>
               </div>
