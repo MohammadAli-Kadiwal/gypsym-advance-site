@@ -210,7 +210,7 @@ export default async function AboutPage() {
         eyebrow={heroPayload.eyebrow || 'ABOUT GYPSYM TECHNOLOGY'}
         eyebrowBulletColor="bg-[#d9287c]"
         titlePrefix={heroPayload.headline || 'Architects of High-Growth Shopify'}
-        titleHighlight={heroPayload.titleHighlight || 'Storefronts'}
+        titleHighlight={heroPayload.titleHighlight || (heroPayload.headline ? undefined : 'Storefronts')}
         description={
           heroPayload.subheadline ||
           'Founded to solve the hardest problems in e-commerce engineering, headless performance, and custom Shopify architecture for ambitious global brands.'

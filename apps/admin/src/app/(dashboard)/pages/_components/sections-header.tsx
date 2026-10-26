@@ -43,18 +43,18 @@ export function SectionsHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#eaedf3]">
       {/* Left: Back + Title + Badges + Description */}
-      <div className="space-y-1">
+      <div className="space-y-1 min-w-0 flex-1">
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group mb-1"
+          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group mb-1 cursor-pointer"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
           <span>Back to All Pages</span>
         </button>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 break-words">
             {pageTitle} Page
           </h1>
           <Badge
@@ -85,13 +85,13 @@ export function SectionsHeader({
           )}
         </div>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 line-clamp-2 sm:line-clamp-none">
           Configure content, sections, and settings for the {pageTitle} page.
         </p>
       </div>
 
       {/* Right: Status Toggle + Refresh + Preview + Save */}
-      <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+      <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-start sm:justify-end shrink-0 pt-1 sm:pt-0">
         {onStatusChange && (
           <StatusToggleField
             value={status || 'PUBLISHED'}
@@ -106,10 +106,10 @@ export function SectionsHeader({
             size="sm"
             onClick={onRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold text-slate-500 hover:text-blue-600 rounded-xl"
+            className="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 text-xs font-semibold text-slate-500 hover:text-blue-600 rounded-xl"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
+            <span className="hidden xs:inline sm:inline">Refresh</span>
           </Button>
         )}
 
@@ -125,14 +125,14 @@ export function SectionsHeader({
             className="inline-flex items-center gap-1.5"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Preview
+            <span>Preview</span>
           </Link>
         </Button>
 
         <Button
           onClick={onSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-5 text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 sm:px-5 text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
         >
           {saving ? (
             <>

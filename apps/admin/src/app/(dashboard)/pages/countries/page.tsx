@@ -134,8 +134,8 @@ function CountryEditDialog({
 
             {/* TAB 1: Hero & Copy */}
             <TabsContent value="hero" className="space-y-4">
-              <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-5 space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="col-span-1 sm:col-span-5 space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700">Country Name</label>
                     {autoMatchedNotice && (
@@ -172,7 +172,7 @@ function CountryEditDialog({
                     ))}
                   </datalist>
                 </div>
-                <div className="col-span-3 space-y-1">
+                <div className="col-span-1 sm:col-span-3 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">Flag / Icon</label>
                   <CountryFlagPicker
                     value={formFlag}
@@ -188,7 +188,7 @@ function CountryEditDialog({
                     slug={formSlug}
                   />
                 </div>
-                <div className="col-span-4 space-y-1">
+                <div className="col-span-1 sm:col-span-4 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">URL Route Slug</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-xs font-mono text-slate-400">/</span>
@@ -214,7 +214,7 @@ function CountryEditDialog({
               </div>
 
               {/* Localization: All Currencies & Searchable Timezone */}
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     <Coins className="h-3.5 w-3.5 text-amber-500" />

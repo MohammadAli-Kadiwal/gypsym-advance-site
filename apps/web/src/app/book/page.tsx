@@ -117,7 +117,7 @@ export default async function BookPage() {
         eyebrow={heroPayload.eyebrow || 'Gypsym Technology · Discovery Call'}
         eyebrowBulletColor="bg-[#d9287c]"
         titlePrefix={heroPayload.headline || heroPayload.title || 'Schedule a Technical Discovery'}
-        titleHighlight={heroPayload.highlight || heroPayload.titleHighlight || 'Session'}
+        titleHighlight={heroPayload.highlight || heroPayload.titleHighlight || (heroPayload.headline || heroPayload.title ? undefined : 'Session')}
         description={
           heroPayload.description ||
           'Connect directly with our lead Shopify Plus architects. Live review of your storefront, zero sales pitch, and tailored engineering recommendations.'

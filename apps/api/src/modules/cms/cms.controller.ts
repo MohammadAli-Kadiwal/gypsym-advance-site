@@ -345,9 +345,24 @@ export class CmsController {
     return this.cmsService.updateSiteSetting(key, value);
   }
 
+  @Get('pages/metrics')
+  async getPagesMetrics(): Promise<{ total: number; published: number }> {
+    return this.cmsService.getPagesMetrics();
+  }
+
+  @Get('media/metrics')
+  async getMediaMetrics(): Promise<{ total: number }> {
+    return this.cmsService.getMediaMetrics();
+  }
+
+  @Get('media')
+  async getMediaList(): Promise<any[]> {
+    return this.cmsService.getMediaList();
+  }
+
   @Get('pages')
-  async getAllPages(): Promise<any[]> {
-    return this.cmsService.getAllPages();
+  async getAllPages(@Query('summary') summary?: string): Promise<any[]> {
+    return this.cmsService.getAllPages(summary === 'true');
   }
 
   @Post('pages')

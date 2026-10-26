@@ -714,31 +714,33 @@ export default function FooterSettingsPage() {
 
       {/* Main Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-slate-100/80 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/80 h-auto shadow-2xs">
-          <TabsTrigger value="general" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">General</TabsTrigger>
-          <TabsTrigger value="brand" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">Brand</TabsTrigger>
-          <TabsTrigger value="navigation" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">
-            Navigation ({navGroups.length})
-          </TabsTrigger>
-          <TabsTrigger value="keywords" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">
-            Keywords ({config.keywords?.items?.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="contact" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">Contact</TabsTrigger>
-          <TabsTrigger value="regions" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">
-            Regions ({config.regions.length})
-          </TabsTrigger>
-          <TabsTrigger value="large-brand" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">Large Mark</TabsTrigger>
-          <TabsTrigger value="legal" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">
-            Legal ({config.legalLinks.length})
-          </TabsTrigger>
-          <TabsTrigger value="badges" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">Badges</TabsTrigger>
-          <TabsTrigger value="cta" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">CTA Banner</TabsTrigger>
-          <TabsTrigger value="appearance" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all">Appearance</TabsTrigger>
-          <TabsTrigger value="preview" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5" />
-            <span>Live Preview</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto no-scrollbar scroll-smooth py-1">
+          <TabsList className="bg-slate-100/80 p-1.5 rounded-2xl inline-flex sm:flex sm:flex-wrap gap-1 border border-slate-200/80 h-auto shadow-2xs min-w-full sm:min-w-0">
+            <TabsTrigger value="general" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">General</TabsTrigger>
+            <TabsTrigger value="brand" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">Brand</TabsTrigger>
+            <TabsTrigger value="navigation" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">
+              Navigation ({navGroups.length})
+            </TabsTrigger>
+            <TabsTrigger value="keywords" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">
+              Keywords ({config.keywords?.items?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">Contact</TabsTrigger>
+            <TabsTrigger value="regions" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">
+              Regions ({config.regions.length})
+            </TabsTrigger>
+            <TabsTrigger value="large-brand" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">Large Mark</TabsTrigger>
+            <TabsTrigger value="legal" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">
+              Legal ({config.legalLinks.length})
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">Badges</TabsTrigger>
+            <TabsTrigger value="cta" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">CTA Banner</TabsTrigger>
+            <TabsTrigger value="appearance" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all shrink-0">Appearance</TabsTrigger>
+            <TabsTrigger value="preview" className="text-xs font-medium rounded-xl data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs px-3.5 py-1.5 transition-all flex items-center gap-1.5 shrink-0">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Live Preview</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ── TAB: GENERAL ── */}
         <TabsContent value="general" className="space-y-6">

@@ -335,12 +335,12 @@ export default function NavigationBuilderPage() {
       />
 
       <Tabs defaultValue="navigation" className="space-y-6">
-        <TabsList className="bg-card border border-border/40 p-1">
-          <TabsTrigger value="navigation" className="text-xs flex items-center gap-1.5">
-            <Menu className="h-3.5 w-3.5" /> Navigation Items & Mega Menus
+        <TabsList className="bg-card border border-border/40 p-1 w-full grid grid-cols-1 sm:grid-cols-2 h-auto gap-1">
+          <TabsTrigger value="navigation" className="text-xs flex items-center justify-center gap-1.5 py-2">
+            <Menu className="h-3.5 w-3.5" /> <span>Navigation Items &amp; Mega Menus</span>
           </TabsTrigger>
-          <TabsTrigger value="header" className="text-xs flex items-center gap-1.5">
-            <Sliders className="h-3.5 w-3.5" /> Floating Header Geometry & CTA
+          <TabsTrigger value="header" className="text-xs flex items-center justify-center gap-1.5 py-2">
+            <Sliders className="h-3.5 w-3.5" /> <span>Floating Header Geometry &amp; CTA</span>
           </TabsTrigger>
         </TabsList>
 

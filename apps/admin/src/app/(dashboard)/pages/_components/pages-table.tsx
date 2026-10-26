@@ -326,7 +326,7 @@ export function PagesTable({
       />
 
       {/* Search & Filter Bar */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -347,7 +347,7 @@ export function PagesTable({
               setSearchQuery('');
               setPage(1);
             }}
-            className="text-xs text-muted-foreground"
+            className="text-xs text-muted-foreground self-start sm:self-auto"
           >
             Clear Filter
           </Button>
@@ -356,7 +356,7 @@ export function PagesTable({
 
       {/* Pages Table Card */}
       <Card className="rounded-2xl border-border bg-card shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/30">
+        <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-muted/30">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Active Directory ({filteredPages.length} of {pages.length})
           </span>
@@ -695,13 +695,13 @@ export function PagesTable({
           </DialogHeader>
 
           <Tabs defaultValue="general" className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 pt-3 border-b border-slate-100 bg-white">
-              <TabsList className="bg-slate-100/80 p-1">
-                <TabsTrigger value="general" className="text-xs font-semibold">
-                  1. Page General &amp; Layout
+            <div className="px-4 sm:px-6 pt-3 border-b border-slate-100 bg-white">
+              <TabsList className="bg-slate-100/80 p-1 w-full grid grid-cols-2">
+                <TabsTrigger value="general" className="text-xs font-semibold px-2">
+                  1. General &amp; Layout
                 </TabsTrigger>
-                <TabsTrigger value="seo" className="text-xs font-semibold">
-                  2. SEO &amp; Social Meta
+                <TabsTrigger value="seo" className="text-xs font-semibold px-2">
+                  2. SEO &amp; Meta
                 </TabsTrigger>
               </TabsList>
             </div>

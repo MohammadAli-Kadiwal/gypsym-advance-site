@@ -173,8 +173,8 @@ export default async function BlogPage() {
         eyebrow={heroPayload.eyebrow || "Systems Architecture · Technical Editorial"}
         eyebrowBulletColor="bg-emerald-400"
         titlePrefix={heroPayload.titlePrefix || heroPayload.title || "Engineering Insights &"}
-        titleHighlight={heroPayload.titleHighlight || "Architecture"}
-        titleSuffix={heroPayload.titleSuffix !== undefined ? heroPayload.titleSuffix : "Blueprints"}
+        titleHighlight={heroPayload.titleHighlight || (heroPayload.title ? undefined : "Architecture")}
+        titleSuffix={heroPayload.titleSuffix !== undefined ? heroPayload.titleSuffix : (heroPayload.title ? undefined : "Blueprints")}
         description={
           heroPayload.description ||
           "A curated repository of deep-dive architectural blueprints, headless commerce benchmarks, and sovereign AI telemetry engineered by Gypsym systems architects."

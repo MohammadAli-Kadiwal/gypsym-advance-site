@@ -754,33 +754,33 @@ export default function ServicesAdminPage() {
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 pt-3 border-b border-slate-100 bg-white">
-              <TabsList className="bg-slate-100/80 p-1 flex flex-wrap h-auto gap-1">
-                <TabsTrigger value="basic" className="text-xs font-semibold">
+            <div className="px-4 sm:px-6 pt-3 border-b border-slate-100 bg-white overflow-x-auto no-scrollbar scroll-smooth">
+              <TabsList className="bg-slate-100/80 p-1 inline-flex sm:flex sm:flex-wrap h-auto gap-1 min-w-full sm:min-w-0">
+                <TabsTrigger value="basic" className="text-xs font-semibold shrink-0">
                   1. General & Icon
                 </TabsTrigger>
-                <TabsTrigger value="content" className="text-xs font-semibold">
+                <TabsTrigger value="content" className="text-xs font-semibold shrink-0">
                   2. Messaging
                 </TabsTrigger>
-                <TabsTrigger value="deliverables" className="text-xs font-semibold">
+                <TabsTrigger value="deliverables" className="text-xs font-semibold shrink-0">
                   3. Deliverables & Stack
                 </TabsTrigger>
-                <TabsTrigger value="playbook" className="text-xs font-semibold">
+                <TabsTrigger value="playbook" className="text-xs font-semibold shrink-0">
                   4. 4-Step Playbook
                 </TabsTrigger>
-                <TabsTrigger value="pricing" className="text-xs font-semibold text-emerald-700 data-[state=active]:text-emerald-900">
+                <TabsTrigger value="pricing" className="text-xs font-semibold text-emerald-700 data-[state=active]:text-emerald-900 shrink-0">
                   5. Pricing Packages
                 </TabsTrigger>
-                <TabsTrigger value="benefits" className="text-xs font-semibold">
+                <TabsTrigger value="benefits" className="text-xs font-semibold shrink-0">
                   6. Key Benefits
                 </TabsTrigger>
-                <TabsTrigger value="faqs" className="text-xs font-semibold">
+                <TabsTrigger value="faqs" className="text-xs font-semibold shrink-0">
                   7. FAQs
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               {/* ── TAB 1: General & Icon ── */}
               <TabsContent value="basic" className="m-0 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

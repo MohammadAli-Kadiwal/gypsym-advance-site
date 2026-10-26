@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { ScrollReveal, AnimatedCounter } from '@/components/motion';
+import { renderTitleWithHighlight, findHighlightTarget } from '@/lib/render-title-highlight';
 
 export interface CredentialItem {
   label: string;
@@ -93,23 +94,49 @@ export function SubpageHero({
 
           {/* Editorial Headline with Serif Accent */}
           <ScrollReveal direction="up" delay={120}>
-            {React.isValidElement(titleNode) && (titleNode as React.ReactElement).type === 'h1' ? (
-              titleNode
-            ) : titleNode ? (
-              <h1 className="text-[clamp(32px,6.5vw,66px)] font-semibold tracking-[-0.025em] text-white leading-[1.12] drop-shadow-md">
-                {titleNode}
-              </h1>
-            ) : (
-              <h1 className="text-[clamp(32px,6.5vw,66px)] font-semibold tracking-[-0.025em] text-white leading-[1.12] drop-shadow-md">
-                {titlePrefix && <span>{titlePrefix} </span>}
-                {titleHighlight && (
-                  <span className="font-serif italic font-normal text-white drop-shadow-md text-[clamp(36px,7.5vw,74px)] inline-block leading-none mx-1.5 sm:mx-2.5">
-                    {titleHighlight}
-                  </span>
-                )}
-                {titleSuffix && <span> {titleSuffix}</span>}
-              </h1>
-            )}
+            {(() => {
+              if (React.isValidElement(titleNode) && (titleNode as React.ReactElement).type === 'h1') {
+                return titleNode;
+              }
+              if (titleNode) {
+                return (
+                  <h1 className="text-[clamp(32px,6.5vw,66px)] font-semibold tracking-[-0.025em] text-white leading-[1.12] drop-shadow-md">
+                    {titleNode}
+                  </h1>
+                );
+              }
+
+              const prefix = titlePrefix?.trim() || '';
+              const highlight = titleHighlight?.trim() || '';
+              const suffix = titleSuffix?.trim() || '';
+              const italicClass =
+                'font-serif italic font-normal text-white drop-shadow-md text-[clamp(36px,7.5vw,74px)] inline-block leading-none mx-1.5 sm:mx-2.5';
+
+              // If the highlight word is already embedded within titlePrefix, style it in-place to avoid duplicate titles
+              const targetHighlight = prefix && highlight ? findHighlightTarget(prefix, highlight) : null;
+              if (targetHighlight) {
+                const shouldAppendSuffix = suffix && !prefix.toLowerCase().includes(suffix.toLowerCase());
+                return (
+                  <h1 className="text-[clamp(32px,6.5vw,66px)] font-semibold tracking-[-0.025em] text-white leading-[1.12] drop-shadow-md">
+                    {renderTitleWithHighlight(prefix, highlight, italicClass)}
+                    {shouldAppendSuffix && <span> {suffix}</span>}
+                  </h1>
+                );
+              }
+
+              // Segmented headline (prefix + highlighted accent + suffix)
+              return (
+                <h1 className="text-[clamp(32px,6.5vw,66px)] font-semibold tracking-[-0.025em] text-white leading-[1.12] drop-shadow-md">
+                  {prefix && <span>{prefix}{highlight ? ' ' : ''}</span>}
+                  {highlight && (
+                    <span className={italicClass}>
+                      {highlight}
+                    </span>
+                  )}
+                  {suffix && <span> {suffix}</span>}
+                </h1>
+              );
+            })()}
           </ScrollReveal>
 
           {/* Subtitle Description */}

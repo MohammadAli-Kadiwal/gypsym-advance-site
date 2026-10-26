@@ -107,15 +107,15 @@ export function EditPageSeoDialog({
         </DialogHeader>
 
         <Tabs defaultValue="metadata" className="space-y-4 pt-2">
-          <TabsList className="bg-slate-100 p-1 rounded-xl h-auto w-full grid grid-cols-3">
-            <TabsTrigger value="metadata" className="text-xs py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold">
-              <Globe className="h-3.5 w-3.5 mr-1.5" /> SERP & Meta
+          <TabsList className="bg-slate-100 p-1 rounded-xl h-auto w-full grid grid-cols-3 gap-1">
+            <TabsTrigger value="metadata" className="text-[11px] sm:text-xs px-1 sm:px-2 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold flex items-center justify-center">
+              <Globe className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">SERP & Meta</span>
             </TabsTrigger>
-            <TabsTrigger value="social" className="text-xs py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold">
-              <Share2 className="h-3.5 w-3.5 mr-1.5" /> Social & OG
+            <TabsTrigger value="social" className="text-[11px] sm:text-xs px-1 sm:px-2 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold flex items-center justify-center">
+              <Share2 className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Social & OG</span>
             </TabsTrigger>
-            <TabsTrigger value="schema" className="text-xs py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold">
-              <Code className="h-3.5 w-3.5 mr-1.5" /> Schema JSON-LD
+            <TabsTrigger value="schema" className="text-[11px] sm:text-xs px-1 sm:px-2 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-2xs font-semibold flex items-center justify-center">
+              <Code className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Schema</span>
             </TabsTrigger>
           </TabsList>
 

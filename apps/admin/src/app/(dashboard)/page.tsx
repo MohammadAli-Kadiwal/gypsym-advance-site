@@ -70,6 +70,11 @@ export default function DashboardPage() {
     media: 0,
   });
 
+  const localRef = React.useRef({ localPages, localBlogs, localMedia, localServices });
+  React.useEffect(() => {
+    localRef.current = { localPages, localBlogs, localMedia, localServices };
+  }, [localPages, localBlogs, localMedia, localServices]);
+
   // Load live dynamic metrics from backend APIs with graceful fallback to store collections
   const loadDynamicMetrics = React.useCallback(async (showRefreshing = false) => {
     if (showRefreshing) setIsRefreshing(true);
@@ -82,23 +87,27 @@ export default function DashboardPage() {
         partnersRes,
         bookingsRes,
         inquiriesRes,
+        mediaRes,
       ] = await Promise.allSettled([
-        fetchApi<any>('/pages'),
+        fetchApi<any>('/pages/metrics')
+          .catch(() => fetchApi<any>('/pages?summary=true'))
+          .catch(() => fetchApi<any>('/pages')),
         fetchApi<any>('/cms/blog').catch(() => fetchApi<any>('/blog')),
         fetchApi<any>('/services'),
         fetchApi<any>('/clients'),
         fetchApi<any>('/partners'),
         fetchApi<any>('/bookings/metrics').catch(() => fetchApi<any>('/bookings?limit=1')),
         fetchApi<any>('/inquiries?limit=1'),
+        fetchApi<any>('/media/metrics').catch(() => fetchApi<any>('/media')),
       ]);
 
       const nextCounts: MetricCounts = {
-        pages: localPages.length || 0,
-        publishedPages: localPages.filter((p: any) => p.status === 'PUBLISHED' || !p.status).length || 0,
-        blogs: localBlogs.length || 0,
-        publishedBlogs: localBlogs.filter((b: any) => b.status === 'PUBLISHED').length || 0,
-        services: localServices.length || 0,
-        activeServices: localServices.filter((s: any) => s.status === 'PUBLISHED' || !s.status).length || 0,
+        pages: 0,
+        publishedPages: 0,
+        blogs: 0,
+        publishedBlogs: 0,
+        services: 0,
+        activeServices: 0,
         clients: 0,
         activeClients: 0,
         partners: 0,
@@ -107,17 +116,26 @@ export default function DashboardPage() {
         upcomingBookings: 0,
         inquiries: 0,
         newInquiries: 0,
-        media: localMedia.length || 0,
+        media: 0,
       };
 
       // 1. Pages
       if (pagesRes.status === 'fulfilled' && pagesRes.value) {
         const raw = pagesRes.value;
-        const list = Array.isArray(raw) ? raw : raw?.data || [];
-        if (Array.isArray(list)) {
-          nextCounts.pages = list.length;
-          nextCounts.publishedPages = list.filter((p: any) => p.status === 'PUBLISHED' || !p.status).length;
+        if (typeof raw?.total === 'number') {
+          nextCounts.pages = raw.total;
+          nextCounts.publishedPages = typeof raw.published === 'number' ? raw.published : raw.total;
+        } else {
+          const list = Array.isArray(raw) ? raw : raw?.data || [];
+          if (Array.isArray(list)) {
+            nextCounts.pages = list.length;
+            nextCounts.publishedPages = list.filter((p: any) => p.status === 'PUBLISHED' || !p.status).length;
+          }
         }
+      }
+      if (nextCounts.pages === 0 && localRef.current.localPages?.length) {
+        nextCounts.pages = localRef.current.localPages.length;
+        nextCounts.publishedPages = localRef.current.localPages.filter((p: any) => p.status === 'PUBLISHED' || !p.status).length;
       }
 
       // 2. Blog Posts
@@ -129,6 +147,10 @@ export default function DashboardPage() {
           nextCounts.publishedBlogs = list.filter((b: any) => b.status === 'PUBLISHED').length;
         }
       }
+      if (nextCounts.blogs === 0 && localRef.current.localBlogs?.length) {
+        nextCounts.blogs = localRef.current.localBlogs.length;
+        nextCounts.publishedBlogs = localRef.current.localBlogs.filter((b: any) => b.status === 'PUBLISHED').length;
+      }
 
       // 3. Services
       if (servicesRes.status === 'fulfilled' && servicesRes.value) {
@@ -138,6 +160,10 @@ export default function DashboardPage() {
           nextCounts.services = list.length;
           nextCounts.activeServices = list.filter((s: any) => s.status === 'PUBLISHED' || !s.status).length;
         }
+      }
+      if (nextCounts.services === 0 && localRef.current.localServices?.length) {
+        nextCounts.services = localRef.current.localServices.length;
+        nextCounts.activeServices = localRef.current.localServices.filter((s: any) => s.status === 'PUBLISHED' || !s.status).length;
       }
 
       // 4. Clients
@@ -183,6 +209,22 @@ export default function DashboardPage() {
         }
       }
 
+      // 8. Media Library
+      if (mediaRes.status === 'fulfilled' && mediaRes.value) {
+        const raw = mediaRes.value;
+        if (typeof raw?.total === 'number') {
+          nextCounts.media = raw.total;
+        } else {
+          const list = Array.isArray(raw) ? raw : raw?.data || [];
+          if (Array.isArray(list)) {
+            nextCounts.media = list.length;
+          }
+        }
+      }
+      if (nextCounts.media === 0 && localRef.current.localMedia?.length) {
+        nextCounts.media = localRef.current.localMedia.length;
+      }
+
       setCounts(nextCounts);
       setLastRefreshed(new Date());
     } catch {
@@ -191,7 +233,7 @@ export default function DashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [localPages, localBlogs, localMedia, localServices]);
+  }, []);
 
   React.useEffect(() => {
     loadDynamicMetrics();

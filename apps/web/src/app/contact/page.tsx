@@ -219,7 +219,7 @@ export default async function ContactPage() {
         eyebrowBulletColor="bg-[#d9287c]"
         titlePrefix={heroPayload.title || "Let's Build Something"}
         titleHighlight={heroPayload.titleHighlight || "Remarkable"}
-        titleSuffix="Together"
+        titleSuffix={heroPayload.title ? (heroPayload.titleSuffix || undefined) : "Together"}
         description={heroPayload.description || "Whether you need a new Shopify Plus storefront, a performance overhaul, or a long-term engineering partner — our team is ready. Every message is read personally and replied to within one business day."}
         credentials={Array.isArray(heroPayload.credentials) && heroPayload.credentials.length > 0 ? heroPayload.credentials : CONTACT_CREDENTIALS}
         showHeroStrip={heroPayload.showHeroStrip !== undefined ? heroPayload.showHeroStrip : true}

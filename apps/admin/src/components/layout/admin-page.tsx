@@ -96,10 +96,10 @@ export function AdminPageHeader({
       )}
 
       {/* Main Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground break-words">
               {title}
             </h1>
             {status && <div className="shrink-0">{status}</div>}
@@ -112,7 +112,7 @@ export function AdminPageHeader({
         </div>
 
         {actions && (
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0 w-full sm:w-auto justify-start sm:justify-end pt-1 sm:pt-0">
             {actions}
           </div>
         )}
@@ -153,7 +153,7 @@ export function AdminToolbar({
     >
       <div className="flex items-center gap-2.5 flex-1 flex-wrap">
         {search && (
-          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
+          <div className="relative w-full sm:w-auto flex-1 min-w-[160px] sm:max-w-xs">
             <input
               type="text"
               value={search.value}

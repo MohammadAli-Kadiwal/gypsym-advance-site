@@ -245,7 +245,7 @@ export function Header() {
             <DropdownMenuContent
               align="end"
               sideOffset={8}
-              className="w-80 sm:w-96 rounded-2xl border border-border bg-popover text-popover-foreground p-0 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 overflow-hidden"
+              className="w-[calc(100vw-2rem)] sm:w-96 max-w-sm rounded-2xl border border-border bg-popover text-popover-foreground p-0 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 overflow-hidden"
             >
               {/* Dropdown Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">

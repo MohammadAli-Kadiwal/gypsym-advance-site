@@ -6,7 +6,7 @@ import * as React from 'react';
  * e.g. "engineered" matches "Engineered"
  * e.g. "modern" matches "modern"
  */
-function findHighlightTarget(title: string, highlightWord?: string): string | null {
+export function findHighlightTarget(title: string, highlightWord?: string): string | null {
   if (!highlightWord || !highlightWord.trim()) return null;
   const trimmed = highlightWord.trim();
 

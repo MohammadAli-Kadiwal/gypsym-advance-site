@@ -2536,7 +2536,73 @@ export class CmsService implements OnModuleInit {
 
 
   // 9. Dynamic Pages & Sections
-  async getAllPages(): Promise<any[]> {
+  async getPagesMetrics(): Promise<{ total: number; published: number }> {
+    const [total, published] = await Promise.all([
+      this.prisma.page.count({ where: { deletedAt: null } }),
+      this.prisma.page.count({ where: { deletedAt: null, status: 'PUBLISHED' } }),
+    ]);
+    return { total, published };
+  }
+
+  async getMediaMetrics(): Promise<{ total: number }> {
+    const total = await this.prisma.media.count();
+    return { total };
+  }
+
+  async getMediaList(): Promise<any[]> {
+    const media = await this.prisma.media.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return media.map((m) => ({
+      id: m.id,
+      filename: m.originalFilename,
+      title: m.altText || m.originalFilename,
+      url: this.logoUrlFromMedia(m),
+      mimeType: m.mimeType,
+      sizeBytes: Number(m.fileSizeBytes || 0),
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+    }));
+  }
+
+  async getAllPages(summaryOnly = false): Promise<any[]> {
+    if (summaryOnly) {
+      const pages = await this.prisma.page.findMany({
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          layoutType: true,
+          status: true,
+          locale: true,
+          publishedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: { sections: true },
+          },
+        },
+      });
+      return pages.map((page) => ({
+        id: page.id,
+        slug: page.slug,
+        title: page.title,
+        description: page.description,
+        layoutType: page.layoutType,
+        status: page.status,
+        locale: page.locale,
+        sectionsCount: page._count.sections,
+        publishedAt: page.publishedAt,
+        createdAt: page.createdAt,
+        updatedAt: page.updatedAt,
+      }));
+    }
+
     let pages = await this.prisma.page.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: 'asc' },
