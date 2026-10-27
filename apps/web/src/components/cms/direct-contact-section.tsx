@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Calendar, Mail, MessageCircle, ArrowRight } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
+import { ContactSettingsDto } from '@/lib/api/cms';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { ScrollReveal, StaggerContainer, RevealItem } from '@/components/motion';
 
@@ -29,6 +30,7 @@ export interface DirectContactPayload {
 interface DirectContactSectionProps {
   section?: PageSectionDto;
   payload?: DirectContactPayload;
+  contactSettings?: ContactSettingsDto;
 }
 
 const DEFAULT_CARDS: DirectContactCard[] = [
@@ -86,7 +88,7 @@ function renderCardIcon(icon?: string, color?: string) {
   );
 }
 
-export function DirectContactSection({ section, payload }: DirectContactSectionProps) {
+export function DirectContactSection({ section, payload, contactSettings }: DirectContactSectionProps) {
   const p = payload || (section?.contentPayload as DirectContactPayload) || {};
 
   if (p.enabled === false) {
@@ -97,8 +99,47 @@ export function DirectContactSection({ section, payload }: DirectContactSectionP
   const title = p.title?.trim() || 'Or Reach Us Directly';
   const titleHighlight = p.titleHighlight?.trim() || 'Directly';
   const footnote =
-    p.footnote?.trim() || 'We reply within 24 hours on business days. Gujarat, India.';
-  const cards = p.cards && p.cards.length > 0 ? p.cards : DEFAULT_CARDS;
+    p.footnote?.trim() ||
+    `We reply within 24 hours on business days. ${contactSettings?.secondaryAddress || contactSettings?.headquartersAddress || 'Gujarat, India.'}`;
+
+  // If dynamic contactSettings provided and no custom cards from CMS, synthesize dynamic cards
+  const dynamicCards: DirectContactCard[] = contactSettings
+    ? [
+        {
+          id: 'book-call',
+          icon: 'calendar',
+          iconBgColor: 'blue',
+          title: 'Book a 30-min call',
+          description:
+            'Book a 30-minute discovery session directly on our calendar. A live look at your store, no pitch deck.',
+          linkText: `${contactSettings.bookingUrl.replace(/^\//, 'gypsym.com/')} →`,
+          linkUrl: contactSettings.bookingUrl || '/book',
+        },
+        {
+          id: 'email-us',
+          icon: 'mail',
+          iconBgColor: 'amber',
+          title: 'Email us',
+          description: 'For briefs, RFPs and anything with attachments.',
+          linkText: `${contactSettings.projectEmail || contactSettings.primaryEmail} →`,
+          linkUrl: `mailto:${contactSettings.projectEmail || contactSettings.primaryEmail}`,
+        },
+        {
+          id: 'whatsapp',
+          icon: 'whatsapp',
+          iconBgColor: 'sky',
+          title: 'WhatsApp',
+          description:
+            'Quick questions, quick answers. We serve clients in USA, UK, and globally — time zones aren’t a barrier.',
+          linkText: `${contactSettings.whatsappNumber} →`,
+          linkUrl:
+            contactSettings.whatsappUrl ||
+            `https://wa.me/${contactSettings.whatsappNumber.replace(/[^0-9]/g, '')}`,
+        },
+      ]
+    : DEFAULT_CARDS;
+
+  const cards = p.cards && p.cards.length > 0 ? p.cards : dynamicCards;
 
   return (
     <div

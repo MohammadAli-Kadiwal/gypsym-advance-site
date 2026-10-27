@@ -5,13 +5,15 @@ import { ArrowLeft, FileText } from 'lucide-react';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
+import { getContactSettings } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Gypsym Technology',
   description: 'Enterprise Master Service Agreement, Intellectual Property Ownership, and Commercial Terms of Gypsym Technology Inc.',
 };
 
-export default function TermsOfServicePage() {
+export default async function TermsOfServicePage() {
+  const contact = await getContactSettings();
   const lastUpdated = 'September 22, 2026';
 
   const breadcrumbs = buildBreadcrumbsSchema([
@@ -187,10 +189,10 @@ export default function TermsOfServicePage() {
                 7. Governing Law & Jurisdiction
               </h2>
               <p>
-                These Terms shall be governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to conflicts of law provisions.
+                These Terms shall be governed by and construed in accordance with the laws of {contact.legalJurisdiction || 'the State of Delaware, United States'}, without regard to conflicts of law provisions.
               </p>
               <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono">
-                Legal Notice Contact: <a href="mailto:contact@gypsym.com" className="text-blue-600 underline">contact@gypsym.com</a>
+                Legal Notice Contact: <a href={`mailto:${contact.primaryEmail || 'contact@gypsym.com'}`} className="text-blue-600 underline">{contact.primaryEmail || 'contact@gypsym.com'}</a>
               </div>
             </section>
           </article>

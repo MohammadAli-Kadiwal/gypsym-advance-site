@@ -2492,6 +2492,233 @@ export class CmsService implements OnModuleInit {
     return this.getSocialLinks();
   }
 
+  // 8.0 Comprehensive All-In-One Site Contact & Entity Settings
+  async getContactSettings(): Promise<any> {
+    const [contactRow, entityRow, seoRow, brandRow] = await Promise.all([
+      this.prisma.siteSetting.findUnique({ where: { key: 'general:contact' } }),
+      this.prisma.siteSetting.findUnique({ where: { key: 'general:entity' } }),
+      this.prisma.siteSetting.findUnique({ where: { key: 'seo:global' } }),
+      this.prisma.brandSetting.findFirst({ where: { isActive: true } }).catch(() => null),
+    ]);
+
+    const contact = (contactRow?.value as Record<string, any>) || {};
+    const entity = (entityRow?.value as Record<string, any>) || {};
+    const seo = (seoRow?.value as Record<string, any>) || {};
+
+    const primaryEmail =
+      contact.primaryEmail ||
+      contact.email ||
+      seo.email ||
+      'hello@gypsym.com';
+
+    const primaryPhone =
+      contact.primaryPhone ||
+      contact.phone ||
+      seo.phone ||
+      '+1 (800) 928-4019';
+
+    const whatsappNumber =
+      contact.whatsappNumber ||
+      contact.whatsapp ||
+      '+91 73397 26403';
+
+    const whatsappMessage =
+      contact.whatsappMessage ||
+      "Hi Gypsym team, I'd like to discuss a Shopify project.";
+
+    const cleanWaNumber = whatsappNumber.replace(/[^0-9]/g, '');
+    const defaultWaUrl = cleanWaNumber
+      ? `https://wa.me/${cleanWaNumber}${whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : ''}`
+      : 'https://wa.me/917339726403';
+
+    const whatsappUrl = contact.whatsappUrl || defaultWaUrl;
+
+    const headquartersAddress =
+      contact.headquartersAddress ||
+      contact.address ||
+      entity.headquarters ||
+      seo.address ||
+      '100 Bishopsgate, London EC2N 4AG, United Kingdom';
+
+    const secondaryAddress =
+      contact.secondaryAddress ||
+      'Surat, Gujarat, India (Engineering Hub)';
+
+    const officeHours =
+      contact.officeHours ||
+      'Mon – Fri: 08:00 – 18:00 EST';
+
+    const timezone =
+      contact.timezone ||
+      seo.timezone ||
+      'America/New_York (EST)';
+
+    const bookingUrl =
+      contact.bookingUrl ||
+      '/book';
+
+    const projectEmail =
+      contact.projectEmail ||
+      'project@gypsym.com';
+
+    const advisoryEmail =
+      contact.advisoryEmail ||
+      'advisory@gypsym.com';
+
+    const securityEmail =
+      contact.securityEmail ||
+      'security@gypsym.com';
+
+    const supportEmail =
+      contact.supportEmail ||
+      'support@gypsym.com';
+
+    const companyName =
+      entity.companyName ||
+      brandRow?.companyName ||
+      seo.organizationName ||
+      'Gypsym Technology';
+
+    const legalName =
+      entity.legalName ||
+      'Gypsym Global Enterprises Inc.';
+
+    const tagline =
+      entity.tagline ||
+      'Shopify & Shopify Plus Engineering Agency';
+
+    const legalJurisdiction =
+      entity.legalJurisdiction ||
+      'Delaware, United States & London, United Kingdom';
+
+    const country =
+      contact.country ||
+      seo.country ||
+      'United Kingdom';
+
+    return {
+      primaryEmail,
+      primaryPhone,
+      secondaryPhone: contact.secondaryPhone || '',
+      whatsappNumber,
+      whatsappMessage,
+      whatsappUrl,
+      bookingUrl,
+      projectEmail,
+      advisoryEmail,
+      securityEmail,
+      supportEmail,
+      headquartersAddress,
+      secondaryAddress,
+      officeHours,
+      timezone,
+      companyName,
+      legalName,
+      tagline,
+      legalJurisdiction,
+      country,
+      googleMapsUrl: contact.googleMapsUrl || '',
+    };
+  }
+
+  async updateContactSettings(data: any): Promise<any> {
+    const current = await this.getContactSettings();
+    const merged = { ...current, ...data };
+
+    const cleanWaNumber = (merged.whatsappNumber || '').replace(/[^0-9]/g, '');
+    if (!merged.whatsappUrl || merged.whatsappUrl.startsWith('https://wa.me/')) {
+      merged.whatsappUrl = cleanWaNumber
+        ? `https://wa.me/${cleanWaNumber}${merged.whatsappMessage ? `?text=${encodeURIComponent(merged.whatsappMessage)}` : ''}`
+        : 'https://wa.me/917339726403';
+    }
+
+    // 1. Save to general:contact
+    const contactValue = {
+      primaryEmail: merged.primaryEmail,
+      email: merged.primaryEmail,
+      phone: merged.primaryPhone,
+      primaryPhone: merged.primaryPhone,
+      secondaryPhone: merged.secondaryPhone || '',
+      whatsappNumber: merged.whatsappNumber,
+      whatsappMessage: merged.whatsappMessage || '',
+      whatsappUrl: merged.whatsappUrl,
+      bookingUrl: merged.bookingUrl || '/book',
+      projectEmail: merged.projectEmail || merged.primaryEmail,
+      advisoryEmail: merged.advisoryEmail || merged.primaryEmail,
+      securityEmail: merged.securityEmail || merged.primaryEmail,
+      supportEmail: merged.supportEmail || merged.primaryEmail,
+      address: merged.headquartersAddress,
+      headquartersAddress: merged.headquartersAddress,
+      secondaryAddress: merged.secondaryAddress || '',
+      officeHours: merged.officeHours || 'Mon – Fri: 08:00 – 18:00 EST',
+      timezone: merged.timezone || 'UTC',
+      country: merged.country || 'United Kingdom',
+      googleMapsUrl: merged.googleMapsUrl || '',
+    };
+
+    await this.prisma.siteSetting.upsert({
+      where: { key: 'general:contact' },
+      create: {
+        key: 'general:contact',
+        category: 'general',
+        value: contactValue,
+        isPublic: true,
+      },
+      update: {
+        value: contactValue,
+        isPublic: true,
+      },
+    });
+
+    // 2. Save to general:entity
+    const entityValue = {
+      companyName: merged.companyName,
+      legalName: merged.legalName,
+      tagline: merged.tagline,
+      headquarters: merged.headquartersAddress,
+      legalJurisdiction: merged.legalJurisdiction,
+    };
+
+    await this.prisma.siteSetting.upsert({
+      where: { key: 'general:entity' },
+      create: {
+        key: 'general:entity',
+        category: 'general',
+        value: entityValue,
+        isPublic: true,
+      },
+      update: {
+        value: entityValue,
+        isPublic: true,
+      },
+    });
+
+    // 3. Mirror to seo:global so SEO schema, JSON-LD, Organization stay 100% synchronized
+    try {
+      const seoGlobal = await this.prisma.siteSetting.findUnique({ where: { key: 'seo:global' } });
+      if (seoGlobal && typeof seoGlobal.value === 'object') {
+        const seoVal = (seoGlobal.value as Record<string, any>) || {};
+        await this.prisma.siteSetting.update({
+          where: { key: 'seo:global' },
+          data: {
+            value: {
+              ...seoVal,
+              email: merged.primaryEmail,
+              phone: merged.primaryPhone,
+              address: merged.headquartersAddress,
+              country: merged.country,
+              organizationName: merged.companyName,
+            },
+          },
+        });
+      }
+    } catch {
+      // non-critical sync
+    }
+
+    return this.getContactSettings();
+  }
+
   // 8. Site Settings
   async getSiteSettings(): Promise<Record<string, any>> {
     const settings = await this.prisma.siteSetting.findMany({

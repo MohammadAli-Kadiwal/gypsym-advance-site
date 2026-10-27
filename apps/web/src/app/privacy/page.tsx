@@ -5,13 +5,15 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
+import { getContactSettings } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Gypsym Technology',
   description: 'Enterprise Data Protection, GDPR Compliance, and Global Sovereignty Governance for Gypsym Technology clients.',
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const contact = await getContactSettings();
   const lastUpdated = 'September 22, 2026';
 
   const breadcrumbs = buildBreadcrumbsSchema([
@@ -210,9 +212,9 @@ export default function PrivacyPolicyPage() {
                 For questions concerning our data sovereignty frameworks or to exercise statutory privacy rights, contact our Data Protection Officer directly:
               </p>
               <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 text-xs font-mono space-y-1">
-                <div>Email: <a href="mailto:security@gypsym.com" className="text-blue-600 underline">security@gypsym.com</a></div>
-                <div>Alternative: <a href="mailto:contact@gypsym.com" className="text-blue-600 underline">contact@gypsym.com</a></div>
-                <div>Postal Address: Gypsym Technology Inc., 175 Varick Street, 8th Floor, New York, NY 10014, USA</div>
+                <div>Email: <a href={`mailto:${contact.securityEmail || 'security@gypsym.com'}`} className="text-blue-600 underline">{contact.securityEmail || 'security@gypsym.com'}</a></div>
+                <div>Alternative: <a href={`mailto:${contact.primaryEmail || 'hello@gypsym.com'}`} className="text-blue-600 underline">{contact.primaryEmail || 'hello@gypsym.com'}</a></div>
+                <div>Postal Address: {contact.legalName || 'Gypsym Technology'}, {contact.headquartersAddress}</div>
               </div>
             </section>
           </article>

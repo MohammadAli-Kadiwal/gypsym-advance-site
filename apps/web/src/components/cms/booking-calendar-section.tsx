@@ -18,11 +18,13 @@ import {
   Check,
 } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
+import { ContactSettingsDto } from '@/lib/api/cms';
 import { ScrollReveal } from '@/components/motion';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { getPublicHoliday } from '@/lib/public-holidays';
 import { bookingsService } from '@/services/bookings.service';
+import { cmsService } from '@/services/cms.service';
 
 export interface BookingCalendarPayload {
   eyebrow?: string;
@@ -44,6 +46,7 @@ export interface BookingCalendarPayload {
 interface BookingCalendarSectionProps {
   section?: PageSectionDto;
   payload?: BookingCalendarPayload;
+  contactSettings?: ContactSettingsDto;
 }
 
 const TIMEZONES = [
@@ -113,8 +116,27 @@ interface GeneratedSlot {
   available: boolean;
 }
 
-export function BookingCalendarSection({ section, payload }: BookingCalendarSectionProps) {
+export function BookingCalendarSection({ section, payload, contactSettings }: BookingCalendarSectionProps) {
   const p = payload || (section?.contentPayload as BookingCalendarPayload) || {};
+
+  const [liveContact, setLiveContact] = React.useState<ContactSettingsDto | null>(contactSettings || null);
+
+  React.useEffect(() => {
+    if (contactSettings) {
+      setLiveContact(contactSettings);
+      return;
+    }
+    cmsService.getContactSettings().then((res) => {
+      const data = res?.data || res;
+      if (data) setLiveContact(data);
+    }).catch(() => {});
+  }, [contactSettings]);
+
+  const whatsappHref =
+    liveContact?.whatsappUrl ||
+    (liveContact?.whatsappNumber
+      ? `https://wa.me/${liveContact.whatsappNumber.replace(/[^0-9]/g, '')}`
+      : 'https://wa.me/917339726403');
 
   const eyebrow = p.eyebrow || 'GYPSYM / BOOK';
   const title = p.title || 'Book a discovery';
@@ -700,7 +722,7 @@ export function BookingCalendarSection({ section, payload }: BookingCalendarSect
                       </div>
 
                       <a
-                        href="https://wa.me/917339726403"
+                        href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-semibold text-[#d9287c] hover:underline inline-flex items-center gap-1"

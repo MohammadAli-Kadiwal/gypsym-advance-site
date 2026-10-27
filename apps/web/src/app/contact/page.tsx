@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 import { ArrowUpRight, Mail } from 'lucide-react';
-import { getPageBySlug } from '@/lib/api';
+import { getPageBySlug, getContactSettings } from '@/lib/api';
 import { ContactSection } from '@/components/cms/contact-section';
 import { ClientOutcomesSection } from '@/components/cms/client-outcomes-section';
 import { DirectContactSection } from '@/components/cms/direct-contact-section';
@@ -43,9 +43,10 @@ const CONTACT_CREDENTIALS = [
 ];
 
 export default async function ContactPage() {
-  const [page, homePage] = await Promise.all([
+  const [page, homePage, contactSettings] = await Promise.all([
     getPageBySlug('contact'),
     getPageBySlug('home'),
+    getContactSettings(),
   ]);
 
   const rawContactSection = page?.sections?.find(
@@ -104,10 +105,10 @@ export default async function ContactPage() {
         'Whether you need a new Shopify Plus store, a custom theme, a CRO audit, or a long-term development partner — drop us a line. Our team reviews every inquiry personally.',
       contactInfo: {
         useGlobalDefaults: true,
-        email: 'hello@gypsym.com',
-        phone: '+1 (800) 928-4019',
-        address: 'One World Trade Center, Suite 8500, New York, NY',
-        officeHours: 'Mon – Fri: 08:00 – 18:00 EST',
+        email: contactSettings.primaryEmail,
+        phone: contactSettings.primaryPhone,
+        address: contactSettings.headquartersAddress,
+        officeHours: contactSettings.officeHours,
       },
       globalContactDetails,
       supportCard: {
@@ -233,11 +234,11 @@ export default async function ContactPage() {
               <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
             </a>
             <a
-              href="mailto:hello@gypsym.com"
+              href={`mailto:${contactSettings.primaryEmail}`}
               className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/25 text-white font-medium text-xs sm:text-sm transition-all"
             >
               <Mail className="h-3.5 w-3.5" />
-              <span>hello@gypsym.com</span>
+              <span>{contactSettings.primaryEmail}</span>
             </a>
           </>
         }
@@ -255,6 +256,7 @@ export default async function ContactPage() {
           <DirectContactSection
             section={rawDirectContactSection}
             payload={rawDirectContactSection?.contentPayload || contactSectionToRender?.contentPayload?.directChannels}
+            contactSettings={contactSettings}
           />
         </ScrollReveal>
       </div>

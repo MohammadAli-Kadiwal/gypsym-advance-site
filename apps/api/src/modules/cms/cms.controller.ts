@@ -284,6 +284,23 @@ export class CmsController {
     return this.cmsService.updateSocialLinks(body.socialLinks || body.socials || []);
   }
 
+  @Get('settings/contact')
+  async getContactSettings() {
+    return this.cmsService.getContactSettings();
+  }
+
+  @Put('settings/contact')
+  @UseGuards(AuthGuard)
+  async updateContactSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateContactSettings(body);
+  }
+
+  @Patch('settings/contact')
+  @UseGuards(AuthGuard)
+  async patchContactSettings(@Body() body: any): Promise<any> {
+    return this.cmsService.updateContactSettings(body);
+  }
+
   @Get('settings')
   async getSettings() {
     return this.cmsService.getSiteSettings();

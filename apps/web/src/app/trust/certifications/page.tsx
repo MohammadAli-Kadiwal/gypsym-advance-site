@@ -5,13 +5,15 @@ import { ArrowLeft, ShieldCheck, Lock, CheckCircle2, Server, Globe } from 'lucid
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
+import { getContactSettings } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Security, Trust & Certifications | Gypsym Technology',
   description: 'Enterprise Security Posture, ISO 27001 Certification, SOC 2 Type II Audit, and Zero-Trust Compliance Standards of Gypsym Technology.',
 };
 
-export default function TrustAndCertificationsPage() {
+export default async function TrustAndCertificationsPage() {
+  const contact = await getContactSettings();
   const auditDate = 'Q3 2026';
   const siteUrl = getSiteUrl();
 
@@ -198,10 +200,10 @@ export default function TrustAndCertificationsPage() {
             </p>
             <div className="pt-2">
               <a
-                href="mailto:security@gypsym.com"
+                href={`mailto:${contact.securityEmail || 'security@gypsym.com'}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-neutral-900 text-xs font-bold hover:bg-neutral-100 transition-colors"
               >
-                <span>Email: security@gypsym.com</span>
+                <span>Email: {contact.securityEmail || 'security@gypsym.com'}</span>
               </a>
             </div>
           </div>

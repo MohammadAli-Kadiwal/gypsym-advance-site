@@ -42,4 +42,11 @@ export const cmsService = {
   async getScripts(): Promise<any> {
     return api.get('/settings/scripts');
   },
+
+  /**
+   * Fetch site contact settings
+   */
+  async getContactSettings(): Promise<any> {
+    return api.get('/settings/contact');
+  },
 };

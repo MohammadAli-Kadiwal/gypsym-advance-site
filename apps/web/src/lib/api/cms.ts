@@ -543,3 +543,66 @@ export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
     return null;
   }
 }
+
+export interface ContactSettingsDto {
+  primaryEmail: string;
+  primaryPhone: string;
+  secondaryPhone?: string;
+  whatsappNumber: string;
+  whatsappMessage?: string;
+  whatsappUrl?: string;
+  bookingUrl: string;
+  projectEmail?: string;
+  advisoryEmail?: string;
+  securityEmail?: string;
+  supportEmail?: string;
+  headquartersAddress: string;
+  secondaryAddress?: string;
+  officeHours: string;
+  timezone: string;
+  companyName: string;
+  legalName: string;
+  tagline: string;
+  legalJurisdiction: string;
+  country: string;
+  googleMapsUrl?: string;
+}
+
+export const DEFAULT_CONTACT_SETTINGS: ContactSettingsDto = {
+  primaryEmail: 'hello@gypsym.com',
+  primaryPhone: '+1 (800) 928-4019',
+  secondaryPhone: '+44 20 7946 0991',
+  whatsappNumber: '+91 73397 26403',
+  whatsappMessage: "Hi Gypsym team, I'd like to discuss a Shopify project.",
+  whatsappUrl: 'https://wa.me/917339726403?text=Hi%20Gypsym%20team%2C%20I%27d%20like%20to%20discuss%20a%20Shopify%20project.',
+  bookingUrl: '/book',
+  projectEmail: 'project@gypsym.com',
+  advisoryEmail: 'advisory@gypsym.com',
+  securityEmail: 'security@gypsym.com',
+  supportEmail: 'support@gypsym.com',
+  headquartersAddress: '100 Bishopsgate, London EC2N 4AG, United Kingdom',
+  secondaryAddress: 'Surat, Gujarat, India (Engineering Hub)',
+  officeHours: 'Mon – Fri: 08:00 – 18:00 EST',
+  timezone: 'America/New_York (EST)',
+  companyName: 'Gypsym Technology',
+  legalName: 'Gypsym Global Enterprises Inc.',
+  tagline: 'Shopify & Shopify Plus Engineering Agency',
+  legalJurisdiction: 'Delaware, United States & London, United Kingdom',
+  country: 'United Kingdom',
+};
+
+export async function getContactSettings(): Promise<ContactSettingsDto> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/settings/contact`, {
+      cache: 'no-store',
+      next: { tags: ['contact-settings'], revalidate: 0 },
+    });
+    if (!res.ok) return DEFAULT_CONTACT_SETTINGS;
+    const json = await res.json();
+    const data = (json?.data ?? json) || {};
+    return { ...DEFAULT_CONTACT_SETTINGS, ...data };
+  } catch {
+    return DEFAULT_CONTACT_SETTINGS;
+  }
+}
+

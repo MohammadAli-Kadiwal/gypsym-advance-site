@@ -5,13 +5,15 @@ import { ArrowLeft, Cookie } from 'lucide-react';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { ScrollReveal } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
+import { getContactSettings } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Cookie Declaration & Tracking Policy | Gypsym Technology',
   description: 'Learn how Gypsym Technology utilizes cookies, analytics telemetry, and browser storage tokens in accordance with GDPR and ePrivacy directives.',
 };
 
-export default function CookieDeclarationPage() {
+export default async function CookieDeclarationPage() {
+  const contact = await getContactSettings();
   const lastUpdated = 'September 22, 2026';
 
   const breadcrumbs = buildBreadcrumbsSchema([
@@ -157,7 +159,7 @@ export default function CookieDeclarationPage() {
             You can modify your browser preferences at any time to block or alert you about specific cookies. However, disabling strictly necessary cookies may impair authentication states and high-availability routing across our services.
           </p>
           <div className="text-xs font-mono text-neutral-500 pt-2">
-            Inquiries regarding cookie governance: <a href="mailto:security@gypsym.com" className="text-blue-600 underline">security@gypsym.com</a>
+            Inquiries regarding cookie governance: <a href={`mailto:${contact.securityEmail || 'security@gypsym.com'}`} className="text-blue-600 underline">{contact.securityEmail || 'security@gypsym.com'}</a>
           </div>
         </section>
       </ScrollReveal>

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getPageBySlug } from '@/lib/api';
+import { getPageBySlug, getContactSettings } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
 import { JsonLd, buildOrganizationSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
@@ -39,7 +39,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const page = await getPageBySlug('home');
+  const [page, contactSettings] = await Promise.all([
+    getPageBySlug('home'),
+    getContactSettings(),
+  ]);
 
   if (!page) {
     notFound();
@@ -72,7 +75,16 @@ export default async function HomePage() {
     }
   }
 
-  const orgSchema = buildOrganizationSchema();
+  const orgSchema = buildOrganizationSchema({
+    name: contactSettings.companyName || 'Gypsym Technology',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'sales and engineering support',
+      email: contactSettings.primaryEmail,
+      telephone: contactSettings.primaryPhone,
+      availableLanguage: ['English'],
+    },
+  });
 
   return (
     <div className="w-full">

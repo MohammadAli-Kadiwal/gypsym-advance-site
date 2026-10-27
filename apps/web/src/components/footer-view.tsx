@@ -194,12 +194,19 @@ export function FooterView({ data }: FooterViewProps) {
   const resolvedEmail =
     config?.contact?.emailOverride ||
     contact?.primaryEmail ||
+    contact?.email ||
     contact?.advisoryEmail ||
     '';
   const resolvedPhone =
-    config?.contact?.phoneOverride || contact?.phone || '';
+    config?.contact?.phoneOverride ||
+    contact?.primaryPhone ||
+    contact?.phone ||
+    '';
   const resolvedAddress =
-    config?.contact?.addressOverride || contact?.address || '';
+    config?.contact?.addressOverride ||
+    contact?.headquartersAddress ||
+    contact?.address ||
+    '';
 
   // Dynamic social links from branding or config
   const socialLinks = React.useMemo(() => {
@@ -365,7 +372,7 @@ export function FooterView({ data }: FooterViewProps) {
               ) : (
                 entity?.legalName && (
                   <p className="text-xs text-neutral-500 font-mono">
-                    {entity.legalName} • {entity.headquarters}
+                    {entity.legalName} • {entity.headquarters || contact?.headquartersAddress || ''}
                   </p>
                 )
               )}
