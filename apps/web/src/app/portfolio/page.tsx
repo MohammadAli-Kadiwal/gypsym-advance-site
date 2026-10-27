@@ -10,7 +10,7 @@ import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { SubpageHero } from '@/components/ui/subpage-hero';
 import { JsonLd, buildBreadcrumbsSchema, buildPortfolioSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,9 +21,11 @@ interface PortfolioPageProps {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('portfolio');
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug('portfolio'),
+    resolveSiteUrl(),
+  ]);
   const seo = page?.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/portfolio`;
   const resolvedTitle = seo?.metaTitle || 'Portfolio & Shopify Case Studies | Gypsym Technology';
 

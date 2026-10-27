@@ -113,13 +113,16 @@ export function SocialPreviewTab() {
   }, [selectedPage, globalSeo]);
 
   const previewUrl = React.useMemo(() => {
-    const base = globalSeo?.siteUrl || 'https://gypsym.com';
+    const base = globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl || 'https://gypsym.com';
     if (!selectedPage || selectedPage.slug === 'home' || selectedPage.slug === '/') return base;
     return `${base.replace(/\/$/, '')}/${selectedPage.slug}`;
   }, [selectedPage, globalSeo]);
 
   const previewImage = React.useMemo(() => {
     if (selectedPage?.seoMetadata?.ogImageUrl) return selectedPage.seoMetadata.ogImageUrl;
+    if ((selectedPage?.seoMetadata?.structuredData as any)?.ogImageUrl) {
+      return (selectedPage?.seoMetadata?.structuredData as any).ogImageUrl;
+    }
     return globalSeo?.defaultOgImage || globalSeo?.defaultSocialImage || '/og-image.jpg';
   }, [selectedPage, globalSeo]);
 

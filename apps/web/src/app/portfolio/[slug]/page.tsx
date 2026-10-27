@@ -20,7 +20,7 @@ import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,14 +31,16 @@ interface PortfolioProjectPageProps {
 }
 
 export async function generateMetadata({ params }: PortfolioProjectPageProps): Promise<Metadata> {
-  const project = await getPortfolioProjectBySlug(params.slug);
+  const [project, siteUrl] = await Promise.all([
+    getPortfolioProjectBySlug(params.slug),
+    resolveSiteUrl(),
+  ]);
   if (!project) {
     return {
       title: 'Case Study Not Found | Gypsym Technology',
     };
   }
 
-  const siteUrl = getSiteUrl();
   const canonicalUrl = `${siteUrl}/portfolio/${project.slug}`;
 
   const seo = (project as any).seoMetadata;

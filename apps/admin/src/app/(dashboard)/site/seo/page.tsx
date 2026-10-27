@@ -433,6 +433,7 @@ function SeoManagementContent() {
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSavePageSeo}
+        canonicalBaseUrl={globalSettings?.canonicalBaseUrl || globalSettings?.siteUrl}
       />
 
       {/* On-Page SEO Deep Audit Dialog */}

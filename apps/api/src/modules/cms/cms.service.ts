@@ -76,6 +76,7 @@ export class CmsService implements OnModuleInit {
         heroBackgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
         backgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
         backgroundImageUrl: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+        ogImageUrl: mergedMeta.ogImageUrl || ((s as any).seoMetadata?.structuredData as any)?.ogImageUrl || null,
         keyFeatures: mergedMeta.keyFeatures || [],
         deliverables: mergedMeta.deliverables || [],
         technologies: mergedMeta.technologies || [],
@@ -83,7 +84,12 @@ export class CmsService implements OnModuleInit {
         benefits: mergedMeta.benefits || [],
         faqs: mergedMeta.faqs || [],
         pricing: mergedMeta.pricing || [],
-        seoMetadata: (s as any).seoMetadata || null,
+        seoMetadata: (s as any).seoMetadata
+          ? {
+              ...(s as any).seoMetadata,
+              ogImageUrl: mergedMeta.ogImageUrl || ((s as any).seoMetadata?.structuredData as any)?.ogImageUrl || null,
+            }
+          : (mergedMeta.ogImageUrl ? { ogImageUrl: mergedMeta.ogImageUrl } : null),
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
       };
@@ -127,6 +133,7 @@ export class CmsService implements OnModuleInit {
       heroBackgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
       backgroundImage: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
       backgroundImageUrl: mergedMeta.heroBackgroundImage || mergedMeta.imageUrl || null,
+      ogImageUrl: mergedMeta.ogImageUrl || ((s as any).seoMetadata?.structuredData as any)?.ogImageUrl || null,
       keyFeatures: mergedMeta.keyFeatures || [],
       deliverables: mergedMeta.deliverables || [],
       technologies: mergedMeta.technologies || [],
@@ -134,7 +141,12 @@ export class CmsService implements OnModuleInit {
       benefits: mergedMeta.benefits || [],
       faqs: mergedMeta.faqs || [],
       pricing: mergedMeta.pricing || [],
-      seoMetadata: (s as any).seoMetadata || null,
+      seoMetadata: (s as any).seoMetadata
+        ? {
+            ...(s as any).seoMetadata,
+            ogImageUrl: mergedMeta.ogImageUrl || ((s as any).seoMetadata?.structuredData as any)?.ogImageUrl || null,
+          }
+        : (mergedMeta.ogImageUrl ? { ogImageUrl: mergedMeta.ogImageUrl } : null),
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     };
@@ -150,6 +162,7 @@ export class CmsService implements OnModuleInit {
     iconName?: string;
     imageUrl?: string;
     heroBackgroundImage?: string;
+    ogImageUrl?: string;
     displayOrder?: number;
     status?: any;
     deliverables?: string[];
@@ -195,6 +208,7 @@ export class CmsService implements OnModuleInit {
       iconName: body.iconName || 'ShoppingBag',
       imageUrl: body.imageUrl || body.heroBackgroundImage || null,
       heroBackgroundImage: body.heroBackgroundImage || body.imageUrl || null,
+      ogImageUrl: body.ogImageUrl || null,
       keyFeatures: body.keyFeatures || [],
       deliverables: body.deliverables || [],
       technologies: body.technologies || [],
@@ -215,6 +229,17 @@ export class CmsService implements OnModuleInit {
       },
     });
 
+    if (body.ogImageUrl) {
+      await (this.prisma as any).seoMetadata.create({
+        data: {
+          serviceId: service.id,
+          metaTitle: body.title,
+          metaDescription: body.shortDescription || null,
+          structuredData: { ogImageUrl: body.ogImageUrl },
+        },
+      }).catch(() => null);
+    }
+
     return {
       ...service,
       ...metaValue,
@@ -233,6 +258,7 @@ export class CmsService implements OnModuleInit {
       iconName?: string;
       imageUrl?: string;
       heroBackgroundImage?: string;
+      ogImageUrl?: string;
       displayOrder?: number;
       status?: any;
       deliverables?: string[];
@@ -279,6 +305,7 @@ export class CmsService implements OnModuleInit {
       ...(body.iconName !== undefined && { iconName: body.iconName }),
       ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
       ...(body.heroBackgroundImage !== undefined && { heroBackgroundImage: body.heroBackgroundImage }),
+      ...(body.ogImageUrl !== undefined && { ogImageUrl: body.ogImageUrl || null }),
       ...(body.keyFeatures !== undefined && { keyFeatures: body.keyFeatures }),
       ...(body.deliverables !== undefined && { deliverables: body.deliverables }),
       ...(body.technologies !== undefined && { technologies: body.technologies }),
@@ -298,6 +325,30 @@ export class CmsService implements OnModuleInit {
         isPublic: true,
       },
     });
+
+    if (body.ogImageUrl !== undefined) {
+      const existingSeo = await (this.prisma as any).seoMetadata.findFirst({
+        where: { serviceId: id },
+      });
+      if (existingSeo) {
+        const sData = (existingSeo.structuredData as Record<string, any>) || {};
+        await (this.prisma as any).seoMetadata.update({
+          where: { id: existingSeo.id },
+          data: {
+            structuredData: { ...sData, ogImageUrl: body.ogImageUrl || null },
+          },
+        }).catch(() => null);
+      } else {
+        await (this.prisma as any).seoMetadata.create({
+          data: {
+            serviceId: id,
+            metaTitle: updated.title,
+            metaDescription: updated.shortDescription || null,
+            structuredData: { ogImageUrl: body.ogImageUrl || null },
+          },
+        }).catch(() => null);
+      }
+    }
 
     return {
       ...updated,

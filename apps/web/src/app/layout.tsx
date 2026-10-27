@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const defaultTitle = seo?.defaultTitle || `${siteName} | Enterprise Architecture`;
   const description = seo?.defaultDescription || undefined;
   const keywords = seo?.defaultKeywords || [];
-  const baseUrl = seo?.siteUrl || seo?.canonicalBaseUrl || getSiteUrl();
+  const baseUrl = (seo?.canonicalBaseUrl || seo?.siteUrl || getSiteUrl()).replace(/\/+$/, '');
   const ogImage = seo?.defaultOgImage || seo?.ogDefaultImage ? [{ url: seo.defaultOgImage || seo.ogDefaultImage }] : undefined;
   const twitterCard = (seo?.twitterCard as any) || 'summary_large_image';
 

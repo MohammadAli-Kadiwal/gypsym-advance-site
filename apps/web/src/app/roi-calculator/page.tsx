@@ -13,14 +13,16 @@ import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildFaqSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { getPageBySlug } from '@/lib/api';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('roi-calculator').catch(() => null);
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug('roi-calculator').catch(() => null),
+    resolveSiteUrl(),
+  ]);
   const seo = page?.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/roi-calculator`;
   const resolvedTitle = seo?.metaTitle || 'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology';
 

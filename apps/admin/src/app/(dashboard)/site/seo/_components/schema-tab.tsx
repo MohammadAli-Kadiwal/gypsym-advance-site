@@ -148,7 +148,7 @@ export function SchemaTab({ onNavigateTab }: SchemaTabProps) {
     const targetPage = pages.find((p) => p.id === selectedPageId);
     if (!targetPage) return;
 
-    const siteUrl = (globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const siteUrl = (globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
     const orgName = globalSeo?.organizationName || globalSeo?.siteName || 'Gypsym Technology';
     const orgLogo = globalSeo?.organizationLogo || globalSeo?.defaultOgImage || `${siteUrl}/og-default.png`;
     const slug = (targetPage.slug || '').toLowerCase().trim();
@@ -297,9 +297,9 @@ export function SchemaTab({ onNavigateTab }: SchemaTabProps) {
   // Quick template inserters
   const applyTemplate = (templateName: string) => {
     const targetPage = pages.find((p) => p.id === selectedPageId);
-    const siteUrl = globalSeo?.siteUrl || 'https://gypsym.com';
+    const siteUrl = (globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
     const pageUrl = targetPage
-      ? `${siteUrl.replace(/\/$/, '')}/${targetPage.slug.replace(/^\//, '')}`
+      ? `${siteUrl}/${targetPage.slug.replace(/^\//, '')}`
       : siteUrl;
     const pageTitle = targetPage?.title || 'Gypsym Technology';
 
@@ -532,9 +532,10 @@ export function SchemaTab({ onNavigateTab }: SchemaTabProps) {
     setTimeout(() => setCopiedType(null), 2500);
   };
 
+  const baseSiteUrl = (globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
   const selectedPageUrl = selectedPage
-    ? `${(globalSeo?.siteUrl || 'https://gypsym.com').replace(/\/$/, '')}/${(selectedPage.slug || '').replace(/^\//, '')}`
-    : globalSeo?.siteUrl || 'https://gypsym.com';
+    ? `${baseSiteUrl}/${(selectedPage.slug || '').replace(/^\//, '')}`
+    : baseSiteUrl;
 
   if (loading) {
     return (

@@ -11,7 +11,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       getPublicGlobalSeo(),
     ]);
 
-    const siteUrl = (globalSeo?.siteUrl || getSiteUrl()).replace(/\/+$/, '');
+    const siteUrl = (globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl || getSiteUrl()).replace(/\/+$/, '');
     const sitemapUrl = config?.sitemapUrl || `${siteUrl}/sitemap.xml`;
 
     const rules = (config?.rules || [

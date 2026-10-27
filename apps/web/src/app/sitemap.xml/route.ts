@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       getPublicGlobalSeo(),
     ]);
 
-    const baseUrl = globalSeo?.siteUrl?.replace(/\/+$/, '') || getSiteUrl();
+    const baseUrl = (globalSeo?.canonicalBaseUrl || globalSeo?.siteUrl)?.replace(/\/+$/, '') || getSiteUrl();
 
     let items = Array.isArray(rawUrls) ? rawUrls : [];
 

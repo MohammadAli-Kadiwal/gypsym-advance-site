@@ -88,6 +88,7 @@ export interface ServiceRecord extends BaseRecord {
   imageUrl?: string;
   heroBackgroundImage?: string;
   backgroundImageUrl?: string;
+  ogImageUrl?: string;
   technologies?: string[];
   deliverables?: string[];
   process?: ServiceProcessStep[];
@@ -144,6 +145,7 @@ interface ServiceFormState {
   shortDescription: string;
   detailedContent: string;
   heroBackgroundImage: string;
+  ogImageUrl?: string;
   displayOrder: number;
   status: ItemStatus;
   technologiesText: string;
@@ -236,6 +238,7 @@ const DEFAULT_FORM: ServiceFormState = {
   shortDescription: '',
   detailedContent: '',
   heroBackgroundImage: '/assets/editorial/agency-hero-editorial.png',
+  ogImageUrl: '',
   displayOrder: 1,
   status: 'PUBLISHED',
   technologiesText: 'Shopify Plus, Liquid, Hydrogen, React, TypeScript',
@@ -320,6 +323,7 @@ export default function ServicesAdminPage() {
       benefits: JSON.parse(JSON.stringify(DEFAULT_BENEFITS)),
       faqs: JSON.parse(JSON.stringify(DEFAULT_FAQS)),
       displayOrder: services.length + 1,
+      ogImageUrl: '',
     });
     setActiveTab('basic');
     setNewDeliverable('');
@@ -343,6 +347,11 @@ export default function ServicesAdminPage() {
         item.imageUrl ||
         (item as any).backgroundImage ||
         '/assets/editorial/agency-hero-editorial.png',
+      ogImageUrl:
+        item.ogImageUrl ||
+        (item as any).seoMetadata?.ogImageUrl ||
+        (item as any).seoMetadata?.structuredData?.ogImageUrl ||
+        '',
       displayOrder: item.displayOrder ?? 1,
       status: (item.status || 'PUBLISHED') as ItemStatus,
       technologiesText: (item.technologies || []).join(', '),
@@ -400,6 +409,7 @@ export default function ServicesAdminPage() {
       detailedContent: form.detailedContent.trim(),
       imageUrl: form.heroBackgroundImage,
       heroBackgroundImage: form.heroBackgroundImage,
+      ogImageUrl: form.ogImageUrl?.trim() || null,
       displayOrder: Number(form.displayOrder) || 1,
       status: form.status,
       technologies: techArray,
@@ -871,6 +881,16 @@ export default function ServicesAdminPage() {
                     description="Upload an editorial photograph or banner visual for this service's subpage hero header."
                     value={form.heroBackgroundImage}
                     onChange={(url) => setForm((prev) => ({ ...prev, heroBackgroundImage: url }))}
+                    placeholder="/assets/editorial/agency-hero-editorial.png"
+                  />
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <ImageUploadField
+                    label="OpenGraph & Social Share Image (1200x630)"
+                    description="Upload an image or paste a URL (1200x630px recommended). Displayed when this service page is shared on LinkedIn, X, Facebook, and messaging apps."
+                    value={form.ogImageUrl || ''}
+                    onChange={(url) => setForm((prev) => ({ ...prev, ogImageUrl: url }))}
                     placeholder="/assets/editorial/agency-hero-editorial.png"
                   />
                 </div>

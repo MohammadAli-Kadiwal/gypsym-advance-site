@@ -68,10 +68,17 @@ export function CanonicalsTab() {
     if (!globalSeo) return;
     try {
       setSaving(true);
+      const cleanBase = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || '').trim().replace(/\/+$/, '');
+      const payload: GlobalSeoData = {
+        ...globalSeo,
+        canonicalBaseUrl: cleanBase,
+        siteUrl: cleanBase,
+      };
       await Promise.all([
-        seoService.updateGlobal(globalSeo),
+        seoService.updateGlobal(payload),
         seoService.updateHreflang({ locales }),
       ]);
+      setGlobalSeo(payload);
       notify.success({ title: 'Settings saved', description: 'Canonical URL and hreflang directives updated.' });
     } catch (err) {
       notify.error({ title: 'Failed to save canonicals', description: normalizeErrorMessage(err) });
@@ -179,7 +186,8 @@ export function CanonicalsTab() {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                All automatic canonical tags will prefix this base URL (e.g. <code>https://gypsym.com/services</code>).
+                All automatic canonical tags will prefix this base URL (e.g.{' '}
+                <code>{(globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '')}/services</code>).
               </p>
             </div>
 

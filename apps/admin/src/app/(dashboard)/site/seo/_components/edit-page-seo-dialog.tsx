@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2, Globe, Share2, Code } from 'lucide-react';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { PageSeoItem } from './types';
 
 interface EditPageSeoDialogProps {
@@ -22,6 +23,7 @@ interface EditPageSeoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (pageId: string, data: any) => Promise<void>;
+  canonicalBaseUrl?: string;
 }
 
 export function EditPageSeoDialog({
@@ -29,6 +31,7 @@ export function EditPageSeoDialog({
   open,
   onOpenChange,
   onSave,
+  canonicalBaseUrl,
 }: EditPageSeoDialogProps) {
   const [metaTitle, setMetaTitle] = React.useState('');
   const [metaDescription, setMetaDescription] = React.useState('');
@@ -37,6 +40,7 @@ export function EditPageSeoDialog({
   const [robotsFollow, setRobotsFollow] = React.useState(true);
   const [ogTitle, setOgTitle] = React.useState('');
   const [ogDescription, setOgDescription] = React.useState('');
+  const [ogImageUrl, setOgImageUrl] = React.useState('');
   const [twitterCard, setTwitterCard] = React.useState('summary_large_image');
   const [structuredData, setStructuredData] = React.useState('');
   const [saving, setSaving] = React.useState(false);
@@ -50,6 +54,7 @@ export function EditPageSeoDialog({
       setRobotsFollow(page.seoMetadata.robotsFollow !== false);
       setOgTitle(page.seoMetadata.ogTitle || '');
       setOgDescription(page.seoMetadata.ogDescription || '');
+      setOgImageUrl(page.seoMetadata.ogImageUrl || (page.seoMetadata.structuredData as any)?.ogImageUrl || '');
       setTwitterCard(page.seoMetadata.twitterCard || 'summary_large_image');
       setStructuredData(
         page.seoMetadata.structuredData
@@ -81,6 +86,7 @@ export function EditPageSeoDialog({
         robotsFollow,
         ogTitle: ogTitle.trim() || null,
         ogDescription: ogDescription.trim() || null,
+        ogImageUrl: ogImageUrl.trim() || null,
         twitterCard,
         structuredData: parsedSchema,
       });
@@ -155,7 +161,10 @@ export function EditPageSeoDialog({
             {/* Canonical URL */}
             {(() => {
               const normalizedPath = page.path || (page.slug === 'home' || page.slug === '/' ? '' : (page.slug.startsWith('/') ? page.slug : `/${page.slug}`));
-              const autoCanonicalUrl = page.autoCanonicalUrl || `https://gypsym.com${normalizedPath === '/' ? '' : normalizedPath}`;
+              const baseOrigin = (canonicalBaseUrl || 'https://gypsym.com').replace(/\/+$/, '');
+              const autoCanonicalUrl = canonicalBaseUrl
+                ? `${baseOrigin}${normalizedPath === '/' ? '' : normalizedPath}`
+                : (page.autoCanonicalUrl || `${baseOrigin}${normalizedPath === '/' ? '' : normalizedPath}`);
               const isCustom = Boolean(canonicalUrl.trim());
 
               return (
@@ -250,6 +259,16 @@ export function EditPageSeoDialog({
                 <option value="summary_large_image">summary_large_image (Large Banner)</option>
                 <option value="summary">summary (Compact Square)</option>
               </select>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <ImageUploadField
+                label="Open Graph Image (Social Card Preview)"
+                description="Upload an image or paste a URL (1200x630px recommended). Displayed when this page is shared on LinkedIn, Facebook, X, and messaging apps."
+                value={ogImageUrl}
+                onChange={setOgImageUrl}
+                placeholder="/assets/editorial/agency-hero-editorial.png"
+              />
             </div>
           </TabsContent>
 

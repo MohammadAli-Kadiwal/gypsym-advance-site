@@ -4,12 +4,15 @@ import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
 import { JsonLd, buildOrganizationSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('home');
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug('home'),
+    resolveSiteUrl(),
+  ]);
   if (!page) {
     return {
       title: 'Home',
@@ -17,7 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   const seo = page.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || siteUrl;
   const resolvedTitle = seo?.metaTitle || page.title || 'Gypsym Technology | Enterprise Architecture';
 

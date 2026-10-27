@@ -17,7 +17,7 @@ import { PageSectionDto } from '@/lib/cms-types';
 import { SubpageHero } from '@/components/ui/subpage-hero';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildServiceSchema, buildFaqSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,14 +33,16 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
-  const service = await getServiceBySlug(params.slug);
+  const [service, siteUrl] = await Promise.all([
+    getServiceBySlug(params.slug),
+    resolveSiteUrl(),
+  ]);
   if (!service) {
     return {
       title: 'Service Not Found | Gypsym Technology',
     };
   }
 
-  const siteUrl = getSiteUrl();
   const canonicalUrl = (service as any).seoMetadata?.canonicalUrl || `${siteUrl}/services/${service.slug}`;
 
   const seo = (service as any).seoMetadata;
@@ -60,6 +62,7 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
         {
           url:
             seo?.ogImageUrl ||
+            (service as any).ogImageUrl ||
             (service as any).heroBackgroundImage ||
             (service as any).imageUrl ||
             (service as any).backgroundImage ||

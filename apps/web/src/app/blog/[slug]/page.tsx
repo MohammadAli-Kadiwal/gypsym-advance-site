@@ -18,7 +18,7 @@ import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildArticleSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,14 +29,16 @@ interface BlogPostPageProps {
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = await getBlogPostBySlug(params.slug);
+  const [post, siteUrl] = await Promise.all([
+    getBlogPostBySlug(params.slug),
+    resolveSiteUrl(),
+  ]);
   if (!post) {
     return {
       title: 'Publication Not Found | Gypsym Technology',
     };
   }
 
-  const siteUrl = getSiteUrl();
   const canonicalUrl = (post as any).seoMetadata?.canonicalUrl || `${siteUrl}/blog/${post.slug}`;
 
   const seo = (post as any).seoMetadata;

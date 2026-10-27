@@ -7,14 +7,16 @@ import { DirectContactSection } from '@/components/cms/direct-contact-section';
 import { ClientOutcomesSection } from '@/components/cms/client-outcomes-section';
 import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('book').catch(() => null);
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug('book').catch(() => null),
+    resolveSiteUrl(),
+  ]);
   const seo = page?.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/book`;
 
   const resolvedTitle = seo?.metaTitle || 'Book a Discovery Call | Gypsym Technology';

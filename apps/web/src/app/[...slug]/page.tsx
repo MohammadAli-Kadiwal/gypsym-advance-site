@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api';
 import { SectionRenderer } from '@/components/cms/section-renderer';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 // Always fetch fresh from the API — never serve a stale ISR-cached version.
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,10 @@ interface DynamicPageProps {
 
 export async function generateMetadata({ params }: DynamicPageProps): Promise<Metadata> {
   const slugPath = params.slug.join('/');
-  const page = await getPageBySlug(slugPath);
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug(slugPath),
+    resolveSiteUrl(),
+  ]);
   if (!page) {
     return {
       title: 'Page Not Found',
@@ -26,7 +29,6 @@ export async function generateMetadata({ params }: DynamicPageProps): Promise<Me
   }
 
   const seo = page.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/${slugPath}`;
   const resolvedTitle = seo?.metaTitle || page.title || 'Gypsym Technology';
 

@@ -10,14 +10,16 @@ import { ScrollReveal } from '@/components/motion';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
-import { getSiteUrl } from '@/lib/site-url';
+import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('about');
+  const [page, siteUrl] = await Promise.all([
+    getPageBySlug('about'),
+    resolveSiteUrl(),
+  ]);
   const seo = page?.seoMetadata;
-  const siteUrl = getSiteUrl();
   const canonicalUrl = seo?.canonicalUrl || `${siteUrl}/about`;
   const resolvedTitle = seo?.metaTitle || 'About Us | Shopify Plus & E-Commerce Engineering | Gypsym Technology';
 

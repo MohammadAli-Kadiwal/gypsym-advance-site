@@ -551,11 +551,18 @@ export class SeoService implements OnModuleInit {
       resolvedLogo = brandLogo;
     }
 
+    const effectiveBaseUrl = (
+      val.canonicalBaseUrl ||
+      val.siteUrl ||
+      legacy.canonicalBaseUrl ||
+      'https://gypsym.com'
+    ).trim().replace(/\/+$/, '');
+
     return {
       siteName: val.siteName || brand?.companyName || 'Gypsym Technology',
       siteTitle: val.siteTitle || legacy.defaultTitle || 'Gypsym Technology | Shopify & Shopify Plus Agency',
       siteDescription: val.siteDescription || legacy.defaultDescription || 'Gypsym Technology is a leading Shopify & Shopify Plus agency specializing in custom store design, e-commerce development, conversion rate optimization, and D2C growth strategies for global brands.',
-      siteUrl: val.siteUrl || legacy.canonicalBaseUrl || 'https://gypsym.com',
+      siteUrl: effectiveBaseUrl,
       defaultTitle: val.defaultTitle || legacy.defaultTitle || 'Gypsym Technology | Shopify & Shopify Plus Agency',
       defaultDescription: val.defaultDescription || legacy.defaultDescription || 'Gypsym Technology is a leading Shopify & Shopify Plus agency specializing in custom store design, e-commerce development, conversion rate optimization, and D2C growth strategies for global brands.',
       defaultKeywords: val.defaultKeywords || legacy.defaultKeywords || [
@@ -588,7 +595,7 @@ export class SeoService implements OnModuleInit {
       defaultLocale: val.defaultLocale || 'en_US',
       timezone: val.timezone || 'UTC',
       metaTitleTemplate: val.metaTitleTemplate || legacy.metaTitleTemplate || '%s | Gypsym Technology',
-      canonicalBaseUrl: val.canonicalBaseUrl || legacy.canonicalBaseUrl || 'https://gypsym.com',
+      canonicalBaseUrl: effectiveBaseUrl,
       ogDefaultImage: val.ogDefaultImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
       twitterCard: val.twitterCard || legacy.twitterCard || 'summary_large_image',
       twitterHandle: val.twitterHandle || legacy.twitterHandle || '@gypsymtech',
@@ -606,7 +613,20 @@ export class SeoService implements OnModuleInit {
 
   async updateGlobalSeo(dto: GlobalSeoDto, user?: any): Promise<GlobalSeoDto> {
     const current = await this.getGlobalSeo();
-    const merged = { ...current, ...dto };
+    const effectiveBaseUrl = (
+      dto.canonicalBaseUrl ||
+      dto.siteUrl ||
+      current.canonicalBaseUrl ||
+      current.siteUrl ||
+      'https://gypsym.com'
+    ).trim().replace(/\/+$/, '');
+
+    const merged = {
+      ...current,
+      ...dto,
+      canonicalBaseUrl: effectiveBaseUrl,
+      siteUrl: effectiveBaseUrl,
+    };
 
     await this.prisma.siteSetting.upsert({
       where: { key: 'seo:global' },
@@ -635,7 +655,8 @@ export class SeoService implements OnModuleInit {
           defaultTitle: merged.defaultTitle,
           defaultDescription: merged.defaultDescription,
           defaultKeywords: merged.defaultKeywords,
-          canonicalBaseUrl: merged.canonicalBaseUrl,
+          canonicalBaseUrl: effectiveBaseUrl,
+          siteUrl: effectiveBaseUrl,
           ogDefaultImage: merged.ogDefaultImage,
           twitterCard: merged.twitterCard,
           twitterHandle: merged.twitterHandle,
@@ -655,7 +676,8 @@ export class SeoService implements OnModuleInit {
           defaultTitle: merged.defaultTitle,
           defaultDescription: merged.defaultDescription,
           defaultKeywords: merged.defaultKeywords,
-          canonicalBaseUrl: merged.canonicalBaseUrl,
+          canonicalBaseUrl: effectiveBaseUrl,
+          siteUrl: effectiveBaseUrl,
           ogDefaultImage: merged.ogDefaultImage,
           twitterCard: merged.twitterCard,
           twitterHandle: merged.twitterHandle,
@@ -782,7 +804,7 @@ export class SeoService implements OnModuleInit {
     const descMap = new Map<string, string[]>();
 
     const globalSeo = await this.getGlobalSeo();
-    const siteUrl = (globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const siteUrl = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
 
     for (const item of allItems) {
       const title = (item.seo?.metaTitle || item.title || '').trim();
@@ -988,7 +1010,7 @@ export class SeoService implements OnModuleInit {
     ];
 
     const globalSeo = await this.getGlobalSeo();
-    const siteUrl = (globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const siteUrl = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
 
     let result = allRawItems.map((p: any) => {
       const seo = p.seoMetadata || {};
@@ -1019,7 +1041,12 @@ export class SeoService implements OnModuleInit {
           robotsFollow: seo.robotsFollow ?? true,
           ogTitle: seo.ogTitle || null,
           ogDescription: seo.ogDescription || null,
-          ogImageUrl: seo.ogImageUrl || null,
+          ogImageUrl:
+            (seo.structuredData as any)?.ogImageUrl ||
+            seo.ogImage?.url ||
+            seo.ogImageUrl ||
+            (p as any).imageUrl ||
+            null,
           twitterCard: seo.twitterCard || 'summary_large_image',
           structuredData: seo.structuredData || null,
         },
@@ -1032,7 +1059,7 @@ export class SeoService implements OnModuleInit {
           descriptionStatus: descLen >= 120 && descLen <= 165 ? 'GOOD' : descLen > 0 ? 'WARNING' : 'CRITICAL',
           hasCanonical: true, // Auto-taken for all pages; can be changed from Page SEO
           isAutoCanonical: !hasExplicitCanonical,
-          hasOg: Boolean(seo.ogTitle || seo.ogImageUrl),
+          hasOg: Boolean(seo.ogTitle || (seo.structuredData as any)?.ogImageUrl || seo.ogImageUrl || (p as any).imageUrl),
           isIndexable: seo.robotsIndex !== false,
           hasStructuredData: Boolean(seo.structuredData),
         },
@@ -1062,7 +1089,7 @@ export class SeoService implements OnModuleInit {
 
   async getPageSeo(pageId: string) {
     const globalSeo = await this.getGlobalSeo();
-    const siteUrl = (globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const siteUrl = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
 
     // 1. Try Page
     const page = await (this.prisma as any).page.findUnique({
@@ -1085,6 +1112,7 @@ export class SeoService implements OnModuleInit {
           isAutoCanonical: !seo.canonicalUrl,
           explicitCanonicalUrl: seo.canonicalUrl || null,
           autoCanonicalUrl,
+          ogImageUrl: (seo.structuredData as any)?.ogImageUrl || seo.ogImageUrl || null,
         } : {
           metaTitle: page.title,
           metaDescription: page.description || '',
@@ -1129,6 +1157,7 @@ export class SeoService implements OnModuleInit {
           isAutoCanonical: !seo.canonicalUrl,
           explicitCanonicalUrl: seo.canonicalUrl || null,
           autoCanonicalUrl,
+          ogImageUrl: (seo.structuredData as any)?.ogImageUrl || seo.ogImageUrl || (service as any).imageUrl || null,
         } : {
           metaTitle: `${service.title} | Services`,
           metaDescription: service.shortDescription || '',
@@ -1173,6 +1202,7 @@ export class SeoService implements OnModuleInit {
           isAutoCanonical: !seo.canonicalUrl,
           explicitCanonicalUrl: seo.canonicalUrl || null,
           autoCanonicalUrl,
+          ogImageUrl: (seo.structuredData as any)?.ogImageUrl || seo.ogImageUrl || (blog as any).coverImage || null,
         } : {
           metaTitle: `${blog.title} | Blog`,
           metaDescription: blog.excerpt || '',
@@ -1230,16 +1260,31 @@ export class SeoService implements OnModuleInit {
   }
 
   async updatePageSeo(pageId: string, dto: any, user?: any) {
-    const seoData = {
-      metaTitle: dto.metaTitle || '',
-      metaDescription: dto.metaDescription || '',
-      canonicalUrl: dto.canonicalUrl || null,
-      robotsIndex: dto.robotsIndex ?? true,
-      robotsFollow: dto.robotsFollow ?? true,
-      ogTitle: dto.ogTitle || null,
-      ogDescription: dto.ogDescription || null,
-      twitterCard: dto.twitterCard || 'summary_large_image',
-      structuredData: dto.structuredData || null,
+    const buildSeoData = (existingSeo: any) => {
+      const existingStructured =
+        existingSeo?.structuredData && typeof existingSeo.structuredData === 'object'
+          ? (existingSeo.structuredData as Record<string, any>)
+          : {};
+      const newStructured =
+        dto.structuredData && typeof dto.structuredData === 'object'
+          ? (dto.structuredData as Record<string, any>)
+          : existingStructured;
+      const finalStructured = {
+        ...newStructured,
+        ...(dto.ogImageUrl !== undefined ? { ogImageUrl: dto.ogImageUrl || null } : {}),
+      };
+
+      return {
+        metaTitle: dto.metaTitle || '',
+        metaDescription: dto.metaDescription || '',
+        canonicalUrl: dto.canonicalUrl || null,
+        robotsIndex: dto.robotsIndex ?? true,
+        robotsFollow: dto.robotsFollow ?? true,
+        ogTitle: dto.ogTitle || null,
+        ogDescription: dto.ogDescription || null,
+        twitterCard: dto.twitterCard || 'summary_large_image',
+        structuredData: finalStructured,
+      };
     };
 
     // 1. Try Page
@@ -1248,6 +1293,7 @@ export class SeoService implements OnModuleInit {
       include: { seoMetadata: true },
     });
     if (page) {
+      const seoData = buildSeoData(page.seoMetadata);
       let updatedSeo: any;
       if (page.seoMetadata) {
         updatedSeo = await (this.prisma as any).seoMetadata.update({
@@ -1276,7 +1322,13 @@ export class SeoService implements OnModuleInit {
           },
         }).catch(() => null);
       }
-      return { ...page, seoMetadata: updatedSeo };
+      return {
+        ...page,
+        seoMetadata: {
+          ...updatedSeo,
+          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+        },
+      };
     }
 
     // 2. Try Service
@@ -1285,6 +1337,7 @@ export class SeoService implements OnModuleInit {
       include: { seoMetadata: true },
     });
     if (service) {
+      const seoData = buildSeoData(service.seoMetadata);
       let updatedSeo: any;
       if (service.seoMetadata) {
         updatedSeo = await (this.prisma as any).seoMetadata.update({
@@ -1295,6 +1348,21 @@ export class SeoService implements OnModuleInit {
         updatedSeo = await (this.prisma as any).seoMetadata.create({
           data: { ...seoData, serviceId: service.id },
         });
+      }
+      if (dto.ogImageUrl !== undefined) {
+        const existingMetaSetting = await this.prisma.siteSetting.findFirst({
+          where: {
+            category: 'services_meta',
+            key: { in: [`service_meta_${service.id}`, `service_meta_${service.slug}`] },
+          },
+        });
+        if (existingMetaSetting) {
+          const val = (existingMetaSetting.value as Record<string, any>) || {};
+          await this.prisma.siteSetting.update({
+            where: { id: existingMetaSetting.id },
+            data: { value: { ...val, ogImageUrl: dto.ogImageUrl || null } },
+          }).catch(() => null);
+        }
       }
       await (this.prisma as any).service.update({
         where: { id: service.id },
@@ -1313,7 +1381,13 @@ export class SeoService implements OnModuleInit {
           },
         }).catch(() => null);
       }
-      return { ...service, seoMetadata: updatedSeo };
+      return {
+        ...service,
+        seoMetadata: {
+          ...updatedSeo,
+          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+        },
+      };
     }
 
     // 3. Try BlogPost
@@ -1322,6 +1396,7 @@ export class SeoService implements OnModuleInit {
       include: { seoMetadata: true },
     });
     if (blog) {
+      const seoData = buildSeoData(blog.seoMetadata);
       let updatedSeo: any;
       if (blog.seoMetadata) {
         updatedSeo = await (this.prisma as any).seoMetadata.update({
@@ -1352,8 +1427,10 @@ export class SeoService implements OnModuleInit {
       }
       return {
         ...blog,
-        viewCount: Number(blog.viewCount || 0),
-        seoMetadata: updatedSeo,
+        seoMetadata: {
+          ...updatedSeo,
+          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+        },
       };
     }
 
@@ -1362,6 +1439,7 @@ export class SeoService implements OnModuleInit {
       where: { id: pageId },
     });
     if (project) {
+      const seoData = buildSeoData(null);
       await (this.prisma as any).portfolioProjectItem.update({
         where: { id: project.id },
         data: {
@@ -2002,7 +2080,7 @@ export class SeoService implements OnModuleInit {
       }),
     ]);
 
-    const baseUrl = (globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
+    const baseUrl = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
     const excluded = new Set((config.excludedSlugs || []).map((s) => s.toLowerCase().trim()));
 
     const urls: Array<{
