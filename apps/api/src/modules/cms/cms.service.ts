@@ -2716,6 +2716,40 @@ export class CmsService implements OnModuleInit {
       // non-critical sync
     }
 
+    // 4. Synchronize existing CONTACT sections in database
+    try {
+      const contactSections = await this.prisma.pageSection.findMany({
+        where: {
+          OR: [
+            { componentType: 'CONTACT' },
+            { sectionIdentifier: 'contact-inquiry' },
+            { sectionIdentifier: 'contact-form' },
+            { sectionIdentifier: 'contact' },
+          ],
+        },
+      });
+
+      for (const sec of contactSections) {
+        const payload = (sec.contentPayload as Record<string, any>) || {};
+        const updatedPayload = {
+          ...payload,
+          globalContactDetails: {
+            ...(payload.globalContactDetails || {}),
+            email: merged.primaryEmail,
+            phone: merged.primaryPhone,
+            address: merged.headquartersAddress,
+            officeHours: merged.officeHours,
+          },
+        };
+        await this.prisma.pageSection.update({
+          where: { id: sec.id },
+          data: { contentPayload: updatedPayload },
+        });
+      }
+    } catch {
+      // non-critical section sync
+    }
+
     return this.getContactSettings();
   }
 

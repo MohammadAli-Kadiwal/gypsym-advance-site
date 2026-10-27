@@ -229,10 +229,73 @@ function SeoManagementContent() {
   // Page SEO Save
   const handleSavePageSeo = async (pageId: string, data: any) => {
     try {
-      await seoService.updatePageSeo(pageId, data);
+      const updated = await seoService.updatePageSeo(pageId, data);
       notify.success({ title: 'Page SEO updated', description: 'Metadata for this page was saved.' });
-      loadPages();
-      loadDashboard();
+
+      // Immediate local state update to prevent stale data when reopening edit dialog
+      setPages((prev) =>
+        prev.map((p) => {
+          if (p.id === pageId) {
+            const hasExplicitCanonical = Boolean(data.canonicalUrl && String(data.canonicalUrl).trim());
+            const hasExplicitOg = Boolean(data.ogImageUrl && String(data.ogImageUrl).trim());
+            return {
+              ...p,
+              updatedAt: new Date().toISOString(),
+              seoMetadata: {
+                ...p.seoMetadata,
+                ...(updated?.seoMetadata || {}),
+                metaTitle: data.metaTitle ? String(data.metaTitle).trim() : null,
+                metaDescription: data.metaDescription ? String(data.metaDescription).trim() : null,
+                canonicalUrl: hasExplicitCanonical ? String(data.canonicalUrl).trim() : (p.seoMetadata?.autoCanonicalUrl || p.seoMetadata?.canonicalUrl),
+                explicitCanonicalUrl: hasExplicitCanonical ? String(data.canonicalUrl).trim() : null,
+                isAutoCanonical: !hasExplicitCanonical,
+                ogTitle: data.ogTitle ? String(data.ogTitle).trim() : null,
+                ogDescription: data.ogDescription ? String(data.ogDescription).trim() : null,
+                ogImageUrl: hasExplicitOg ? String(data.ogImageUrl).trim() : (p.seoMetadata?.autoOgImageUrl || p.seoMetadata?.ogImageUrl),
+                explicitOgImageUrl: hasExplicitOg ? String(data.ogImageUrl).trim() : null,
+                isAutoOgImage: !hasExplicitOg,
+                robotsIndex: data.robotsIndex ?? true,
+                robotsFollow: data.robotsFollow ?? true,
+                twitterCard: data.twitterCard || 'summary_large_image',
+                structuredData: data.structuredData || null,
+              },
+            };
+          }
+          return p;
+        })
+      );
+
+      setEditingPage((prev) => {
+        if (prev && prev.id === pageId) {
+          const hasExplicitCanonical = Boolean(data.canonicalUrl && String(data.canonicalUrl).trim());
+          const hasExplicitOg = Boolean(data.ogImageUrl && String(data.ogImageUrl).trim());
+          return {
+            ...prev,
+            updatedAt: new Date().toISOString(),
+            seoMetadata: {
+              ...prev.seoMetadata,
+              ...(updated?.seoMetadata || {}),
+              metaTitle: data.metaTitle ? String(data.metaTitle).trim() : null,
+              metaDescription: data.metaDescription ? String(data.metaDescription).trim() : null,
+              canonicalUrl: hasExplicitCanonical ? String(data.canonicalUrl).trim() : (prev.seoMetadata?.autoCanonicalUrl || prev.seoMetadata?.canonicalUrl),
+              explicitCanonicalUrl: hasExplicitCanonical ? String(data.canonicalUrl).trim() : null,
+              isAutoCanonical: !hasExplicitCanonical,
+              ogTitle: data.ogTitle ? String(data.ogTitle).trim() : null,
+              ogDescription: data.ogDescription ? String(data.ogDescription).trim() : null,
+              ogImageUrl: hasExplicitOg ? String(data.ogImageUrl).trim() : (prev.seoMetadata?.autoOgImageUrl || prev.seoMetadata?.ogImageUrl),
+              explicitOgImageUrl: hasExplicitOg ? String(data.ogImageUrl).trim() : null,
+              isAutoOgImage: !hasExplicitOg,
+              robotsIndex: data.robotsIndex ?? true,
+              robotsFollow: data.robotsFollow ?? true,
+              twitterCard: data.twitterCard || 'summary_large_image',
+              structuredData: data.structuredData || null,
+            },
+          };
+        }
+        return prev;
+      });
+
+      await Promise.all([loadPages(), loadDashboard()]);
     } catch (err) {
       notify.error({ title: 'Failed to save page SEO', description: normalizeErrorMessage(err) });
       throw err;

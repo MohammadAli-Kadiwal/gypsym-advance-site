@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   Globe,
@@ -74,10 +75,8 @@ export default function CountryStudioPage() {
   const [heroCtaUrl, setHeroCtaUrl] = React.useState('#contact-inquiry');
   const [heroClientStripTitle, setHeroClientStripTitle] = React.useState('');
 
-  // Page Level SEO
+  // Page Level
   const [pageTitle, setPageTitle] = React.useState('');
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDesc, setMetaDesc] = React.useState('');
   const [pageStatus, setPageStatus] = React.useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
   const [countryMeta, setCountryMeta] = React.useState<CountryMeta | null>(null);
 
@@ -90,10 +89,6 @@ export default function CountryStudioPage() {
         setPage(data);
         setPageTitle(data.title || slug);
         setPageStatus((data.status as any) || 'PUBLISHED');
-
-        const seo = data.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDesc(seo?.metaDescription || data.description || '');
 
         // Extract Hero Section payload (ignore home-inherited sections)
         const heroSection = data.sections?.find(
@@ -140,20 +135,13 @@ export default function CountryStudioPage() {
     try {
       const targetSlug = page?.slug || slug;
 
-      // 1. Update Page & SEO Metadata
+      // 1. Update Page
       const updatedPage = await fetchApi<PageData>(`/pages/${targetSlug}`, {
         method: 'PUT',
         body: JSON.stringify({
           title: pageTitle || slug,
           description: heroDescription,
           status: pageStatus,
-          seoMetadata: {
-            metaTitle: metaTitle || pageTitle || slug,
-            metaDescription: metaDesc || heroDescription,
-            canonicalUrl: `https://gypsym.com/${targetSlug}`,
-            robotsIndex: true,
-            robotsFollow: true,
-          },
         }),
       });
 
@@ -286,6 +274,18 @@ export default function CountryStudioPage() {
             </a>
 
             <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 rounded-xl border-border text-xs font-semibold text-foreground hover:text-primary hover:bg-muted"
+            >
+              <Link href="/site/seo?tab=pages" className="inline-flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 text-blue-600" />
+                <span>Page SEO</span>
+              </Link>
+            </Button>
+
+            <Button
               variant="outline"
               size="sm"
               onClick={loadPageData}
@@ -328,13 +328,6 @@ export default function CountryStudioPage() {
               >
                 <Layers className="w-3.5 h-3.5 text-slate-500" />
                 <span>2. 8-Section Layout</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="seo"
-                className="inline-flex items-center gap-2 rounded-xl py-2 px-4 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs text-slate-600 hover:text-slate-900 cursor-pointer"
-              >
-                <Globe className="w-3.5 h-3.5 text-slate-500" />
-                <span>3. SEO &amp; Meta</span>
               </TabsTrigger>
             </TabsList>
 
@@ -563,51 +556,6 @@ export default function CountryStudioPage() {
                       </div>
                     );
                   })}
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* TAB 3: SEO */}
-            <TabsContent value="seo" className="space-y-4">
-              <Card className="rounded-2xl border-slate-200/80 p-5 space-y-4 bg-white shadow-2xs">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-blue-600" />
-                    <span>Search Engine Optimization (SEO)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Customize SERP titles, descriptions, and canonical parameters.
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Meta Title Tag</label>
-                  <Input
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder="Shopify Plus Agency | Country"
-                    className="rounded-xl text-xs font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Meta Description Tag</label>
-                  <Textarea
-                    value={metaDesc}
-                    onChange={(e) => setMetaDesc(e.target.value)}
-                    rows={3}
-                    placeholder="High-converting search snippet under 160 characters..."
-                    className="rounded-xl text-xs leading-relaxed resize-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Canonical URL</label>
-                  <Input
-                    value={`https://gypsym.com/${slug}`}
-                    readOnly
-                    className="rounded-xl text-xs font-mono bg-slate-50 text-slate-500"
-                  />
                 </div>
               </Card>
             </TabsContent>

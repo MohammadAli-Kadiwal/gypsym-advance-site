@@ -17,7 +17,6 @@ import {
   Plus,
   Settings2,
   Search,
-  CheckCircle2,
   Globe,
   FileCheck,
   FileClock,
@@ -29,7 +28,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -47,8 +45,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { AdminPageHeader } from '@/components/layout/admin-page';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { StatusToggleField } from '@/components/crud/status-toggle-field';
@@ -135,13 +131,6 @@ export function PagesTable({
   const [formDescription, setFormDescription] = React.useState('');
   const [formLayoutType, setFormLayoutType] = React.useState('DEFAULT');
   const [formStatus, setFormStatus] = React.useState('PUBLISHED');
-  const [formMetaTitle, setFormMetaTitle] = React.useState('');
-  const [formMetaDesc, setFormMetaDesc] = React.useState('');
-  const [formCanonicalUrl, setFormCanonicalUrl] = React.useState('');
-  const [formOgTitle, setFormOgTitle] = React.useState('');
-  const [formOgDesc, setFormOgDesc] = React.useState('');
-  const [formOgImageUrl, setFormOgImageUrl] = React.useState('');
-  const [formNoIndex, setFormNoIndex] = React.useState(false);
 
   // ── Create Page Modal State ────────────────────────────────────────────────
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -220,15 +209,6 @@ export function PagesTable({
     setFormLayoutType(page.layoutType || 'DEFAULT');
     setFormStatus(page.status || 'PUBLISHED');
 
-    const seo = page.seoMetadata;
-    setFormMetaTitle(seo?.metaTitle || page.title || '');
-    setFormMetaDesc(seo?.metaDescription || page.description || '');
-    setFormCanonicalUrl(seo?.canonicalUrl || '');
-    setFormOgTitle(seo?.ogTitle || seo?.metaTitle || page.title || '');
-    setFormOgDesc(seo?.ogDescription || seo?.metaDescription || page.description || '');
-    setFormOgImageUrl(seo?.ogImageUrl || '');
-    setFormNoIndex(Boolean(seo?.noIndex));
-
     setSettingsOpen(true);
   }
 
@@ -243,15 +223,6 @@ export function PagesTable({
         description: formDescription.trim(),
         layoutType: formLayoutType,
         status: formStatus,
-        seoMetadata: {
-          metaTitle: formMetaTitle.trim() || formTitle.trim(),
-          metaDescription: formMetaDesc.trim() || formDescription.trim(),
-          canonicalUrl: formCanonicalUrl.trim() || null,
-          ogTitle: formOgTitle.trim() || formMetaTitle.trim() || formTitle.trim(),
-          ogDescription: formOgDesc.trim() || formMetaDesc.trim() || formDescription.trim(),
-          ogImageUrl: formOgImageUrl.trim() || null,
-          noIndex: formNoIndex,
-        },
       });
       setSettingsOpen(false);
     } finally {
@@ -508,16 +479,16 @@ export function PagesTable({
 
                   {/* SEO indicator */}
                   <TableCell className="py-3.5">
-                    {page.seoMetadata ? (
-                      <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span className="truncate max-w-[120px]" title={page.seoMetadata.metaTitle || ''}>
-                          {page.seoMetadata.metaTitle ? 'Customized' : 'Inherited'}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-slate-400">Default</span>
-                    )}
+                    <Link
+                      href="/site/seo?tab=pages"
+                      title="Manage SEO in central Page SEO console"
+                      className="inline-flex items-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:underline font-medium cursor-pointer"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span className="truncate max-w-[120px]">
+                        {page.seoMetadata?.metaTitle ? 'Customized' : 'Page SEO'}
+                      </span>
+                    </Link>
                   </TableCell>
 
                   {/* Actions */}
@@ -694,142 +665,90 @@ export function PagesTable({
             </div>
           </DialogHeader>
 
-          <Tabs defaultValue="general" className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 sm:px-6 pt-3 border-b border-slate-100 bg-white">
-              <TabsList className="bg-slate-100/80 p-1 w-full grid grid-cols-2">
-                <TabsTrigger value="general" className="text-xs font-semibold px-2">
-                  1. General &amp; Layout
-                </TabsTrigger>
-                <TabsTrigger value="seo" className="text-xs font-semibold px-2">
-                  2. SEO &amp; Meta
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {/* TAB 1: General */}
-              <TabsContent value="general" className="m-0 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Page Title *</label>
-                    <Input
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      placeholder="e.g. Our Services"
-                      className="text-sm font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">URL Route Slug *</label>
-                    <Input
-                      value={formSlug}
-                      disabled={editingPage?.slug === 'home'}
-                      onChange={(e) => setFormSlug(e.target.value)}
-                      placeholder="e.g. services"
-                      className="text-sm font-mono"
-                    />
-                    {editingPage?.slug === 'home' && (
-                      <p className="text-[10px] text-slate-400">Root home slug is protected.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Page Description</label>
-                  <Textarea
-                    rows={2}
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                    placeholder="Short description of this page content and purpose..."
-                    className="text-sm leading-relaxed"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Layout Canvas</label>
-                    <select
-                      value={formLayoutType}
-                      onChange={(e) => setFormLayoutType(e.target.value)}
-                      className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-white p-2.5 text-slate-800"
-                    >
-                      {LAYOUT_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label} ({opt.value})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <StatusToggleField
-                  value={formStatus}
-                  onChange={(st) => setFormStatus(st as any)}
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Page Title *</label>
+                <Input
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="e.g. Our Services"
+                  className="text-sm font-medium"
                 />
-              </TabsContent>
+              </div>
 
-              {/* TAB 2: SEO */}
-              <TabsContent value="seo" className="m-0 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Meta Title Tag</label>
-                  <Input
-                    value={formMetaTitle}
-                    onChange={(e) => setFormMetaTitle(e.target.value)}
-                    placeholder="e.g. Services | Gypsym Technology"
-                    className="text-sm"
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    Shown in browser tab and Google search results ({formMetaTitle.length}/60 chars).
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Meta Description</label>
-                  <Textarea
-                    rows={3}
-                    value={formMetaDesc}
-                    onChange={(e) => setFormMetaDesc(e.target.value)}
-                    placeholder="Compelling summary shown in Google search result snippets..."
-                    className="text-sm leading-relaxed"
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    Optimal length 140–160 characters ({formMetaDesc.length}/160 chars).
-                  </p>
-                </div>
-
-                <div>
-                  <ImageUploadField
-                    label="Social OpenGraph (OG) Image"
-                    description="Upload directly or specify a URL (1200x630 recommended for LinkedIn, X, and WhatsApp previews)."
-                    value={formOgImageUrl}
-                    onChange={setFormOgImageUrl}
-                    placeholder="https://example.com/assets/og-image.jpg"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Canonical URL (Optional)</label>
-                  <Input
-                    value={formCanonicalUrl}
-                    onChange={(e) => setFormCanonicalUrl(e.target.value)}
-                    placeholder="https://gypsym.com/services"
-                    className="text-sm font-mono"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 pt-2">
-                  <div>
-                    <span className="text-xs font-semibold text-slate-800 block">Robots No-Index</span>
-                    <span className="text-[11px] text-slate-400 block">
-                      Instruct search engines to NOT index this page
-                    </span>
-                  </div>
-                  <Switch checked={formNoIndex} onCheckedChange={setFormNoIndex} />
-                </div>
-              </TabsContent>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">URL Route Slug *</label>
+                <Input
+                  value={formSlug}
+                  disabled={editingPage?.slug === 'home'}
+                  onChange={(e) => setFormSlug(e.target.value)}
+                  placeholder="e.g. services"
+                  className="text-sm font-mono"
+                />
+                {editingPage?.slug === 'home' && (
+                  <p className="text-[10px] text-slate-400">Root home slug is protected.</p>
+                )}
+              </div>
             </div>
-          </Tabs>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">Page Description</label>
+              <Textarea
+                rows={2}
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Short description of this page content and purpose..."
+                className="text-sm leading-relaxed"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Layout Canvas</label>
+                <select
+                  value={formLayoutType}
+                  onChange={(e) => setFormLayoutType(e.target.value)}
+                  className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-white p-2.5 text-slate-800"
+                >
+                  {LAYOUT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} ({opt.value})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <StatusToggleField
+              value={formStatus}
+              onChange={(st) => setFormStatus(st as any)}
+            />
+
+            {/* Centralized Page SEO notice */}
+            <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-bold text-blue-900">SEO &amp; Discoverability Centralized</span>
+                </div>
+                <p className="text-[11px] text-blue-700">
+                  Page SEO, meta titles, descriptions, canonical URLs, and Open Graph previews are centrally managed under Site &gt; Page SEO.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                asChild
+                className="rounded-xl text-xs bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 border-blue-300 font-semibold shrink-0 cursor-pointer shadow-2xs"
+              >
+                <Link href="/site/seo?tab=pages">
+                  Manage Page SEO &rarr;
+                </Link>
+              </Button>
+            </div>
+          </div>
 
           <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between sm:justify-between">
             <Button

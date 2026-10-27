@@ -77,8 +77,6 @@ interface CountryEditDialogProps {
   formContent: string; setFormContent: (v: string) => void;
   formHeroImage: string; setFormHeroImage: (v: string) => void;
   formStatus: 'PUBLISHED' | 'DRAFT'; setFormStatus: (v: 'PUBLISHED' | 'DRAFT') => void;
-  formMetaTitle: string; setFormMetaTitle: (v: string) => void;
-  formMetaDesc: string; setFormMetaDesc: (v: string) => void;
   onSave: () => void;
 }
 
@@ -95,8 +93,6 @@ function CountryEditDialog({
   formContent, setFormContent,
   formHeroImage, setFormHeroImage,
   formStatus, setFormStatus,
-  formMetaTitle, setFormMetaTitle,
-  formMetaDesc, setFormMetaDesc,
   onSave,
 }: CountryEditDialogProps) {
   const fallbackFlag = page ? getCountryMeta(page.slug, page.title).flag : '🌐';
@@ -337,33 +333,30 @@ function CountryEditDialog({
 
             {/* TAB 3: SEO */}
             <TabsContent value="seo" className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Meta Title Tag</label>
-                <Input
-                  value={formMetaTitle}
-                  onChange={(e) => setFormMetaTitle(e.target.value)}
-                  placeholder="Shopify Plus Agency | United States"
-                  className="h-9 rounded-xl text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Meta Description</label>
-                <Textarea
-                  value={formMetaDesc}
-                  onChange={(e) => setFormMetaDesc(e.target.value)}
-                  rows={3}
-                  placeholder="Compelling SERP description under 160 characters..."
-                  className="rounded-xl text-xs resize-none"
-                />
-                <span className={`text-[10px] font-mono ${formMetaDesc.length > 160 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                  {formMetaDesc.length}/160 chars
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-800">
-                <p className="font-semibold mb-1">Canonical URL (auto-generated)</p>
-                <code className="font-mono text-[11px] text-blue-700">https://gypsym.com/{formSlug || 'slug'}</code>
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <Globe className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-blue-950">Centralized Page SEO Management</h4>
+                    <p className="text-[11px] text-blue-800/80 mt-1 leading-relaxed">
+                      All page title tags, meta descriptions, canonical URLs, social share images, and robot indexing settings are now centralized under Page SEO.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-1">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold h-8 px-3 gap-1.5 shadow-xs"
+                  >
+                    <Link href="/site/seo?tab=pages">
+                      <span>Manage in Page SEO</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
@@ -412,8 +405,6 @@ export default function CountryPagesManagementPage() {
   const [formHeroImage, setFormHeroImage] = React.useState('');
   const [formHeroTitleHighlight, setFormHeroTitleHighlight] = React.useState('');
   const [formStatus, setFormStatus] = React.useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
-  const [formMetaTitle, setFormMetaTitle] = React.useState('');
-  const [formMetaDesc, setFormMetaDesc] = React.useState('');
 
   // Create modal state
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -595,9 +586,6 @@ export default function CountryPagesManagementPage() {
     setFormContent(heroPayload.content || heroPayload.country?.content || fullPage.description || '');
     setFormHeroImage(heroPayload.backgroundMedia?.desktopImageUrl || '');
     setFormStatus((fullPage.status as any) || 'PUBLISHED');
-    const seo = fullPage.seoMetadata;
-    setFormMetaTitle(seo?.metaTitle || fullPage.title || '');
-    setFormMetaDesc(seo?.metaDescription || fullPage.description || '');
     setEditOpen(true);
   };
 
@@ -613,13 +601,6 @@ export default function CountryPagesManagementPage() {
           description: formHeroDescription.trim(),
           content: formContent.trim(),
           status: formStatus,
-          seoMetadata: {
-            metaTitle: formMetaTitle.trim() || `${formCountryName.trim()} | Gypsym Technology`,
-            metaDescription: formMetaDesc.trim() || formHeroDescription.trim(),
-            canonicalUrl: `https://gypsym.com/${formSlug.trim()}`,
-            robotsIndex: true,
-            robotsFollow: true,
-          },
         }),
       });
 
@@ -1164,8 +1145,6 @@ export default function CountryPagesManagementPage() {
         formContent={formContent} setFormContent={setFormContent}
         formHeroImage={formHeroImage} setFormHeroImage={setFormHeroImage}
         formStatus={formStatus} setFormStatus={setFormStatus}
-        formMetaTitle={formMetaTitle} setFormMetaTitle={setFormMetaTitle}
-        formMetaDesc={formMetaDesc} setFormMetaDesc={setFormMetaDesc}
         onSave={handleSaveEdit}
       />
 

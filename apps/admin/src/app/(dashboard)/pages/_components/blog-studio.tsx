@@ -85,13 +85,6 @@ export function BlogStudio({ onBack }: BlogStudioProps) {
   const [ctaButtonLabel, setCtaButtonLabel] = React.useState('Schedule Architecture Review');
   const [ctaButtonUrl, setCtaButtonUrl] = React.useState('/contact');
 
-  // ── SEO State ──
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDescription, setMetaDescription] = React.useState('');
-  const [canonicalUrl, setCanonicalUrl] = React.useState('');
-  const [ogImageUrl, setOgImageUrl] = React.useState('');
-  const [noIndex, setNoIndex] = React.useState(false);
-
   const updateCredential = (idx: number, field: keyof CredentialItem, val: string) => {
     setCredentials((prev) => {
       const copy = [...prev];
@@ -121,17 +114,6 @@ export function BlogStudio({ onBack }: BlogStudioProps) {
       const page = await fetchApi<PageData>('/pages/blog');
       if (page) {
         setPageData(page);
-
-        const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDescription(
-          seo?.metaDescription ||
-            page.description ||
-            'Peer-reviewed systems architecture, headless commerce topologies, sovereign AI infrastructure, and high-throughput distributed engineering.'
-        );
-        setCanonicalUrl(seo?.canonicalUrl || '');
-        setOgImageUrl(seo?.ogImageUrl || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80');
-        setNoIndex(Boolean(seo?.noIndex));
 
         // Hero Section
         const rawHero = page.sections?.find(
@@ -198,21 +180,11 @@ export function BlogStudio({ onBack }: BlogStudioProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // 1. Update Page SEO
+      // 1. Update Page Info
       const pagePromise = fetchApi('/pages/blog', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'Publications & Insights',
-          description: metaDescription,
-          seoMetadata: {
-            metaTitle,
-            metaDescription,
-            canonicalUrl: canonicalUrl || null,
-            ogTitle: metaTitle,
-            ogDescription: metaDescription,
-            ogImageUrl: ogImageUrl || null,
-            noIndex,
-          },
         }),
       });
 
@@ -408,12 +380,6 @@ export function BlogStudio({ onBack }: BlogStudioProps) {
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
             3. Conversion CTA
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            4. SEO & OpenGraph
           </TabsTrigger>
         </TabsList>
 
@@ -688,74 +654,6 @@ export function BlogStudio({ onBack }: BlogStudioProps) {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 4: SEO & OPENGRAPH ── */}
-        <TabsContent value="seo" className="space-y-6">
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white overflow-hidden">
-            <CardHeader className="p-6 pb-4 border-b border-slate-100">
-              <CardTitle className="text-base font-bold text-slate-900">SEO &amp; OpenGraph Settings</CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Configure browser page title, meta description, canonical link, and social sharing OpenGraph visuals.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <Label>Page Title (Browser &amp; Search Engine Title)</Label>
-                <Input
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="Engineering Publications & Architecture Deep Dives"
-                  className="h-10 text-xs rounded-xl border-slate-200/90"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  When a custom title is set, it will display exactly as entered.
-                </span>
-              </div>
-
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={2}
-                  className="text-xs rounded-xl border-slate-200/90"
-                />
-              </div>
-
-              <div>
-                <Label>Canonical URL</Label>
-                <Input
-                  value={canonicalUrl}
-                  onChange={(e) => setCanonicalUrl(e.target.value)}
-                  placeholder="https://gypsym.com/blog"
-                  className="h-10 text-xs rounded-xl border-slate-200/90 font-mono"
-                />
-              </div>
-
-              <div className="pt-2">
-                <ImageUploadField
-                  label="Social Share OpenGraph Image"
-                  description="1200x630px image displayed when this page is shared on LinkedIn, X, or Slack."
-                  value={ogImageUrl}
-                  onChange={setOgImageUrl}
-                  placeholder="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=2000&auto=format&fit=crop&q=80"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block">Search Engine Indexing</span>
-                  <span className="text-[11px] text-slate-500">
-                    {noIndex ? 'Page is excluded from Google & search indexing (noindex)' : 'Page is indexed by Google, Bing & AI crawlers'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500">{noIndex ? 'NoIndex' : 'Index'}</span>
-                  <Switch checked={!noIndex} onCheckedChange={(checked) => setNoIndex(!checked)} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

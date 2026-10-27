@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, RefreshCw, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, RefreshCw, ExternalLink, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -112,6 +112,22 @@ export function SectionsHeader({
             <span className="hidden xs:inline sm:inline">Refresh</span>
           </Button>
         )}
+
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="h-9 px-3 text-xs font-semibold rounded-xl border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50"
+        >
+          <Link
+            href="/site/seo?tab=pages"
+            className="inline-flex items-center gap-1.5"
+            title="Manage page SEO, meta tags, and Open Graph previews centrally"
+          >
+            <Globe className="h-3.5 w-3.5 text-blue-600" />
+            <span className="hidden xs:inline sm:inline">Page SEO</span>
+          </Link>
+        </Button>
 
         <Button
           asChild

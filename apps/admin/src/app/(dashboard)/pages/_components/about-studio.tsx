@@ -109,13 +109,6 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
   const [ctaButtonLabel, setCtaButtonLabel] = React.useState('Schedule Architecture Call');
   const [ctaButtonUrl, setCtaButtonUrl] = React.useState('/book');
 
-  // ── SEO State ──
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDescription, setMetaDescription] = React.useState('');
-  const [canonicalUrl, setCanonicalUrl] = React.useState('');
-  const [ogImageUrl, setOgImageUrl] = React.useState('');
-  const [noIndex, setNoIndex] = React.useState(false);
-
   const updateStat = (idx: number, field: keyof StatItem, val: string) => {
     setStats((prev) => {
       const copy = [...prev];
@@ -145,17 +138,6 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
       const page = await fetchApi<PageData>('/pages/about');
       if (page) {
         setPageData(page);
-
-        const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDescription(
-          seo?.metaDescription ||
-            page.description ||
-            'Learn about Gypsym Technology, our engineering-first philosophy, senior specialists, and client-proven track record.'
-        );
-        setCanonicalUrl(seo?.canonicalUrl || '');
-        setOgImageUrl(seo?.ogImageUrl || '/assets/editorial/agency-hero-editorial.png');
-        setNoIndex(Boolean(seo?.noIndex));
 
         // Hero Section
         const rawHero = page.sections?.find(
@@ -232,21 +214,11 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // 1. Update Page SEO
+      // 1. Update Page Info
       const pagePromise = fetchApi('/pages/about', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'About',
-          description: metaDescription,
-          seoMetadata: {
-            metaTitle,
-            metaDescription,
-            canonicalUrl: canonicalUrl || null,
-            ogTitle: metaTitle,
-            ogDescription: metaDescription,
-            ogImageUrl: ogImageUrl || null,
-            noIndex,
-          },
         }),
       });
 
@@ -459,12 +431,6 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
             4. Conversion CTA
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            5. SEO & OpenGraph
           </TabsTrigger>
         </TabsList>
 
@@ -818,70 +784,6 @@ export function AboutStudio({ onBack }: AboutStudioProps) {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 4: SEO ── */}
-        <TabsContent value="seo" className="space-y-6">
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white overflow-hidden">
-            <CardHeader className="p-6 pb-4 border-b border-slate-100">
-              <CardTitle className="text-base font-bold text-slate-900">About Page SEO & Metadata</CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Search indexing, canonical tags, and OpenGraph social preview.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5">
-              <div>
-                <Label>Meta Title</Label>
-                <Input
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="About Gypsym | Elite Shopify Plus Engineering"
-                  className="h-10 text-xs rounded-xl border-slate-200/90"
-                />
-              </div>
-
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={3}
-                  className="text-xs rounded-xl border-slate-200/90"
-                />
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <Label>Canonical URL</Label>
-                  <Input
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://gypsym.com/about"
-                    className="h-10 text-xs font-mono rounded-xl border-slate-200/90"
-                  />
-                </div>
-
-                <div>
-                  <ImageUploadField
-                    label="Social OpenGraph (OG) Image"
-                    description="Upload directly or specify a URL. Recommended 1200x630px for optimal social previews."
-                    value={ogImageUrl}
-                    onChange={setOgImageUrl}
-                    placeholder="/assets/editorial/agency-hero-editorial.png"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 pt-3">
-                <div>
-                  <span className="text-xs font-semibold text-slate-800 block">Robots No-Index</span>
-                  <span className="text-[11px] text-slate-400 block">
-                    Instruct search engines to NOT index this page
-                  </span>
-                </div>
-                <Switch checked={noIndex} onCheckedChange={setNoIndex} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

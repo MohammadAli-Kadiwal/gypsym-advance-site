@@ -1040,7 +1040,6 @@ export class SeoService implements OnModuleInit {
         (seo.structuredData as any)?.ogImageUrl ||
         seo.ogImage?.url ||
         seo.ogImageUrl ||
-        (p as any).imageUrl ||
         null;
       const hasExplicitOg = Boolean(explicitOg && String(explicitOg).trim().length > 0);
       const effectiveOg = hasExplicitOg ? explicitOg : defaultOgImage;
@@ -1292,19 +1291,22 @@ export class SeoService implements OnModuleInit {
         dto.structuredData && typeof dto.structuredData === 'object'
           ? (dto.structuredData as Record<string, any>)
           : existingStructured;
+      const cleanOgImageUrl = dto.ogImageUrl && String(dto.ogImageUrl).trim() ? String(dto.ogImageUrl).trim() : null;
       const finalStructured = {
         ...newStructured,
-        ...(dto.ogImageUrl !== undefined ? { ogImageUrl: dto.ogImageUrl || null } : {}),
+        ...(dto.ogImageUrl !== undefined ? { ogImageUrl: cleanOgImageUrl } : {}),
       };
 
+      const cleanCanonical = dto.canonicalUrl && String(dto.canonicalUrl).trim() ? String(dto.canonicalUrl).trim() : null;
+
       return {
-        metaTitle: dto.metaTitle || '',
-        metaDescription: dto.metaDescription || '',
-        canonicalUrl: dto.canonicalUrl || null,
+        metaTitle: dto.metaTitle ? String(dto.metaTitle).trim() : '',
+        metaDescription: dto.metaDescription ? String(dto.metaDescription).trim() : '',
+        canonicalUrl: cleanCanonical,
         robotsIndex: dto.robotsIndex ?? true,
         robotsFollow: dto.robotsFollow ?? true,
-        ogTitle: dto.ogTitle || null,
-        ogDescription: dto.ogDescription || null,
+        ogTitle: dto.ogTitle ? String(dto.ogTitle).trim() : null,
+        ogDescription: dto.ogDescription ? String(dto.ogDescription).trim() : null,
         twitterCard: dto.twitterCard || 'summary_large_image',
         structuredData: finalStructured,
       };
@@ -1345,11 +1347,17 @@ export class SeoService implements OnModuleInit {
           },
         }).catch(() => null);
       }
+      const cleanOg = (dto.ogImageUrl !== undefined ? (dto.ogImageUrl && String(dto.ogImageUrl).trim() ? String(dto.ogImageUrl).trim() : null) : (updatedSeo.structuredData as any)?.ogImageUrl) || null;
       return {
         ...page,
         seoMetadata: {
           ...updatedSeo,
-          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+          canonicalUrl: updatedSeo.canonicalUrl || null,
+          explicitCanonicalUrl: updatedSeo.canonicalUrl || null,
+          isAutoCanonical: !updatedSeo.canonicalUrl,
+          ogImageUrl: cleanOg,
+          explicitOgImageUrl: cleanOg,
+          isAutoOgImage: !cleanOg,
         },
       };
     }
@@ -1404,11 +1412,17 @@ export class SeoService implements OnModuleInit {
           },
         }).catch(() => null);
       }
+      const cleanOg = (dto.ogImageUrl !== undefined ? (dto.ogImageUrl && String(dto.ogImageUrl).trim() ? String(dto.ogImageUrl).trim() : null) : (updatedSeo.structuredData as any)?.ogImageUrl) || null;
       return {
         ...service,
         seoMetadata: {
           ...updatedSeo,
-          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+          canonicalUrl: updatedSeo.canonicalUrl || null,
+          explicitCanonicalUrl: updatedSeo.canonicalUrl || null,
+          isAutoCanonical: !updatedSeo.canonicalUrl,
+          ogImageUrl: cleanOg,
+          explicitOgImageUrl: cleanOg,
+          isAutoOgImage: !cleanOg,
         },
       };
     }
@@ -1448,11 +1462,17 @@ export class SeoService implements OnModuleInit {
           },
         }).catch(() => null);
       }
+      const cleanOg = (dto.ogImageUrl !== undefined ? (dto.ogImageUrl && String(dto.ogImageUrl).trim() ? String(dto.ogImageUrl).trim() : null) : (updatedSeo.structuredData as any)?.ogImageUrl) || null;
       return {
         ...blog,
         seoMetadata: {
           ...updatedSeo,
-          ogImageUrl: dto.ogImageUrl || (updatedSeo.structuredData as any)?.ogImageUrl || null,
+          canonicalUrl: updatedSeo.canonicalUrl || null,
+          explicitCanonicalUrl: updatedSeo.canonicalUrl || null,
+          isAutoCanonical: !updatedSeo.canonicalUrl,
+          ogImageUrl: cleanOg,
+          explicitOgImageUrl: cleanOg,
+          isAutoOgImage: !cleanOg,
         },
       };
     }

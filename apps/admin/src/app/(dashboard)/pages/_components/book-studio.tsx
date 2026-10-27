@@ -100,13 +100,6 @@ export function BookStudio({ onBack }: BookStudioProps) {
   const [outcomesTitle, setOutcomesTitle] = React.useState('What We Cover in 30 Minutes');
   const [outcomes, setOutcomes] = React.useState<OutcomeCard[]>(defaultOutcomes);
 
-  // ── SEO State ──
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDescription, setMetaDescription] = React.useState('');
-  const [canonicalUrl, setCanonicalUrl] = React.useState('');
-  const [ogImageUrl, setOgImageUrl] = React.useState('');
-  const [noIndex, setNoIndex] = React.useState(false);
-
   const updateCredential = (idx: number, field: keyof CredentialItem, val: string) => {
     setCredentials((prev) => {
       const copy = [...prev];
@@ -136,17 +129,6 @@ export function BookStudio({ onBack }: BookStudioProps) {
       const page = await fetchApi<PageData>('/pages/book');
       if (page) {
         setPageData(page);
-
-        const seo = page.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDescription(
-          seo?.metaDescription ||
-            page.description ||
-            'Schedule a 30-minute discovery session directly with our lead Shopify Plus engineers.'
-        );
-        setCanonicalUrl(seo?.canonicalUrl || '');
-        setOgImageUrl(seo?.ogImageUrl || '/assets/editorial/agency-hero-editorial.png');
-        setNoIndex(Boolean(seo?.noIndex));
 
         // Hero Section
         const rawHero = page.sections?.find(
@@ -217,21 +199,11 @@ export function BookStudio({ onBack }: BookStudioProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // 1. Update Page SEO
+      // 1. Update Page Info
       await fetchApi('/pages/book', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'Book',
-          description: metaDescription,
-          seoMetadata: {
-            metaTitle,
-            metaDescription,
-            canonicalUrl: canonicalUrl || null,
-            ogTitle: metaTitle,
-            ogDescription: metaDescription,
-            ogImageUrl: ogImageUrl || null,
-            noIndex,
-          },
         }),
       });
 
@@ -386,12 +358,6 @@ export function BookStudio({ onBack }: BookStudioProps) {
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
             3. Session Outcomes
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            4. SEO & OpenGraph
           </TabsTrigger>
         </TabsList>
 
@@ -698,67 +664,6 @@ export function BookStudio({ onBack }: BookStudioProps) {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 4: SEO ── */}
-        <TabsContent value="seo" className="space-y-4">
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold">Book Page SEO & Metadata</CardTitle>
-              <CardDescription className="text-xs">
-                Search indexing tags, canonical link, and social preview.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Meta Title</Label>
-                <Input
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="Book a Discovery Call | Gypsym Technology"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={3}
-                  className="mt-1 text-xs"
-                />
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <Label>Canonical URL</Label>
-                  <Input
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://gypsym.com/book"
-                    className="h-10 text-xs font-mono rounded-xl border-slate-200/90"
-                  />
-                </div>
-                <div>
-                  <ImageUploadField
-                    label="Social OpenGraph (OG) Image"
-                    description="Upload directly or specify a URL (1200x630 recommended for LinkedIn, X, and WhatsApp previews)."
-                    value={ogImageUrl}
-                    onChange={setOgImageUrl}
-                    placeholder="/assets/editorial/agency-hero-editorial.png"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div>
-                  <span className="text-xs font-bold text-slate-800">Prevent Search Indexing (noindex)</span>
-                  <p className="text-[11px] text-slate-500">Keep this off for production search visibility.</p>
-                </div>
-                <Switch checked={noIndex} onCheckedChange={setNoIndex} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

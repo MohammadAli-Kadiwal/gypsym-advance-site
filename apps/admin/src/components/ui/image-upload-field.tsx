@@ -301,7 +301,11 @@ export function ImageUploadField({
               <Input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
+                placeholder={
+                  placeholder && placeholder.startsWith('data:')
+                    ? `${placeholder.slice(0, 28)}...`
+                    : placeholder
+                }
                 className="text-xs font-mono rounded-xl h-10 bg-white border-slate-200"
               />
             </div>

@@ -13,7 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import {
   Dialog,
@@ -63,16 +63,10 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
   const [saving, setSaving] = React.useState(false);
   const [page, setPage] = React.useState<PageData | null>(null);
   const [sections, setSections] = React.useState<UniversalSection[]>([]);
-  const [activeTab, setActiveTab] = React.useState('sections');
 
-  // Page SEO state
+  // Page Info state
   const [pageTitle, setPageTitle] = React.useState('');
   const [pageDescription, setPageDescription] = React.useState('');
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDescription, setMetaDescription] = React.useState('');
-  const [canonicalUrl, setCanonicalUrl] = React.useState('');
-  const [ogImageUrl, setOgImageUrl] = React.useState('');
-  const [noIndex, setNoIndex] = React.useState(false);
 
   // Add Section Modal
   const [addModalOpen, setAddModalOpen] = React.useState(false);
@@ -103,13 +97,6 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
         setPage(loaded);
         setPageTitle(loaded.title || 'Custom Page');
         setPageDescription(loaded.description || '');
-
-        const seo = loaded.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDescription(seo?.metaDescription || loaded.description || '');
-        setCanonicalUrl(seo?.canonicalUrl || '');
-        setOgImageUrl(seo?.ogImageUrl || '');
-        setNoIndex(Boolean(seo?.noIndex));
 
         const rawSecs = Array.isArray(loaded.sections) ? loaded.sections : [];
         setSections(
@@ -239,21 +226,12 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
 
     setSaving(true);
     try {
-      // 1. Update Page Info & SEO
+      // 1. Update Page Info
       await fetchApi(`/pages/${page.slug}`, {
         method: 'PUT',
         body: JSON.stringify({
           title: pageTitle.trim(),
           description: pageDescription.trim(),
-          seoMetadata: {
-            metaTitle: metaTitle.trim() || pageTitle.trim(),
-            metaDescription: metaDescription.trim() || pageDescription.trim(),
-            canonicalUrl: canonicalUrl.trim() || null,
-            ogTitle: metaTitle.trim() || pageTitle.trim(),
-            ogDescription: metaDescription.trim() || pageDescription.trim(),
-            ogImageUrl: ogImageUrl.trim() || null,
-            noIndex,
-          },
         }),
       });
 
@@ -321,21 +299,7 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
         onRefresh={loadData}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <TabsList className="bg-slate-100 p-1.5 rounded-2xl h-auto flex flex-wrap gap-1.5 border border-slate-200/80">
-          <TabsTrigger
-            value="sections"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            1. Inner Page Sections ({sections.length})
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            2. Page SEO & OpenGraph
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value="sections" className="w-full space-y-6">
 
         {/* ── TAB 1: SECTIONS ── */}
         <TabsContent value="sections" className="space-y-4">
@@ -493,81 +457,6 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
           )}
         </TabsContent>
 
-        {/* ── TAB 2: SEO ── */}
-        <TabsContent value="seo" className="space-y-4">
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold">Page SEO & General Information</CardTitle>
-              <CardDescription className="text-xs">
-                Title, meta description, canonical link, and social sharing OpenGraph card.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Page Title</Label>
-                  <Input
-                    value={pageTitle}
-                    onChange={(e) => setPageTitle(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Page Slug</Label>
-                  <Input value={page?.slug || ''} disabled className="mt-1 bg-slate-50 font-mono text-xs" />
-                </div>
-              </div>
-
-              <div>
-                <Label>Meta Title</Label>
-                <Input
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={3}
-                  className="mt-1 text-xs"
-                />
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <Label>Canonical URL</Label>
-                  <Input
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://gypsym.com/..."
-                    className="h-10 text-xs font-mono rounded-xl border-slate-200/90"
-                  />
-                </div>
-                <div>
-                  <ImageUploadField
-                    label="Social OpenGraph (OG) Image"
-                    description="Upload directly or enter URL for social media link previews."
-                    value={ogImageUrl}
-                    onChange={setOgImageUrl}
-                    placeholder="https://gypsym.com/assets/editorial/og-preview.png"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div>
-                  <span className="text-xs font-bold text-slate-800">Prevent Search Indexing (noindex)</span>
-                  <p className="text-[11px] text-slate-500">Keep this off for normal search discovery.</p>
-                </div>
-                <Switch checked={noIndex} onCheckedChange={setNoIndex} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* ── ADD SECTION MODAL ── */}

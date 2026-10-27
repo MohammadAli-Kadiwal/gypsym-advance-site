@@ -166,16 +166,6 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
   const [ctaButton2Label, setCtaButton2Label] = React.useState('Explore Services');
   const [ctaButton2Url, setCtaButton2Url] = React.useState('/services');
 
-  // ── SEO State ──
-  const [metaTitle, setMetaTitle] = React.useState(
-    'Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology'
-  );
-  const [metaDescription, setMetaDescription] = React.useState(
-    "Simulate your store's projected annual revenue increase by switching to Gypsym's 42ms Next.js 15 Headless Edge architecture. Proven CRO conversion lift model."
-  );
-  const [canonicalUrl, setCanonicalUrl] = React.useState('https://gypsym.com/roi-calculator');
-  const [ogImageUrl, setOgImageUrl] = React.useState('/assets/editorial/agency-hero-editorial.png');
-  const [noIndex, setNoIndex] = React.useState(false);
 
   // ── Helper state updaters ──
   const updateCredential = (idx: number, field: keyof CredentialItem, val: string) => {
@@ -237,13 +227,6 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
       if (page) {
         setPageData(page);
 
-        // SEO
-        const seo = page.seoMetadata;
-        if (seo?.metaTitle) setMetaTitle(seo.metaTitle);
-        if (seo?.metaDescription) setMetaDescription(seo.metaDescription);
-        if (seo?.canonicalUrl) setCanonicalUrl(seo.canonicalUrl);
-        if (seo?.ogImageUrl) setOgImageUrl(seo.ogImageUrl);
-        setNoIndex(Boolean(seo?.noIndex));
 
         // Hero Section
         const rawHero = page.sections?.find(
@@ -349,21 +332,11 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // 1. Update Page & SEO
+      // 1. Update Page
       await fetchApi('/pages/roi-calculator', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'ROI Calculator',
-          description: metaDescription,
-          seoMetadata: {
-            metaTitle,
-            metaDescription,
-            canonicalUrl: canonicalUrl || null,
-            ogTitle: metaTitle,
-            ogDescription: metaDescription,
-            ogImageUrl: ogImageUrl || null,
-            noIndex,
-          },
         }),
       });
 
@@ -619,12 +592,6 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
             5. Audit CTA
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            6. SEO & Metadata
           </TabsTrigger>
         </TabsList>
 
@@ -1233,80 +1200,6 @@ export function RoiStudio({ onBack }: RoiStudioProps) {
                       placeholder="/services"
                       className="bg-white rounded-lg text-xs font-mono"
                     />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── TAB 6: SEO ── */}
-        <TabsContent value="seo" className="space-y-6">
-          <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white overflow-hidden">
-            <CardHeader className="p-6 pb-4 border-b border-slate-100">
-              <CardTitle className="text-base font-bold text-slate-900">SEO & OpenGraph Metadata</CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Search engine indexing, meta descriptions, canonical URLs, and social sharing artwork.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label>Page Title Tag (Meta Title)</Label>
-                  <Input
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder="Headless Shopify ROI & Revenue Uplift Calculator | Gypsym Technology"
-                    className="rounded-xl"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    {metaTitle.length} characters (optimal 50-65)
-                  </span>
-                </div>
-
-                <div>
-                  <Label>Meta Description</Label>
-                  <Textarea
-                    value={metaDescription}
-                    onChange={(e) => setMetaDescription(e.target.value)}
-                    rows={3}
-                    placeholder="Simulate your store's projected annual revenue increase..."
-                    className="rounded-xl"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    {metaDescription.length} characters (optimal 130-160)
-                  </span>
-                </div>
-
-                <div>
-                  <Label>Canonical URL</Label>
-                  <Input
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://gypsym.com/roi-calculator"
-                    className="rounded-xl font-mono text-xs"
-                  />
-                </div>
-
-                <div>
-                  <Label>Social Share Image (OpenGraph / Twitter Card)</Label>
-                  <ImageUploadField
-                    value={ogImageUrl}
-                    onChange={setOgImageUrl}
-                    placeholder="Upload high-res 1200x630 social share preview"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Search Engine Indexing (Robots)</h4>
-                    <p className="text-[11px] text-slate-500">
-                      Enable &quot;No Index&quot; to prevent search engines from crawling or caching this page.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600">No Index</span>
-                    <Switch checked={noIndex} onCheckedChange={setNoIndex} />
                   </div>
                 </div>
               </div>

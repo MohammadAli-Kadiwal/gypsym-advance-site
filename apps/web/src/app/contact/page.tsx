@@ -87,8 +87,13 @@ export default async function ContactPage() {
       s.sectionIdentifier === 'direct-channels',
   );
 
-  const globalContactDetails =
-    (rawHomeContact?.contentPayload as any)?.globalContactDetails || null;
+  const globalContactDetails = {
+    email: contactSettings.primaryEmail,
+    phone: contactSettings.primaryPhone,
+    address: contactSettings.headquartersAddress,
+    officeHours: contactSettings.officeHours,
+    socialLinks: (rawHomeContact?.contentPayload as any)?.globalContactDetails?.socialLinks || [],
+  };
 
   const contactSectionToRender: PageSectionDto = rawContactSection || {
     id: 'contact-page-form-section',
@@ -246,7 +251,7 @@ export default async function ContactPage() {
 
       <div id="contact-form" className="w-full relative overflow-x-clip">
         <ScrollReveal direction="up" intensity="subtle" className="w-full">
-          <ContactSection section={contactSectionToRender} />
+          <ContactSection section={contactSectionToRender} contactSettings={contactSettings} />
         </ScrollReveal>
       </div>
 

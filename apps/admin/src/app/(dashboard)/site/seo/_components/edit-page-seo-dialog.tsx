@@ -27,6 +27,23 @@ interface EditPageSeoDialogProps {
   defaultOgImage?: string;
 }
 
+function formatImageUrlDisplay(url?: string): string {
+  if (!url) return '/og-default.png';
+  if (url.startsWith('data:image/')) {
+    const commaIndex = url.indexOf(',');
+    if (commaIndex !== -1) {
+      const mimeHeader = url.slice(0, commaIndex + 1);
+      const sample = url.slice(commaIndex + 1, commaIndex + 9);
+      return `${mimeHeader}${sample}...`;
+    }
+    return `${url.slice(0, 28)}...`;
+  }
+  if (url.length > 55) {
+    return `${url.slice(0, 52)}...`;
+  }
+  return url;
+}
+
 export function EditPageSeoDialog({
   page,
   open,
@@ -48,23 +65,37 @@ export function EditPageSeoDialog({
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    if (page) {
-      setMetaTitle(page.seoMetadata.metaTitle || '');
-      setMetaDescription(page.seoMetadata.metaDescription || '');
-      setCanonicalUrl(page.seoMetadata.canonicalUrl || '');
-      setRobotsIndex(page.seoMetadata.robotsIndex !== false);
-      setRobotsFollow(page.seoMetadata.robotsFollow !== false);
-      setOgTitle(page.seoMetadata.ogTitle || '');
-      setOgDescription(page.seoMetadata.ogDescription || '');
-      setOgImageUrl(page.seoMetadata.ogImageUrl || (page.seoMetadata.structuredData as any)?.ogImageUrl || '');
-      setTwitterCard(page.seoMetadata.twitterCard || 'summary_large_image');
+    if (page && open) {
+      setMetaTitle(page.seoMetadata?.metaTitle || '');
+      setMetaDescription(page.seoMetadata?.metaDescription || '');
+
+      // Explicit Canonical: only set if explicitly customized by user (not auto-fallback)
+      const explicitCanonical =
+        page.seoMetadata?.explicitCanonicalUrl !== undefined && page.seoMetadata?.explicitCanonicalUrl !== null
+          ? page.seoMetadata.explicitCanonicalUrl
+          : (!page.seoMetadata?.isAutoCanonical && page.seoMetadata?.canonicalUrl ? page.seoMetadata.canonicalUrl : '');
+      setCanonicalUrl(explicitCanonical || '');
+
+      setRobotsIndex(page.seoMetadata?.robotsIndex !== false);
+      setRobotsFollow(page.seoMetadata?.robotsFollow !== false);
+      setOgTitle(page.seoMetadata?.ogTitle || '');
+      setOgDescription(page.seoMetadata?.ogDescription || '');
+
+      // Explicit OG Image: only set if explicitly customized by user (not auto-fallback)
+      const explicitOg =
+        page.seoMetadata?.explicitOgImageUrl !== undefined && page.seoMetadata?.explicitOgImageUrl !== null
+          ? page.seoMetadata.explicitOgImageUrl
+          : (!page.seoMetadata?.isAutoOgImage && page.seoMetadata?.ogImageUrl ? page.seoMetadata.ogImageUrl : '');
+      setOgImageUrl(explicitOg || '');
+
+      setTwitterCard(page.seoMetadata?.twitterCard || 'summary_large_image');
       setStructuredData(
-        page.seoMetadata.structuredData
+        page.seoMetadata?.structuredData
           ? JSON.stringify(page.seoMetadata.structuredData, null, 2)
           : ''
       );
     }
-  }, [page]);
+  }, [page, open]);
 
   if (!page) return null;
 
@@ -288,7 +319,7 @@ export function EditPageSeoDialog({
                 label=""
                 value={ogImageUrl}
                 onChange={setOgImageUrl}
-                placeholder={defaultOgImage || '/og-default.png'}
+                placeholder={defaultOgImage && !defaultOgImage.startsWith('data:') ? defaultOgImage : '/og-default.png'}
               />
 
               {!ogImageUrl.trim() && (
@@ -308,8 +339,14 @@ export function EditPageSeoDialog({
                       <span className="text-xs font-semibold text-emerald-900">Active: Common Default OG Banner</span>
                       <span className="text-[9px] bg-emerald-200/80 text-emerald-800 font-medium px-1.5 py-0.5 rounded">Auto Fallback</span>
                     </div>
-                    <p className="text-[11px] text-emerald-700 truncate">
-                      Using site-wide default: <code className="text-emerald-950 font-semibold">{defaultOgImage || '/og-default.png'}</code>
+                    <p className="text-[11px] text-emerald-700 truncate min-w-0 flex items-center gap-1.5 mt-0.5">
+                      <span className="shrink-0 text-emerald-800 font-medium">Using site-wide default:</span>
+                      <code
+                        className="text-emerald-950 font-semibold font-mono text-[10.5px] bg-emerald-100/70 border border-emerald-200/80 px-1.5 py-0.5 rounded truncate max-w-[260px] inline-block align-middle"
+                        title={defaultOgImage?.startsWith('data:') ? 'Embedded Base64 Image Banner' : defaultOgImage}
+                      >
+                        {formatImageUrlDisplay(defaultOgImage)}
+                      </code>
                     </p>
                   </div>
                 </div>

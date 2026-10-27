@@ -41,13 +41,6 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
   const [pageData, setPageData] = React.useState<PageData | null>(null);
   const [section, setSection] = React.useState<PortfolioSection | null>(null);
 
-  // SEO State
-  const [metaTitle, setMetaTitle] = React.useState('');
-  const [metaDescription, setMetaDescription] = React.useState('');
-  const [canonicalUrl, setCanonicalUrl] = React.useState('');
-  const [ogImageUrl, setOgImageUrl] = React.useState('');
-  const [noIndex, setNoIndex] = React.useState(false);
-
   // ── Load Our Work page data ──────────────────────────────────────────────
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -55,18 +48,6 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
       const res = await fetchApi<PageData>('/pages/portfolio');
       if (res) {
         setPageData(res);
-
-        // SEO
-        const seo = res.seoMetadata;
-        setMetaTitle(seo?.metaTitle || '');
-        setMetaDescription(
-          seo?.metaDescription ||
-            res.description ||
-            'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.'
-        );
-        setCanonicalUrl(seo?.canonicalUrl || '');
-        setOgImageUrl(seo?.ogImageUrl || '');
-        setNoIndex(Boolean(seo?.noIndex));
 
         const raw = res.sections?.find(
           (s) =>
@@ -159,21 +140,11 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
     if (!section) return;
     setSaving(true);
     try {
-      // 1. Update Page SEO
+      // 1. Update Page
       const pagePromise = fetchApi('/pages/portfolio', {
         method: 'PUT',
         body: JSON.stringify({
           title: 'Portfolio',
-          description: metaDescription,
-          seoMetadata: {
-            metaTitle,
-            metaDescription,
-            canonicalUrl: canonicalUrl || null,
-            ogTitle: metaTitle,
-            ogDescription: metaDescription,
-            ogImageUrl: ogImageUrl || null,
-            noIndex,
-          },
         }),
       });
 
@@ -288,12 +259,6 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
             className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
           >
             4. Direct Consultation &amp; CTA
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="rounded-xl text-xs font-semibold px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
-          >
-            5. SEO &amp; OpenGraph
           </TabsTrigger>
         </TabsList>
 
@@ -752,71 +717,6 @@ export function PortfolioStudio({ onBack }: PortfolioStudioProps) {
                   <span>Go to Home Studio</span>
                   <ExternalLink className="w-3 h-3" />
                 </button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── TAB 5: SEO & OPENGRAPH ── */}
-        <TabsContent value="seo" className="focus-visible:outline-none space-y-6">
-          <Card className="rounded-2xl border-slate-200/90 bg-white shadow-xs">
-            <CardHeader className="p-6 pb-4 border-b border-slate-100">
-              <CardTitle className="text-base font-bold text-slate-900">Portfolio SEO &amp; OpenGraph Metadata</CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Search engine title tags, meta descriptions, and social media share previews.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="meta-title">Page Meta Title</Label>
-                <Input
-                  id="meta-title"
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="Portfolio & Shopify Case Studies | Gypsym Technology"
-                  className="h-10 text-xs rounded-xl border-slate-200"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="meta-desc">Page Meta Description</Label>
-                <Textarea
-                  id="meta-desc"
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology."
-                  className="text-xs rounded-xl border-slate-200"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="canonical-url">Canonical URL</Label>
-                <Input
-                  id="canonical-url"
-                  value={canonicalUrl}
-                  onChange={(e) => setCanonicalUrl(e.target.value)}
-                  placeholder="https://gypsym.com/portfolio"
-                  className="h-10 text-xs font-mono rounded-xl border-slate-200"
-                />
-              </div>
-
-              <div className="pt-2">
-                <ImageUploadField
-                  label="Social OpenGraph (OG) Image"
-                  description="Upload directly or specify a URL (1200x630 recommended for LinkedIn, X, and WhatsApp previews)."
-                  value={ogImageUrl}
-                  onChange={setOgImageUrl}
-                  placeholder="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2200&auto=format&fit=crop"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <div>
-                  <span className="text-xs font-bold text-slate-800">Prevent Search Indexing (noindex)</span>
-                  <p className="text-[11px] text-slate-500">Keep this off for production search visibility.</p>
-                </div>
-                <Switch checked={noIndex} onCheckedChange={setNoIndex} />
               </div>
             </CardContent>
           </Card>

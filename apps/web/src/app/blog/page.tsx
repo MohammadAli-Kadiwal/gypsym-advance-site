@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { getBlogPosts, getBlogCategories, getPageBySlug } from '@/lib/api';
+import { getBlogPosts, getBlogCategories, getPageBySlug, getContactSettings } from '@/lib/api';
 import { BlogHubClient } from './blog-hub-client';
 import { SubpageHero } from '@/components/ui/subpage-hero';
 import { ContactSection } from '@/components/cms/contact-section';
@@ -47,11 +47,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogPage() {
-  const [posts, categories, blogPage, homePage] = await Promise.all([
+  const [posts, categories, blogPage, homePage, contactSettings] = await Promise.all([
     getBlogPosts(),
     getBlogCategories(),
     getPageBySlug('blog').catch(() => null),
     getPageBySlug('home').catch(() => null),
+    getContactSettings(),
   ]);
 
   const rawHeroSection = blogPage?.sections?.find(
@@ -210,7 +211,7 @@ export default async function BlogPage() {
       {/* ── 3. DIRECT ENGAGEMENT (Contact) Section ── */}
       <section id="blog-contact" className="w-full relative overflow-x-clip">
         <ScrollReveal direction="up" intensity="subtle" className="w-full">
-          <ContactSection section={contactSectionToRender} />
+          <ContactSection section={contactSectionToRender} contactSettings={contactSettings} />
         </ScrollReveal>
       </section>
 

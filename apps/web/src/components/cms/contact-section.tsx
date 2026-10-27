@@ -18,8 +18,10 @@ import {
   Globe,
 } from 'lucide-react';
 import { inquiriesService } from '@/services/inquiries.service';
+import { cmsService } from '@/services/cms.service';
 import { useRecaptcha } from '@/lib/use-recaptcha';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { ContactSettingsDto } from '@/lib/api/cms';
 
 export interface ContactFieldConfig {
   id: string;
@@ -71,6 +73,7 @@ export interface ContactPayload {
 
 interface ContactSectionProps {
   section: PageSectionDto;
+  contactSettings?: ContactSettingsDto;
 }
 
 const DEFAULT_FIELDS: ContactFieldConfig[] = [
@@ -137,8 +140,24 @@ const DEFAULT_FIELDS: ContactFieldConfig[] = [
   },
 ];
 
-export function ContactSection({ section }: ContactSectionProps) {
+export function ContactSection({ section, contactSettings }: ContactSectionProps) {
   const p = (section.contentPayload as ContactPayload) || {};
+
+  const [liveContact, setLiveContact] = React.useState<ContactSettingsDto | null>(contactSettings || null);
+
+  React.useEffect(() => {
+    if (contactSettings) {
+      setLiveContact(contactSettings);
+      return;
+    }
+    cmsService
+      .getContactSettings()
+      .then((res: any) => {
+        const data = res?.data || res;
+        if (data) setLiveContact(data);
+      })
+      .catch(() => {});
+  }, [contactSettings]);
 
   const eyebrow = p.eyebrow?.trim() || 'DIRECT ENGAGEMENT';
   const title = p.title?.trim() || 'Initiate an Architectural Consultation';
@@ -150,10 +169,22 @@ export function ContactSection({ section }: ContactSectionProps) {
   const useGlobal = p.contactInfo?.useGlobalDefaults !== false;
   const globals = p.globalContactDetails;
 
-  const email = useGlobal && globals?.email ? globals.email : p.contactInfo?.email || 'briefings@gypsym.com';
-  const phone = useGlobal && globals?.phone ? globals.phone : p.contactInfo?.phone || '+1 (800) 928-4019';
-  const address = useGlobal && globals?.address ? globals.address : p.contactInfo?.address || 'One World Trade Center, Suite 8500, New York, NY';
-  const officeHours = p.contactInfo?.officeHours || 'Mon – Fri: 08:00 – 18:00 EST';
+  const email = useGlobal
+    ? (liveContact?.primaryEmail || p.contactInfo?.email || globals?.email || 'hello@gypsym.com')
+    : (p.contactInfo?.email || liveContact?.primaryEmail || 'hello@gypsym.com');
+
+  const phone = useGlobal
+    ? (liveContact?.primaryPhone || p.contactInfo?.phone || globals?.phone || '+1 (800) 928-4019')
+    : (p.contactInfo?.phone || liveContact?.primaryPhone || '+1 (800) 928-4019');
+
+  const address = useGlobal
+    ? (liveContact?.headquartersAddress || p.contactInfo?.address || globals?.address || '100 Bishopsgate, London EC2N 4AG, United Kingdom')
+    : (p.contactInfo?.address || liveContact?.headquartersAddress || '100 Bishopsgate, London EC2N 4AG, United Kingdom');
+
+  const officeHours = useGlobal
+    ? (liveContact?.officeHours || p.contactInfo?.officeHours || 'Mon – Fri: 08:00 – 18:00 EST')
+    : (p.contactInfo?.officeHours || liveContact?.officeHours || 'Mon – Fri: 08:00 – 18:00 EST');
+
   const socialLinks = globals?.socialLinks || [];
 
   const supportCard = p.supportCard;

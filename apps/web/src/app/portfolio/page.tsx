@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { getPageBySlug, getPortfolioCategories, getPortfolioProjects } from '@/lib/api';
+import { getPageBySlug, getPortfolioCategories, getPortfolioProjects, getContactSettings } from '@/lib/api';
 import { PortfolioSection, PortfolioCategoryFilterItem } from '@/components/cms/portfolio-section';
 import { ContactSection } from '@/components/cms/contact-section';
 import { CtaSection } from '@/components/cms/cta-section';
@@ -53,11 +53,12 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
   const selectedCategory = (searchParams?.category || 'all').toLowerCase();
 
   // Concurrently fetch CMS page settings, home page sections, categories, and live portfolio projects
-  const [page, homePage, categories, projects] = await Promise.all([
+  const [page, homePage, categories, projects, contactSettings] = await Promise.all([
     getPageBySlug('portfolio'),
     getPageBySlug('home'),
     getPortfolioCategories(),
     getPortfolioProjects(selectedCategory),
+    getContactSettings(),
   ]);
 
   // Extract CMS section payload if customized
@@ -256,7 +257,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
       {showContactSection && (
         <section id="portfolio-contact" className="w-full relative overflow-x-clip">
           <ScrollReveal direction="up" intensity="subtle" className="w-full">
-            <ContactSection section={contactSectionToRender} />
+            <ContactSection section={contactSectionToRender} contactSettings={contactSettings} />
           </ScrollReveal>
         </section>
       )}
