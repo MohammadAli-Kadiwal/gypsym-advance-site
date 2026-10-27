@@ -151,14 +151,17 @@ export function HeroSettings({ section, onChange }: HeroSettingsProps) {
 
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-slate-700">
-                Modal Video Player URL (.mp4 or stream)
+                Modal Video Player URL (YouTube, Vimeo, Loom, or MP4)
               </label>
               <Input
                 value={p.videoCta?.videoUrl || ''}
                 onChange={(e) => updateVideoCta({ videoUrl: e.target.value })}
-                placeholder="https://assets.gypsym.com/videos/showreel.mp4"
+                placeholder="https://youtu.be/... or https://youtube.com/watch?v=..."
                 className="text-xs font-mono rounded-xl bg-white"
               />
+              <p className="text-[10px] text-slate-400">
+                Supports YouTube links, Vimeo, Loom, or direct .mp4/.webm video URLs. Automatically converted to embed player.
+              </p>
             </div>
           </div>
         </div>

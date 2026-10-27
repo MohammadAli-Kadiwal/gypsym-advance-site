@@ -7,6 +7,7 @@ import { PageSectionDto, ClientTestimonialsPayload, VideoTestimonialDto, TextTes
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { Play, Star, X, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, RevealItem, AnimatedCounter } from '@/components/motion';
+import { parseVideoUrl } from '@/lib/video-url';
 
 interface ClientTestimonialsSectionProps {
   section: PageSectionDto;
@@ -790,23 +791,27 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
               <X className="w-5 h-5" />
             </button>
 
-            {activeVideo.videoUrl.endsWith('.mp4') || activeVideo.videoUrl.endsWith('.webm') ? (
-              <video
-                src={activeVideo.videoUrl}
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <iframe
-                src={activeVideo.videoUrl}
-                title={`Video testimonial - ${activeVideo.clientName}`}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            )}
+            {(() => {
+              const parsed = parseVideoUrl(activeVideo.videoUrl);
+              if (!parsed) return null;
+              return parsed.isDirectFile ? (
+                <video
+                  src={parsed.embedUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={parsed.embedUrl}
+                  title={`Video testimonial - ${activeVideo.clientName}`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              );
+            })()}
           </div>
         </div>
       )}

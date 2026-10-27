@@ -13,6 +13,7 @@ import {
 import { PageSectionDto, HeroPayload } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { ScrollReveal } from '@/components/motion';
+import { parseVideoUrl } from '@/lib/video-url';
 
 interface HeroSectionProps {
   section: PageSectionDto;
@@ -27,11 +28,24 @@ export function HeroSection({ section }: HeroSectionProps) {
     setMounted(true);
   }, []);
 
+  const videoCta = payload.videoCta;
+  const parsedVideo = React.useMemo(() => {
+    return parseVideoUrl(videoCta?.videoUrl);
+  }, [videoCta?.videoUrl]);
+
+  React.useEffect(() => {
+    if (!videoOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setVideoOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [videoOpen]);
+
   const titleHighlight = payload.titleHighlight;
   const headline = payload.headline;
   const description = payload.description;
   const primaryCta = payload.primaryCta;
-  const videoCta = payload.videoCta;
   const bg = payload.backgroundMedia;
   const clientStrip = payload.clientStrip;
   const floatingAction = payload.floatingAction;
@@ -281,19 +295,25 @@ export function HeroSection({ section }: HeroSectionProps) {
       )}
 
       {/* 5. Video Modal — portalled to document.body for clean viewport overlay */}
-      {mounted && videoOpen && videoCta?.videoUrl && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in-0">
-          <div className="relative w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black border border-neutral-800 shadow-2xl">
+      {mounted && videoOpen && parsedVideo && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 sm:p-6 backdrop-blur-md animate-in fade-in-0 duration-200"
+          onClick={() => setVideoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden bg-black border border-neutral-800 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setVideoOpen(false)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-neutral-900/80 text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-2 rounded-full bg-neutral-900/80 text-white hover:bg-neutral-800 hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-lg"
               aria-label="Close video player"
             >
               <X className="h-5 w-5" />
             </button>
-            {videoCta.videoUrl.endsWith('.mp4') || videoCta.videoUrl.endsWith('.mov') ? (
+            {parsedVideo.isDirectFile ? (
               <video
-                src={videoCta.videoUrl}
+                src={parsedVideo.embedUrl}
                 controls
                 autoPlay
                 playsInline
@@ -301,10 +321,10 @@ export function HeroSection({ section }: HeroSectionProps) {
               />
             ) : (
               <iframe
-                src={videoCta.videoUrl}
-                title={videoCta.label || 'Video Player'}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                src={parsedVideo.embedUrl}
+                title={videoCta?.label || 'Video Player'}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
               />
             )}
