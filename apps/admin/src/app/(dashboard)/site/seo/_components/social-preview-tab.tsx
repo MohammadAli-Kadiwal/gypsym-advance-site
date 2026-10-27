@@ -123,7 +123,7 @@ export function SocialPreviewTab() {
     if ((selectedPage?.seoMetadata?.structuredData as any)?.ogImageUrl) {
       return (selectedPage?.seoMetadata?.structuredData as any).ogImageUrl;
     }
-    return globalSeo?.defaultOgImage || globalSeo?.defaultSocialImage || '/og-image.jpg';
+    return globalSeo?.defaultOgImage || globalSeo?.defaultSocialImage || '/og-default.png';
   }, [selectedPage, globalSeo]);
 
   const siteName = globalSeo?.siteName || 'Gypsym Technology';

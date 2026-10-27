@@ -24,7 +24,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = seo?.defaultDescription || undefined;
   const keywords = seo?.defaultKeywords || [];
   const baseUrl = (seo?.canonicalBaseUrl || seo?.siteUrl || getSiteUrl()).replace(/\/+$/, '');
-  const ogImage = seo?.defaultOgImage || seo?.ogDefaultImage ? [{ url: seo.defaultOgImage || seo.ogDefaultImage }] : undefined;
+  const defaultOg = seo?.defaultOgImage || seo?.ogDefaultImage || `${baseUrl}/og-default.png`;
+  const ogImage = [{ url: defaultOg }];
   const twitterCard = (seo?.twitterCard as any) || 'summary_large_image';
 
   return {

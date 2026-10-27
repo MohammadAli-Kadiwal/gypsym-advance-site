@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
         seo?.ogDescription ||
         seo?.metaDescription ||
         'Calculate projected annual revenue lift and conversion expansion from sub-50ms TTFB Next.js headless storefronts.',
-      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : [{ url: '/assets/editorial/agency-hero-editorial.png' }],
+      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
     },
     robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };

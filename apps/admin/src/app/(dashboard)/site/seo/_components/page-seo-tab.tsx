@@ -40,7 +40,9 @@ type RuleFilterType =
   | 'MISSING_ANY'
   | 'PASSED_ALL'
   | 'HAS_CANONICAL'
-  | 'HAS_OG';
+  | 'HAS_OG'
+  | 'HAS_CUSTOM_OG'
+  | 'HAS_AUTO_OG';
 
 function mapParamToRule(param: string | null): RuleFilterType {
   if (!param) return 'ALL';
@@ -52,6 +54,8 @@ function mapParamToRule(param: string | null): RuleFilterType {
   if (clean === 'missing-any' || clean === 'incomplete') return 'MISSING_ANY';
   if (clean === 'passed-all' || clean === 'complete') return 'PASSED_ALL';
   if (clean === 'has-canonical') return 'HAS_CANONICAL';
+  if (clean === 'has-custom-og' || clean === 'custom-og') return 'HAS_CUSTOM_OG';
+  if (clean === 'has-auto-og' || clean === 'auto-og' || clean === 'default-og') return 'HAS_AUTO_OG';
   if (clean === 'has-og') return 'HAS_OG';
   return 'ALL';
 }
@@ -99,6 +103,9 @@ export function PageSeoTab({
     const withTitle = pages.filter((p) => Boolean(p.seoMetadata?.metaTitle)).length;
     const withDesc = pages.filter((p) => Boolean(p.seoMetadata?.metaDescription)).length;
     const withCanonical = pages.filter((p) => Boolean(p.seoMetadata?.canonicalUrl)).length;
+    const withCustomOg = pages.filter(
+      (p) => Boolean(p.seoMetadata?.explicitOgImageUrl || (!p.seoMetadata?.isAutoOgImage && p.seoMetadata?.ogImageUrl))
+    ).length;
     const withOg = pages.filter((p) => Boolean(p.seoMetadata?.ogImageUrl)).length;
 
     const missingTitle = total - withTitle;
@@ -131,6 +138,8 @@ export function PageSeoTab({
       missingCanonical,
       canonPct,
       withOg,
+      withCustomOg,
+      withAutoOg: withOg - withCustomOg,
       missingOg,
       ogPct,
       missingAny,
@@ -169,6 +178,8 @@ export function PageSeoTab({
       const hasDesc = Boolean(p.seoMetadata?.metaDescription);
       const hasCanonical = Boolean(p.seoMetadata?.canonicalUrl);
       const hasOg = Boolean(p.seoMetadata?.ogImageUrl);
+      const isAutoOg = Boolean(p.seoMetadata?.isAutoOgImage);
+      const hasCustomOg = Boolean(p.seoMetadata?.explicitOgImageUrl || (!isAutoOg && p.seoMetadata?.ogImageUrl));
 
       switch (ruleFilter) {
         case 'MISSING_CANONICAL':
@@ -191,6 +202,12 @@ export function PageSeoTab({
           break;
         case 'HAS_CANONICAL':
           if (!hasCanonical) return false;
+          break;
+        case 'HAS_CUSTOM_OG':
+          if (!hasCustomOg) return false;
+          break;
+        case 'HAS_AUTO_OG':
+          if (!isAutoOg) return false;
           break;
         case 'HAS_OG':
           if (!hasOg) return false;
@@ -355,10 +372,10 @@ export function PageSeoTab({
         {/* Card 4: OG / Social Image */}
         <Card
           onClick={() =>
-            handleRuleFilterChange(ruleFilter === 'MISSING_OG' ? 'ALL' : 'MISSING_OG')
+            handleRuleFilterChange(ruleFilter === 'HAS_CUSTOM_OG' ? 'ALL' : 'HAS_CUSTOM_OG')
           }
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none hover:shadow-xs ${
-            ruleFilter === 'MISSING_OG'
+            ruleFilter === 'HAS_CUSTOM_OG' || ruleFilter === 'HAS_AUTO_OG' || ruleFilter === 'MISSING_OG'
               ? 'border-pink-500 bg-pink-50/50 ring-2 ring-pink-500/20'
               : 'border-slate-200/80 bg-white hover:border-pink-300'
           }`}
@@ -381,19 +398,23 @@ export function PageSeoTab({
           <div className="mt-3">
             <div className="text-xs font-bold text-slate-800">OG / Social Image</div>
             <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-              {stats.withOg} / {stats.total} pages
+              {stats.withOg} / {stats.total} pages active
             </div>
           </div>
           <div className="mt-2.5 flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
             <span
               className={
-                stats.missingOg > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'
+                stats.missingOg > 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'
               }
             >
-              {stats.missingOg > 0 ? `${stats.missingOg} missing` : 'All OG images set'}
+              {stats.missingOg > 0
+                ? `${stats.missingOg} missing`
+                : stats.withCustomOg > 0
+                ? `100% Covered (${stats.withCustomOg} custom)`
+                : '100% Auto-Covered'}
             </span>
             <span className="text-[10px] text-pink-600 font-bold">
-              {ruleFilter === 'MISSING_OG' ? 'Active ✕' : 'Filter →'}
+              {ruleFilter === 'HAS_CUSTOM_OG' ? 'Active ✕' : 'Filter →'}
             </span>
           </div>
         </Card>
@@ -428,7 +449,7 @@ export function PageSeoTab({
                     : 'border-slate-200 bg-white text-slate-700'
                 }`}
               >
-                <option value="ALL">All Measurable Rules (134)</option>
+                <option value="ALL">All Measurable Rules ({stats.total})</option>
                 <option value="MISSING_CANONICAL">
                   🔴 Missing Explicit Canonical ({stats.missingCanonical})
                 </option>
@@ -449,6 +470,12 @@ export function PageSeoTab({
                 </option>
                 <option value="HAS_CANONICAL">
                   🔗 Has Explicit Canonical ({stats.withCanonical})
+                </option>
+                <option value="HAS_CUSTOM_OG">
+                  🎨 Has Custom OG Image ({stats.withCustomOg})
+                </option>
+                <option value="HAS_AUTO_OG">
+                  🛡️ Auto-Covered by Default OG ({stats.withAutoOg})
                 </option>
                 <option value="HAS_OG">
                   🖼️ Has OG / Social Image ({stats.withOg})
@@ -563,8 +590,6 @@ export function PageSeoTab({
                   const displayDesc =
                     page.seoMetadata?.metaDescription || 'No description set';
                   const descLen = page.seoMetadata?.metaDescription?.length || 0;
-
-                  const hasOgImage = Boolean(page.seoMetadata?.ogImageUrl);
 
                   const isIndexed = page.seoMetadata?.robotsIndex !== false;
 
@@ -690,8 +715,23 @@ export function PageSeoTab({
 
                       {/* Column 5: OG / Social Image */}
                       <td className="py-3 px-4">
-                        {hasOgImage && page.seoMetadata.ogImageUrl ? (
-                          <div className="flex items-center gap-1.5">
+                        {page.seoMetadata?.isAutoOgImage ? (
+                          <div className="flex items-center gap-1.5" title="Auto-covered by Default OG Social Share Banner">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={page.seoMetadata.ogImageUrl || '/og-default.png'}
+                              alt=""
+                              className="h-5 w-8 rounded object-cover border border-slate-200 shrink-0"
+                            />
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-semibold"
+                            >
+                              Auto (Default)
+                            </Badge>
+                          </div>
+                        ) : page.seoMetadata?.ogImageUrl ? (
+                          <div className="flex items-center gap-1.5" title="Custom Page OG Image">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={page.seoMetadata.ogImageUrl}
@@ -700,9 +740,9 @@ export function PageSeoTab({
                             />
                             <Badge
                               variant="outline"
-                              className="bg-pink-50 text-pink-700 border-pink-200 text-[10px] font-semibold"
+                              className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-semibold"
                             >
-                              Set
+                              Custom
                             </Badge>
                           </div>
                         ) : (

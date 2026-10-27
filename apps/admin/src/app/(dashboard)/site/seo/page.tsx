@@ -434,6 +434,7 @@ function SeoManagementContent() {
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSavePageSeo}
         canonicalBaseUrl={globalSettings?.canonicalBaseUrl || globalSettings?.siteUrl}
+        defaultOgImage={globalSettings?.defaultOgImage || globalSettings?.ogDefaultImage || '/og-default.png'}
       />
 
       {/* On-Page SEO Deep Audit Dialog */}

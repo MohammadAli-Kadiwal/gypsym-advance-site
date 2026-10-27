@@ -143,6 +143,9 @@ export interface PageSeoItem {
     ogTitle: string | null;
     ogDescription: string | null;
     ogImageUrl: string | null;
+    isAutoOgImage?: boolean;
+    explicitOgImageUrl?: string | null;
+    autoOgImageUrl?: string;
     twitterCard: string;
     structuredData: any;
   };
@@ -156,6 +159,7 @@ export interface PageSeoItem {
     hasCanonical: boolean;
     isAutoCanonical?: boolean;
     hasOg: boolean;
+    isAutoOg?: boolean;
     isIndexable: boolean;
     hasStructuredData?: boolean;
   };

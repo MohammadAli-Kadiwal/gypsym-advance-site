@@ -24,6 +24,7 @@ interface EditPageSeoDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: (pageId: string, data: any) => Promise<void>;
   canonicalBaseUrl?: string;
+  defaultOgImage?: string;
 }
 
 export function EditPageSeoDialog({
@@ -32,6 +33,7 @@ export function EditPageSeoDialog({
   onOpenChange,
   onSave,
   canonicalBaseUrl,
+  defaultOgImage,
 }: EditPageSeoDialogProps) {
   const [metaTitle, setMetaTitle] = React.useState('');
   const [metaDescription, setMetaDescription] = React.useState('');
@@ -261,14 +263,70 @@ export function EditPageSeoDialog({
               </select>
             </div>
 
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">Open Graph Image (Social Card Banner)</label>
+                  <p className="text-[11px] text-slate-500">
+                    Banner displayed when this page is shared on LinkedIn, Facebook, X, and messaging cards.
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono shrink-0">
+                  {ogImageUrl.trim() ? (
+                    <span className="text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                      Custom Override
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      Common Default Active
+                    </span>
+                  )}
+                </span>
+              </div>
+
               <ImageUploadField
-                label="Open Graph Image (Social Card Preview)"
-                description="Upload an image or paste a URL (1200x630px recommended). Displayed when this page is shared on LinkedIn, Facebook, X, and messaging apps."
+                label=""
                 value={ogImageUrl}
                 onChange={setOgImageUrl}
-                placeholder="/assets/editorial/agency-hero-editorial.png"
+                placeholder={defaultOgImage || '/og-default.png'}
               />
+
+              {!ogImageUrl.trim() && (
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200/80 bg-emerald-50/50">
+                  <div className="w-20 h-11 rounded-lg overflow-hidden border border-emerald-200 shrink-0 bg-slate-900 relative">
+                    <img
+                      src={defaultOgImage || '/og-default.png'}
+                      alt="Common Default OG Banner"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-emerald-900">Active: Common Default OG Banner</span>
+                      <span className="text-[9px] bg-emerald-200/80 text-emerald-800 font-medium px-1.5 py-0.5 rounded">Auto Fallback</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 truncate">
+                      Using site-wide default: <code className="text-emerald-950 font-semibold">{defaultOgImage || '/og-default.png'}</code>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {ogImageUrl.trim() && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                  <span>Custom page OG image active</span>
+                  <button
+                    type="button"
+                    onClick={() => setOgImageUrl('')}
+                    className="text-xs text-rose-600 hover:underline shrink-0 ml-2 cursor-pointer font-medium"
+                  >
+                    Reset to Common Default
+                  </button>
+                </div>
+              )}
             </div>
           </TabsContent>
 

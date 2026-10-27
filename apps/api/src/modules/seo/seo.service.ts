@@ -575,8 +575,8 @@ export class SeoService implements OnModuleInit {
         'custom Shopify theme',
         'Shopify experts',
       ],
-      defaultOgImage: val.defaultOgImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
-      defaultSocialImage: val.defaultSocialImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
+      defaultOgImage: val.defaultOgImage || legacy.ogDefaultImage || `${effectiveBaseUrl}/og-default.png`,
+      defaultSocialImage: val.defaultSocialImage || legacy.ogDefaultImage || `${effectiveBaseUrl}/og-default.png`,
       favicon: resolvedFavicon || undefined,
       defaultAuthor: val.defaultAuthor || 'Gypsym Technology Engineering Team',
       organizationName: val.organizationName || brand?.companyName || 'Gypsym Technology',
@@ -596,7 +596,7 @@ export class SeoService implements OnModuleInit {
       timezone: val.timezone || 'UTC',
       metaTitleTemplate: val.metaTitleTemplate || legacy.metaTitleTemplate || '%s | Gypsym Technology',
       canonicalBaseUrl: effectiveBaseUrl,
-      ogDefaultImage: val.ogDefaultImage || legacy.ogDefaultImage || 'https://gypsym.com/og-default.png',
+      ogDefaultImage: val.ogDefaultImage || legacy.ogDefaultImage || `${effectiveBaseUrl}/og-default.png`,
       twitterCard: val.twitterCard || legacy.twitterCard || 'summary_large_image',
       twitterHandle: val.twitterHandle || legacy.twitterHandle || '@gypsymtech',
       robotsIndex: val.robotsIndex ?? legacy.robotsIndex ?? true,
@@ -621,11 +621,23 @@ export class SeoService implements OnModuleInit {
       'https://gypsym.com'
     ).trim().replace(/\/+$/, '');
 
+    const effectiveOgImage = (
+      dto.defaultOgImage ||
+      dto.ogDefaultImage ||
+      dto.defaultSocialImage ||
+      current.defaultOgImage ||
+      current.ogDefaultImage ||
+      `${effectiveBaseUrl}/og-default.png`
+    );
+
     const merged = {
       ...current,
       ...dto,
       canonicalBaseUrl: effectiveBaseUrl,
       siteUrl: effectiveBaseUrl,
+      defaultOgImage: effectiveOgImage,
+      ogDefaultImage: effectiveOgImage,
+      defaultSocialImage: effectiveOgImage,
     };
 
     await this.prisma.siteSetting.upsert({
@@ -806,13 +818,15 @@ export class SeoService implements OnModuleInit {
     const globalSeo = await this.getGlobalSeo();
     const siteUrl = (globalSeo.canonicalBaseUrl || globalSeo.siteUrl || 'https://gypsym.com').replace(/\/+$/, '');
 
+    const defaultOg = (globalSeo.defaultOgImage || globalSeo.ogDefaultImage || `${siteUrl}/og-default.png`).trim();
+
     for (const item of allItems) {
       const title = (item.seo?.metaTitle || item.title || '').trim();
       const desc = (item.seo?.metaDescription || '').trim();
       const path = item.slug === 'home' || item.slug === '/' ? '' : (item.slug.startsWith('/') ? item.slug : `/${item.slug}`);
       const autoCanonical = `${siteUrl}${path}`;
       const canonical = item.seo?.canonicalUrl || autoCanonical;
-      const og = (item.seo?.ogImageUrl || item.seo?.ogImageId || '').trim();
+      const og = (item.seo?.ogImageUrl || item.seo?.ogImageId || defaultOg || '').trim();
       const schema = item.seo?.structuredData;
       const isIndex = item.seo?.robotsIndex !== false;
 
@@ -1021,6 +1035,16 @@ export class SeoService implements OnModuleInit {
       const hasExplicitCanonical = Boolean(seo.canonicalUrl && String(seo.canonicalUrl).trim().length > 0);
       const canonicalUrl = hasExplicitCanonical ? String(seo.canonicalUrl).trim() : autoCanonicalUrl;
 
+      const defaultOgImage = (globalSeo.defaultOgImage || globalSeo.ogDefaultImage || `${siteUrl}/og-default.png`).trim();
+      const explicitOg =
+        (seo.structuredData as any)?.ogImageUrl ||
+        seo.ogImage?.url ||
+        seo.ogImageUrl ||
+        (p as any).imageUrl ||
+        null;
+      const hasExplicitOg = Boolean(explicitOg && String(explicitOg).trim().length > 0);
+      const effectiveOg = hasExplicitOg ? explicitOg : defaultOgImage;
+
       return {
         id: p.id,
         type: p.type,
@@ -1041,12 +1065,10 @@ export class SeoService implements OnModuleInit {
           robotsFollow: seo.robotsFollow ?? true,
           ogTitle: seo.ogTitle || null,
           ogDescription: seo.ogDescription || null,
-          ogImageUrl:
-            (seo.structuredData as any)?.ogImageUrl ||
-            seo.ogImage?.url ||
-            seo.ogImageUrl ||
-            (p as any).imageUrl ||
-            null,
+          ogImageUrl: effectiveOg,
+          isAutoOgImage: !hasExplicitOg,
+          explicitOgImageUrl: hasExplicitOg ? explicitOg : null,
+          autoOgImageUrl: defaultOgImage,
           twitterCard: seo.twitterCard || 'summary_large_image',
           structuredData: seo.structuredData || null,
         },
@@ -1059,7 +1081,8 @@ export class SeoService implements OnModuleInit {
           descriptionStatus: descLen >= 120 && descLen <= 165 ? 'GOOD' : descLen > 0 ? 'WARNING' : 'CRITICAL',
           hasCanonical: true, // Auto-taken for all pages; can be changed from Page SEO
           isAutoCanonical: !hasExplicitCanonical,
-          hasOg: Boolean(seo.ogTitle || (seo.structuredData as any)?.ogImageUrl || seo.ogImageUrl || (p as any).imageUrl),
+          hasOg: Boolean(effectiveOg),
+          isAutoOg: !hasExplicitOg,
           isIndexable: seo.robotsIndex !== false,
           hasStructuredData: Boolean(seo.structuredData),
         },
@@ -2018,9 +2041,9 @@ export class SeoService implements OnModuleInit {
     }
 
     if (!ogImage) {
-      issues.push({ type: 'WARNING', message: 'Dedicated OG Image is missing. Will use global fallback image.', field: 'ogImage' });
+      issues.push({ type: 'GOOD', message: 'Auto-covered by site-wide Default OG Social Share Banner.', field: 'ogImage' });
     } else {
-      issues.push({ type: 'GOOD', message: 'Custom OG Image attached.', field: 'ogImage' });
+      issues.push({ type: 'GOOD', message: 'Custom dedicated OG Image attached.', field: 'ogImage' });
     }
 
     // Structured Data Check

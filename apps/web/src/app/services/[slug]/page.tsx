@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
             (service as any).heroBackgroundImage ||
             (service as any).imageUrl ||
             (service as any).backgroundImage ||
-            '/assets/editorial/agency-hero-editorial.png',
+            '/og-default.png',
         },
       ],
     },

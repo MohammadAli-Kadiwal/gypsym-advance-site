@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
         seo?.ogDescription ||
         seo?.metaDescription ||
         'Engineering high-growth Shopify Plus storefronts, custom themes, sub-second speed optimization, and 24/7 proactive maintenance retainers.',
-      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : [{ url: '/assets/editorial/agency-hero-editorial.png' }],
+      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
     },
     robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };
