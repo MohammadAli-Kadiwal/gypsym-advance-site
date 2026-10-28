@@ -450,16 +450,25 @@ export class CmsController {
     return this.cmsService.getAdminFooterData();
   }
 
+  @Post('admin/footer/seed')
+  @UseGuards(AuthGuard)
+  async seedAdminFooter(): Promise<any> {
+    await this.cmsService.seedFooterNavigationFromPages();
+    return this.cmsService.getAdminFooterData();
+  }
+
   @Put('admin/footer')
   @UseGuards(AuthGuard)
   async updateAdminFooter(@Body() body: { config?: any; navigation?: any; contact?: any }): Promise<any> {
-    return this.cmsService.updateFooterData(body);
+    await this.cmsService.updateFooterData(body);
+    return this.cmsService.getAdminFooterData();
   }
 
   @Patch('admin/footer')
   @UseGuards(AuthGuard)
   async patchAdminFooter(@Body() body: { config?: any; navigation?: any; contact?: any }): Promise<any> {
-    return this.cmsService.updateFooterData(body);
+    await this.cmsService.updateFooterData(body);
+    return this.cmsService.getAdminFooterData();
   }
 
   @Put('footer')

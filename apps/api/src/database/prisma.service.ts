@@ -6,7 +6,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
+    const dbUrl = process.env.DATABASE_URL;
     super({
+      datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
       log:
         process.env.NODE_ENV === 'development'
           ? [

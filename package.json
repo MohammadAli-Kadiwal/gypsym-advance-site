@@ -10,6 +10,10 @@
     "dev:web": "pnpm --filter web dev",
     "dev:admin": "pnpm --filter admin dev",
     "dev:api": "pnpm --filter api dev",
+    "start": "turbo run start",
+    "start:web": "pnpm --filter web start",
+    "start:admin": "pnpm --filter admin start",
+    "start:api": "pnpm --filter api start",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
@@ -19,7 +23,7 @@
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
-    "turbo": "^2.11.6"
+    "turbo": "^2.11.10"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

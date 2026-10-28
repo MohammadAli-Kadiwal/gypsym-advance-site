@@ -247,8 +247,8 @@ export default function FooterSettingsPage() {
     try {
       setLoading(true);
       const res: any = await fetchApi('/admin/footer');
-      if (res?.data) {
-        const d = res.data;
+      const d = res?.data ? res.data : res;
+      if (d) {
         if (d.config) {
           setConfig({
             ...DEFAULT_CONFIG,
@@ -267,8 +267,9 @@ export default function FooterSettingsPage() {
           });
         }
         if (d.navigation?.items) {
+          const topLevel = (d.navigation.items as any[]).filter((item: any) => !item.parentId);
           setNavGroups(
-            d.navigation.items.map((item: any, idx: number) => ({
+            topLevel.map((item: any, idx: number) => ({
               id: item.id || `group-${idx}`,
               label: item.label || 'Untitled Group',
               url: item.url || '/services',
@@ -302,6 +303,25 @@ export default function FooterSettingsPage() {
   React.useEffect(() => {
     loadFooterData();
   }, [loadFooterData]);
+
+  // Sync menu dynamically from current published pages and services
+  const [syncingMenu, setSyncingMenu] = React.useState(false);
+  const handleSyncMenuFromPages = async () => {
+    try {
+      setSyncingMenu(true);
+      await fetchApi('/admin/footer/seed', { method: 'POST' });
+      notify.success('✓ Footer columns synchronized from active published pages & services.');
+      try {
+        localStorage.setItem('gypsym_footer_updated', Date.now().toString());
+        window.dispatchEvent(new Event('gypsym_footer_updated'));
+      } catch {}
+      await loadFooterData();
+    } catch (err) {
+      notify.error(normalizeErrorMessage(err, 'Failed to sync footer menu from pages.'));
+    } finally {
+      setSyncingMenu(false);
+    }
+  };
 
   // Save changes
   const handleSave = async () => {
@@ -340,6 +360,11 @@ export default function FooterSettingsPage() {
       const payload = {
         config: {
           ...config,
+          brand: {
+            ...config.brand,
+            customLogoUrl: config.brand?.customLogoUrl || '',
+            logoVariant: config.brand?.customLogoUrl ? 'custom' : (config.brand?.logoVariant || 'default'),
+          },
           regions: normalizedRegions,
           legalLinks: normalizedLegal,
           keywords: {
@@ -370,7 +395,7 @@ export default function FooterSettingsPage() {
         localStorage.setItem('gypsym_footer_updated', Date.now().toString());
         window.dispatchEvent(new Event('gypsym_footer_updated'));
       } catch {}
-      loadFooterData();
+      await loadFooterData();
     } catch (err) {
       console.error('Save footer failed:', err);
       notify.error(normalizeErrorMessage(err, 'Unable to save footer settings.'));
@@ -923,7 +948,11 @@ export default function FooterSettingsPage() {
                   onChange={(url) =>
                     setConfig({
                       ...config,
-                      brand: { ...config.brand, customLogoUrl: url },
+                      brand: {
+                        ...config.brand,
+                        customLogoUrl: url,
+                        logoVariant: url ? 'custom' : 'default',
+                      },
                     })
                   }
                   placeholder="Leave blank to use dynamic brand logo automatically"
@@ -951,14 +980,33 @@ export default function FooterSettingsPage() {
                   Organize footer navigation into dynamic columns. Reorder with up/down arrows or drag-and-drop. On mobile viewports, columns automatically collapse into accessible accordions.
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                onClick={handleAddGroup}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Column</span>
-              </Button>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={handleSyncMenuFromPages}
+                  disabled={syncingMenu}
+                  className="rounded-xl h-9 px-3 text-xs font-semibold flex items-center gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50"
+                  title="Rebuild footer columns dynamically from active published pages and services"
+                >
+                  {syncingMenu ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  )}
+                  <span>Sync from Pages</span>
+                </Button>
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={handleAddGroup}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Column</span>
+                </Button>
+              </div>
             </div>
 
             {navGroups.length === 0 ? (
@@ -1186,9 +1234,11 @@ export default function FooterSettingsPage() {
                                           <select
                                             onChange={(e) => {
                                               if (!e.target.value) return;
+                                              const selectedPage = cmsPages.find(p => p.url === e.target.value);
                                               const nextChildren = [...group.children];
                                               nextChildren[childIdx] = {
                                                 ...child,
+                                                label: (!child.label || child.label === 'Link Label') && selectedPage ? selectedPage.title : child.label,
                                                 url: e.target.value,
                                                 isExternal: false,
                                               };

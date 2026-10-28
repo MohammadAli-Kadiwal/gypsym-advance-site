@@ -3911,7 +3911,7 @@ export class CmsService implements OnModuleInit {
     };
   }
 
-  private async seedInitialFooterNavigation(): Promise<any> {
+  async seedFooterNavigationFromPages(): Promise<any> {
     let nav = await this.prisma.navigation.findUnique({ where: { key: 'footer' } });
     if (!nav) {
       nav = await this.prisma.navigation.create({
@@ -3923,57 +3923,133 @@ export class CmsService implements OnModuleInit {
       });
     }
 
+    const [pages, services] = await Promise.all([
+      this.prisma.page.findMany({
+        where: { status: 'PUBLISHED' },
+        orderBy: { title: 'asc' },
+        select: { id: true, title: true, slug: true },
+      }),
+      this.prisma.service.findMany({
+        where: { status: 'PUBLISHED' },
+        orderBy: { displayOrder: 'asc' },
+        select: { id: true, title: true, slug: true },
+      }),
+    ]);
+
+    // 1. Company & Core Navigation (from actual published pages)
+    const exploreSlugs = ['home', 'about', 'services', 'portfolio', 'blog', 'book', 'contact', 'roi-calculator'];
+    const explorePages = exploreSlugs
+      .map((slug) => pages.find((p) => p.slug === slug))
+      .filter((p): p is { id: string; title: string; slug: string } => Boolean(p));
+
+    const exploreLinks = explorePages.map((p, idx) => ({
+      label: p.slug === 'home' ? 'Home' : p.title,
+      url: p.slug === 'home' ? '/' : `/${p.slug}`,
+      displayOrder: idx + 1,
+      isExternal: false,
+      isActive: true,
+    }));
+
+    if (exploreLinks.length === 0) {
+      exploreLinks.push(
+        { label: 'Home', url: '/', displayOrder: 1, isExternal: false, isActive: true },
+        { label: 'About', url: '/about', displayOrder: 2, isExternal: false, isActive: true },
+        { label: 'Services', url: '/services', displayOrder: 3, isExternal: false, isActive: true },
+        { label: 'Portfolio', url: '/portfolio', displayOrder: 4, isExternal: false, isActive: true },
+        { label: 'Blog', url: '/blog', displayOrder: 5, isExternal: false, isActive: true },
+        { label: 'Book Consultation', url: '/book', displayOrder: 6, isExternal: false, isActive: true },
+        { label: 'Contact', url: '/contact', displayOrder: 7, isExternal: false, isActive: true },
+      );
+    }
+
+    // 2. Services & Practice (from actual published services in DB)
+    const serviceLinks = services.map((s, idx) => ({
+      label: s.title,
+      url: `/services/${s.slug}`,
+      displayOrder: idx + 1,
+      isExternal: false,
+      isActive: true,
+    }));
+
+    // 3. Global Offices (from actual country pages in DB)
+    const countryPages = pages.filter(
+      (p) => p.slug.startsWith('shopify-agency-in-') || p.slug === 'united-kingdom'
+    );
+    const globalLinks = countryPages.slice(0, 6).map((c, idx) => {
+      const parts = (c.title || '').split('|');
+      const label = parts[0]?.trim() || c.title || 'Location';
+      return {
+        label,
+        url: `/${c.slug}`,
+        displayOrder: idx + 1,
+        isExternal: false,
+        isActive: true,
+      };
+    });
+
+    // 4. Trust & Governance (from actual legal pages in DB)
+    const legalSlugs = ['privacy', 'terms', 'trust/certifications', 'cookies'];
+    const legalPages = pages.filter((p) => legalSlugs.includes(p.slug));
+    const legalLinks = legalPages.map((p, idx) => ({
+      label: p.title,
+      url: `/${p.slug}`,
+      displayOrder: idx + 1,
+      isExternal: false,
+      isActive: true,
+    }));
+
+    if (legalLinks.length === 0) {
+      legalLinks.push(
+        { label: 'Security & Certifications', url: '/trust/certifications', displayOrder: 1, isExternal: false, isActive: true },
+        { label: 'Privacy Policy', url: '/privacy', displayOrder: 2, isExternal: false, isActive: true },
+        { label: 'Terms of Service', url: '/terms', displayOrder: 3, isExternal: false, isActive: true },
+        { label: 'Cookie Declaration', url: '/cookies', displayOrder: 4, isExternal: false, isActive: true },
+      );
+    }
+
     const items = [
       {
-        label: 'Pages & Exploration',
-        url: '/services',
+        label: 'Company',
+        url: '/about',
         displayOrder: 1,
-        children: [
-          { label: 'Home Storefront', url: '/', displayOrder: 1, isExternal: false },
-          { label: 'Selected Works', url: '/portfolio', displayOrder: 2, isExternal: false },
-          { label: 'Core Services', url: '/services', displayOrder: 3, isExternal: false },
-          { label: 'Engineering Publications', url: '/blog', displayOrder: 4, isExternal: false },
-          { label: 'Schedule Consultation', url: '/book', displayOrder: 5, isExternal: false },
-        ],
+        isActive: true,
+        children: exploreLinks,
       },
       {
         label: 'Services & Practice',
         url: '/services',
         displayOrder: 2,
-        children: [
-          { label: 'Shopify Plus Flagship Development', url: '/services', displayOrder: 1, isExternal: false },
-          { label: 'Headless Liquid & Hydrogen', url: '/services', displayOrder: 2, isExternal: false },
-          { label: 'ERP & Zero-Downtime Data Migration', url: '/services', displayOrder: 3, isExternal: false },
-          { label: 'Checkout Extensibility & Apps', url: '/services', displayOrder: 4, isExternal: false },
-          { label: 'Sub-Second Performance & CWV', url: '/services', displayOrder: 5, isExternal: false },
+        isActive: true,
+        children: serviceLinks.length > 0 ? serviceLinks : [
+          { label: 'All Services', url: '/services', displayOrder: 1, isExternal: false, isActive: true },
         ],
       },
+      ...(globalLinks.length > 0
+        ? [
+            {
+              label: 'Global Offices',
+              url: '/contact',
+              displayOrder: 3,
+              isActive: true,
+              children: globalLinks,
+            },
+          ]
+        : []),
       {
-        label: 'Enterprise Solutions',
-        url: '/solutions',
-        displayOrder: 3,
-        children: [
-          { label: 'B2B Wholesale Portals', url: '/solutions', displayOrder: 1, isExternal: false },
-          { label: 'Multi-Currency Global Checkout', url: '/solutions', displayOrder: 2, isExternal: false },
-          { label: 'Conversion Rate Architecture', url: '/solutions', displayOrder: 3, isExternal: false },
-          { label: 'Catalog Automation & Sync', url: '/solutions', displayOrder: 4, isExternal: false },
-        ],
-      },
-      {
-        label: 'Company & Advisory',
-        url: '/about',
-        displayOrder: 4,
-        children: [
-          { label: 'About Gypsym', url: '/about', displayOrder: 1, isExternal: false },
-          { label: 'Security & Certifications', url: '/trust/certifications', displayOrder: 2, isExternal: false },
-          { label: 'Enterprise Contact', url: '/contact', displayOrder: 3, isExternal: false },
-          { label: 'Client Advisory Briefing', url: '/book', displayOrder: 4, isExternal: false },
-        ],
+        label: 'Trust & Governance',
+        url: '/trust/certifications',
+        displayOrder: globalLinks.length > 0 ? 4 : 3,
+        isActive: true,
+        children: legalLinks,
       },
     ];
 
     await this.updateNavigation('footer', items);
     return this.getNavigationByKey('footer');
+  }
+
+  private async seedInitialFooterNavigation(): Promise<any> {
+    return this.seedFooterNavigationFromPages();
   }
 
   // 12. CMS Updates (Admin Endpoints)
