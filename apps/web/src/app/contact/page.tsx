@@ -11,7 +11,7 @@ import { SubpageHero } from '@/components/ui/subpage-hero';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { getSiteUrl } from '@/lib/site-url';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('contact');

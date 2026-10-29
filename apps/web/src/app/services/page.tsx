@@ -12,7 +12,7 @@ import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const [page, siteUrl] = await Promise.all([

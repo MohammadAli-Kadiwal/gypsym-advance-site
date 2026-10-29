@@ -15,7 +15,7 @@ import { JsonLd, buildBreadcrumbsSchema, buildFaqSchema, buildWebPageSchema } fr
 import { getPageBySlug } from '@/lib/api';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const [page, siteUrl] = await Promise.all([

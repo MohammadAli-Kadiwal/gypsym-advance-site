@@ -43,7 +43,16 @@ export async function generateMetadata(): Promise<Metadata> {
         seo?.ogDescription ||
         seo?.metaDescription ||
         'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.',
-      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
+      images: [{ url: seo?.ogImageUrl || `${siteUrl.replace(/\/+$/, '')}/og-default.png` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo?.ogTitle || resolvedTitle,
+      description:
+        seo?.ogDescription ||
+        seo?.metaDescription ||
+        'Explore high-growth Shopify Plus stores, custom themes, and conversion-engineered D2C shopping experiences built by Gypsym Technology.',
+      images: [seo?.ogImageUrl || `${siteUrl.replace(/\/+$/, '')}/og-default.png`],
     },
     robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };

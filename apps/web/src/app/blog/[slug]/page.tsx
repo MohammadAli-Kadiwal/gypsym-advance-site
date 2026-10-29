@@ -20,7 +20,7 @@ import { ScrollReveal } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildArticleSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface BlogPostPageProps {
   params: {

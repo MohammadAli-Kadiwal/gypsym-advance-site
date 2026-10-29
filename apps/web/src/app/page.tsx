@@ -32,7 +32,13 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: seo?.ogTitle || resolvedTitle,
       description: seo?.ogDescription || seo?.metaDescription || page.description || undefined,
-      images: seo?.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
+      images: [{ url: seo?.ogImageUrl || `${canonicalUrl.replace(/\/+$/, '')}/og-default.png` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo?.ogTitle || resolvedTitle,
+      description: seo?.ogDescription || seo?.metaDescription || page.description || undefined,
+      images: [seo?.ogImageUrl || `${canonicalUrl.replace(/\/+$/, '')}/og-default.png`],
     },
     robots: seo?.noIndex ? { index: false, follow: false } : undefined,
   };

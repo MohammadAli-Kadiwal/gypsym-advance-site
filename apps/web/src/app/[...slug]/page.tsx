@@ -7,7 +7,7 @@ import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 // Always fetch fresh from the API — never serve a stale ISR-cached version.
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 
 interface DynamicPageProps {
