@@ -1,6 +1,6 @@
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { ApiError } from './errors';
-import { API_CONFIG } from './config';
+import { API_CONFIG, getApiBaseUrl } from './config';
 import type { CustomRequestConfig, ApiErrorDetail } from './types';
 
 function generateCorrelationId(): string {
@@ -15,6 +15,9 @@ export function setupInterceptors(client: AxiosInstance): void {
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       const customConfig = config as CustomRequestConfig & InternalAxiosRequestConfig;
+
+      // Always resolve dynamic runtime baseURL
+      config.baseURL = getApiBaseUrl();
 
       // Attach correlation ID
       const correlationId = generateCorrelationId();

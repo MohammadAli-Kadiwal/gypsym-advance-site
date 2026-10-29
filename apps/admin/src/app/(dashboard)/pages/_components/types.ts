@@ -279,6 +279,14 @@ export interface PortfolioPayload {
   showCategoryFilter?: boolean;
   defaultCategory?: string;
 
+  // View All Button (Home Page)
+  showViewAllButton?: boolean;
+  viewAllButtonLabel?: string;
+  viewAllButtonUrl?: string;
+
+  // Selected Projects for Home Page Showcase
+  selectedProjectIds?: string[];
+
   // Homepage Section Integrations (Direct Components)
   showContactSection?: boolean;
   showCtaSection?: boolean;

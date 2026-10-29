@@ -30,6 +30,7 @@ import {
   Globe,
   UserCheck,
   Calculator,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAuth, RoleType } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
@@ -95,6 +96,11 @@ export function Sidebar() {
           label: 'Author Profile',
           href: '/editorial/author',
           icon: UserCheck,
+        },
+        {
+          label: 'Media Library',
+          href: '/media',
+          icon: ImageIcon,
         },
         {
           label: 'Services',
@@ -394,7 +400,7 @@ export function Sidebar() {
 
       {/* Mobile Off-Canvas Drawer (Sheet) */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="p-0 w-[280px] bg-sidebar border-r border-border">
+        <SheetContent side="left" className="p-0 w-[280px] sm:w-[300px] max-w-[85vw] bg-sidebar border-r border-border">
           {renderNavList(true)}
         </SheetContent>
       </Sheet>

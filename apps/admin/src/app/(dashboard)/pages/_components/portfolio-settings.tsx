@@ -7,14 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCmsCollection } from '@/lib/store';
+import { fetchApi } from '@/lib/api-client';
 import {
   Sparkles,
   Layers,
-  Box,
   Eye,
   Briefcase,
   ExternalLink,
+  Search,
+  Filter,
 } from 'lucide-react';
 import type {
   PortfolioSection,
@@ -32,7 +36,38 @@ interface PortfolioSettingsProps {
 
 export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps) {
   const p: PortfolioPayload = section.contentPayload || {};
-  const { data: portfolioItems } = useCmsCollection('portfolio');
+  const { data: cmsPortfolioItems } = useCmsCollection('portfolio');
+
+  const [apiProjects, setApiProjects] = React.useState<any[]>([]);
+  const [projectSearch, setProjectSearch] = React.useState('');
+
+  // Fetch live portfolio catalog
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res: any = await fetchApi('/portfolio/admin/projects').catch(() =>
+          fetchApi('/portfolio').then((r: any) => r?.projects || r?.data?.projects || r || [])
+        );
+        const list = Array.isArray(res)
+          ? res
+          : (Array.isArray(res?.projects)
+            ? res.projects
+            : (Array.isArray(res?.data?.projects) ? res.data.projects : []));
+        if (!cancelled && list.length > 0) {
+          setApiProjects(list);
+        }
+      } catch {
+        // Fallback silently
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const allProjects = apiProjects.length > 0 ? apiProjects : cmsPortfolioItems || [];
 
   const update = (partial: Partial<PortfolioPayload>) => {
     onChange({
@@ -44,12 +79,36 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
     });
   };
 
-  const catalogCount =
-    portfolioItems && portfolioItems.length > 0
-      ? portfolioItems.length
-      : Array.isArray(p.projects) && p.projects.length > 0
-      ? p.projects.length
-      : 5;
+  const selectedIds: string[] = Array.isArray(p.selectedProjectIds) ? p.selectedProjectIds : [];
+
+  const toggleProjectSelection = (id: string) => {
+    const isSelected = selectedIds.includes(id);
+    const nextSelected = isSelected
+      ? selectedIds.filter((item) => item !== id)
+      : [...selectedIds, id];
+    update({ selectedProjectIds: nextSelected });
+  };
+
+  const handleSelectAll = () => {
+    update({ selectedProjectIds: allProjects.map((proj) => proj.id) });
+  };
+
+  const handleClearSelection = () => {
+    update({ selectedProjectIds: [] });
+  };
+
+  const filteredProjects = React.useMemo(() => {
+    if (!projectSearch.trim()) return allProjects;
+    const q = projectSearch.toLowerCase();
+    return allProjects.filter(
+      (proj) =>
+        proj.title?.toLowerCase().includes(q) ||
+        proj.client?.toLowerCase().includes(q) ||
+        proj.category?.toLowerCase().includes(q)
+    );
+  }, [allProjects, projectSearch]);
+
+  const catalogCount = allProjects.length;
 
   return (
     <div className="space-y-6">
@@ -67,7 +126,7 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Display the 2 → 1 → 2 interactive showcase grid on the public home page.
+                Display the high-impact portfolio showcase grid on the public home page.
               </p>
             </div>
             <Switch
@@ -136,42 +195,217 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
         </CardContent>
       </Card>
 
-      {/* ── HOME PAGE DISPLAY LIMIT ────────────────────────────────────── */}
+      {/* ── HOME PAGE CATEGORY FILTER & VIEW ALL BUTTON CONTROLS ──────── */}
       <Card className="rounded-2xl border border-slate-200/80 shadow-xs">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#d9127b]" />
+            <Filter className="w-4 h-4 text-[#d9127b]" />
             <CardTitle className="text-base font-bold text-slate-900">
-              Home Page Projects Display Count
+              Home Page Category Bar & &quot;View All&quot; Action
             </CardTitle>
           </div>
           <CardDescription className="text-xs text-slate-500">
-            Control how many projects are shown in the Home page section. On mobile, projects are rendered in an interactive swipeable slider.
+            Control category tabs on the home page and provide a direct link to the full /portfolio showcase.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="max-w-md space-y-1.5">
-            <Label>Number of Projects to Display on Home Page</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                type="number"
-                min={1}
-                max={catalogCount || 50}
-                value={p.maxDisplayCount !== undefined && p.maxDisplayCount !== null ? p.maxDisplayCount : ''}
-                onChange={(e) => {
-                  const val = e.target.value.trim() === '' ? undefined : parseInt(e.target.value, 10);
-                  update({ maxDisplayCount: isNaN(val as number) ? undefined : val });
-                }}
-                placeholder={`All (${catalogCount})`}
-                className="text-xs h-9 w-36"
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Category Filter on Home Page Switch */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60">
+              <div className="space-y-0.5 pr-2">
+                <Label className="text-slate-800">Show Category Filter on Home Page</Label>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Keep off to remove category tabs from home page (clean agency look). All categories remain active on /portfolio.
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(p.showCategoryFilter)}
+                onCheckedChange={(checked) => update({ showCategoryFilter: checked })}
               />
-              <span className="text-xs text-slate-500">
-                {p.maxDisplayCount ? `Displaying top ${p.maxDisplayCount} of ${catalogCount} projects` : `Displaying all ${catalogCount} projects`}
-              </span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Enter a number (e.g. 3, 4, 5) to restrict the number of projects shown on the home page, or leave blank to display all {catalogCount} projects.
-            </p>
+
+            {/* View All Portfolio Button Switch */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60">
+              <div className="space-y-0.5 pr-2">
+                <Label className="text-slate-800">Show &quot;View All Portfolio&quot; Button</Label>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Display a prominent callout button below the cards inviting visitors to explore the complete showcase.
+                </p>
+              </div>
+              <Switch
+                checked={p.showViewAllButton !== false}
+                onCheckedChange={(checked) => update({ showViewAllButton: checked })}
+              />
+            </div>
+          </div>
+
+          {/* Button Config Fields */}
+          {p.showViewAllButton !== false && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/40">
+              <div className="space-y-1.5">
+                <Label>&quot;View All&quot; Button Label</Label>
+                <Input
+                  value={p.viewAllButtonLabel || 'View All Portfolio'}
+                  onChange={(e) => update({ viewAllButtonLabel: e.target.value })}
+                  placeholder="View All Portfolio"
+                  className="text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>&quot;View All&quot; Destination URL</Label>
+                <Input
+                  value={p.viewAllButtonUrl || '/portfolio'}
+                  onChange={(e) => update({ viewAllButtonUrl: e.target.value })}
+                  placeholder="/portfolio"
+                  className="text-xs h-9"
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── WHICH PORTFOLIO PROJECTS TO SHOW ON HOME PAGE ────────────────── */}
+      <Card className="rounded-2xl border border-slate-200/80 shadow-xs">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#d9127b]" />
+              <div>
+                <CardTitle className="text-base font-bold text-slate-900">
+                  Which Portfolio Projects Show on Home Page
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 mt-0.5">
+                  Select specific projects to showcase on the home page, or leave unselected to automatically display top published projects.
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className={`font-mono text-xs px-2.5 py-1 ${selectedIds.length > 0
+                  ? 'border-[#d9127b]/40 bg-[#d9127b]/10 text-[#d9127b] font-bold'
+                  : 'border-slate-200 bg-slate-50 text-slate-600'
+                  }`}
+              >
+                {selectedIds.length > 0
+                  ? `${selectedIds.length} Custom Selected`
+                  : `Top ${p.maxDisplayCount || 4} Automatic`}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Controls: Search, Quick Selection & Count */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search projects by name, client, category..."
+                value={projectSearch}
+                onChange={(e) => setProjectSearch(e.target.value)}
+                className="pl-9 h-9 text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearSelection}
+                  className="text-xs h-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                >
+                  Clear Selection (Use Top Automatic)
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="text-xs h-8"
+                >
+                  Select All ({allProjects.length})
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Project Cards Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1 border border-slate-100 rounded-xl p-2.5 bg-slate-50/40">
+            {filteredProjects.map((proj) => {
+              const isSelected = selectedIds.includes(proj.id);
+              return (
+                <div
+                  key={proj.id}
+                  onClick={() => toggleProjectSelection(proj.id)}
+                  className={`group relative flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${isSelected
+                    ? 'border-[#d9127b] bg-[#d9127b]/5 shadow-xs ring-1 ring-[#d9127b]/30'
+                    : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-2xs'
+                    }`}
+                >
+                  {/* Thumbnail */}
+                  <div className="w-14 h-12 rounded-lg bg-neutral-900 overflow-hidden shrink-0 border border-slate-200/80 flex items-center justify-center">
+                    {proj.imageUrl ? (
+                      <img
+                        src={proj.imageUrl}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <Briefcase className="w-5 h-5 text-slate-400" />
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-xs font-bold text-slate-800 truncate">{proj.title}</p>
+                    </div>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {proj.client || proj.category || 'Featured Brand'}
+                    </p>
+                    {proj.category && (
+                      <span className="inline-block mt-0.5 text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">
+                        {proj.category}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Check Indicator */}
+                  <div className="shrink-0 pl-1">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleProjectSelection(proj.id)}
+                      className="data-[state=checked]:bg-[#d9127b] data-[state=checked]:border-[#d9127b]"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Display Count fallback */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="space-y-0.5">
+              <Label>Maximum Display Count on Home Page</Label>
+              <p className="text-[11px] text-slate-400">
+                Number of cards rendered in the home showcase grid (e.g. 4, 6).
+              </p>
+            </div>
+            <Input
+              type="number"
+              min={1}
+              max={catalogCount || 50}
+              value={p.maxDisplayCount !== undefined && p.maxDisplayCount !== null ? p.maxDisplayCount : ''}
+              onChange={(e) => {
+                const val = e.target.value.trim() === '' ? undefined : parseInt(e.target.value, 10);
+                update({ maxDisplayCount: isNaN(val as number) ? undefined : val });
+              }}
+              placeholder={`Default (4)`}
+              className="text-xs h-9 w-32"
+            />
           </div>
         </CardContent>
       </Card>
@@ -221,11 +455,11 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-[#d9127b]" />
             <CardTitle className="text-base font-bold text-slate-900">
-              Card Hover & View Button Interaction
+              Card Hover & Visual Physics
             </CardTitle>
           </div>
           <CardDescription className="text-xs text-slate-500">
-            Configure the floating &quot;View Project&quot; button, backdrop glass blur, and zoom transitions.
+            Configure card hover elevation, ambient radial glow, and image zoom transitions.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -233,7 +467,7 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
             <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
               <div>
                 <Label>Hover Effects</Label>
-                <p className="text-[11px] text-slate-500">Enable card hover interactions</p>
+                <p className="text-[11px] text-slate-500">Enable card hover interactions and glow</p>
               </div>
               <Switch
                 checked={p.hoverEffectsEnabled !== false}
@@ -243,114 +477,12 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
 
             <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
               <div>
-                <Label>View Button</Label>
-                <p className="text-[11px] text-slate-500">Floating &quot;View Project&quot; button</p>
-              </div>
-              <Switch
-                checked={p.viewButtonEnabled !== false}
-                onCheckedChange={(checked) => update({ viewButtonEnabled: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-              <div>
-                <Label>Dark/Glass Overlay</Label>
-                <p className="text-[11px] text-slate-500">Subtle background tint on hover</p>
-              </div>
-              <Switch
-                checked={p.overlayEnabled !== false}
-                onCheckedChange={(checked) => update({ overlayEnabled: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-              <div>
-                <Label>Backdrop Blur</Label>
-                <p className="text-[11px] text-slate-500">Controlled glassmorphism filter</p>
-              </div>
-              <Switch
-                checked={p.backdropBlurEnabled !== false}
-                onCheckedChange={(checked) => update({ backdropBlurEnabled: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 col-span-1 sm:col-span-2">
-              <div>
                 <Label>Image Zoom</Label>
-                <p className="text-[11px] text-slate-500">Subtle 1.04x scale inside card</p>
+                <p className="text-[11px] text-slate-500">Subtle 1.08x smooth zoom on hover</p>
               </div>
               <Switch
                 checked={p.imageZoomEnabled !== false}
                 onCheckedChange={(checked) => update({ imageZoomEnabled: checked })}
-              />
-            </div>
-          </div>
-
-          <div className="max-w-md space-y-1.5 pt-2">
-            <Label>View Button Label</Label>
-            <Input
-              value={p.viewButtonLabel || 'View'}
-              onChange={(e) => update({ viewButtonLabel: e.target.value })}
-              placeholder="View"
-              className="text-xs h-9"
-            />
-            <p className="text-[11px] text-slate-400">
-              Text displayed inside the floating interaction button when hovering over project cards.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── 3D SCROLL & PARALLAX SETTINGS ─────────────────────────────── */}
-      <Card className="rounded-2xl border border-slate-200/80 shadow-xs">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <Box className="w-4 h-4 text-[#d9127b]" />
-            <CardTitle className="text-base font-bold text-slate-900">
-              3D Scroll & Mouse Parallax Physics
-            </CardTitle>
-          </div>
-          <CardDescription className="text-xs text-slate-500">
-            Controlled 3D depth perspective and desktop mouse tracking. Respects prefers-reduced-motion.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-              <div>
-                <Label>3D Scroll Depth</Label>
-                <p className="text-[11px] text-slate-500">Perspective rotation on scroll</p>
-              </div>
-              <Switch
-                checked={p.threeDScrollEnabled !== false}
-                onCheckedChange={(checked) => update({ threeDScrollEnabled: checked })}
-              />
-            </div>
-
-            <div className="space-y-1.5 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-              <Label>3D Intensity Preset</Label>
-              <select
-                value={p.threeDIntensity || 'premium'}
-                onChange={(e) =>
-                  update({
-                    threeDIntensity: e.target.value as 'subtle' | 'premium',
-                  })
-                }
-                className="w-full h-8 rounded-md border border-input bg-background px-2 py-0.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
-              >
-                <option value="premium">Premium (Dynamic Depth)</option>
-                <option value="subtle">Subtle (Restrained)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-              <div>
-                <Label>Mouse Parallax</Label>
-                <p className="text-[11px] text-slate-500">Desktop-only micro tilt</p>
-              </div>
-              <Switch
-                checked={p.mouseParallaxEnabled !== false}
-                onCheckedChange={(checked) => update({ mouseParallaxEnabled: checked })}
               />
             </div>
           </div>
@@ -359,4 +491,3 @@ export function PortfolioSettings({ section, onChange }: PortfolioSettingsProps)
     </div>
   );
 }
-

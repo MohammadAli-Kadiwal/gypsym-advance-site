@@ -37,6 +37,7 @@ import {
   Copy,
   Calculator,
   Tags,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
@@ -241,6 +242,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       },
 
       // Content & Collections
+      {
+        id: 'nav-media',
+        title: 'Media Library',
+        subtitle: 'Digital asset management, imagery and brand logos',
+        path: '/media',
+        category: 'Content',
+        icon: ImageIcon,
+        keywords: 'media library images photos assets upload pictures files logos dam',
+      },
       {
         id: 'content-services',
         title: 'Services & Capabilities',

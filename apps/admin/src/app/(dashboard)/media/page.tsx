@@ -8,6 +8,7 @@ import {
   Grid,
   List,
   Copy,
+  Check,
   Trash2,
   Search,
   ShieldCheck,
@@ -55,6 +56,8 @@ export default function MediaLibraryPage() {
   const [pageSize, setPageSize] = React.useState(12);
   const [inspectItem, setInspectItem] = React.useState<MediaRecord | null>(null);
   const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null);
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [failedImages, setFailedImages] = React.useState<Record<string, boolean>>({});
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const folders = ['ALL', '/Logos', '/Case-Studies', '/Team', '/Blog', '/Banners'];
@@ -111,8 +114,12 @@ export default function MediaLibraryPage() {
     e.target.value = '';
   };
 
-  const handleCopyUrl = (url: string) => {
+  const handleCopyUrl = (url: string, id?: string) => {
     navigator.clipboard.writeText(url);
+    if (id) {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 1500);
+    }
     notify.info('Media URL copied to clipboard.');
   };
 
@@ -128,7 +135,7 @@ export default function MediaLibraryPage() {
         title="Media Library"
         description="Upload, organize, and manage website imagery, brand logos, and digital documents."
         actions={
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
             <input
               ref={fileInputRef}
               type="file"
@@ -138,7 +145,7 @@ export default function MediaLibraryPage() {
             />
             <Button
               onClick={() => fileInputRef.current?.click()}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 px-4 text-xs font-semibold shadow-xs transition-colors"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-10 px-4 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <Upload className="h-4 w-4 mr-2" />
               <span>Upload Image</span>
@@ -147,65 +154,79 @@ export default function MediaLibraryPage() {
         }
       />
 
-      {/* ── Main DAM Layout: Folders Tree + Assets Browser ── */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        {/* Left: Folders Sidebar */}
-        <div className="md:col-span-3 space-y-3 bg-card p-4 rounded-2xl border border-border shadow-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-border/50">
+      {/* ── Top Folders Section (Responsive Horizontal Bar) ── */}
+      <div className="bg-card p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <Folder className="h-4 w-4 text-primary" />
             <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               Folders
             </span>
           </div>
+          <span className="text-xs text-muted-foreground font-mono">
+            Showing <span className="font-semibold text-foreground">{filteredMedia.length}</span> {filteredMedia.length === 1 ? 'asset' : 'assets'} in <span className="font-semibold text-primary">{selectedFolder}</span>
+          </span>
+        </div>
 
-          <div className="space-y-1">
-            {folders.map((f) => (
+        {/* Horizontal scrollable pills */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+          {folders.map((f) => {
+            const isSelected = selectedFolder === f;
+            const count = f === 'ALL' ? media.length : media.filter((m) => m.folder === f).length;
+            return (
               <button
                 key={f}
                 onClick={() => {
                   setSelectedFolder(f);
                   setPage(1);
                 }}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
-                  selectedFolder === f
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/50'
                 }`}
               >
-                <div className="flex items-center space-x-2">
-                  <Folder className="h-4 w-4 text-muted-foreground" />
-                  <span>{f}</span>
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {f === 'ALL'
-                    ? media.length
-                    : media.filter((m) => m.folder === f).length}
+                <span>{f}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                    isSelected
+                      ? 'bg-primary-foreground/20 text-primary-foreground font-bold'
+                      : 'bg-background text-muted-foreground border border-border/60'
+                  }`}
+                >
+                  {count}
                 </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Right: Assets Canvas */}
-        <div className="md:col-span-9 space-y-4">
-          {/* Controls Bar: Search & View Toggle */}
-          <div className="flex items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border shadow-xs">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search assets by filename..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-9 h-9 text-xs rounded-xl"
-              />
-            </div>
+      {/* ── Full Width Assets Canvas ── */}
+      <div className="space-y-4 w-full">
+        {/* Controls Bar: Search & View Toggle */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border shadow-xs">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search assets by filename..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 h-9 text-xs rounded-xl w-full"
+            />
+          </div>
 
-            <div className="flex items-center space-x-1 rounded-xl border border-border bg-muted/50 p-1">
+          <div className="flex items-center justify-between sm:justify-end gap-2">
+            <span className="text-xs text-muted-foreground sm:hidden font-mono">
+              {filteredMedia.length} {filteredMedia.length === 1 ? 'asset' : 'assets'}
+            </span>
+            <div className="flex items-center space-x-1 rounded-xl border border-border bg-muted/50 p-1 shrink-0">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   viewMode === 'grid' ? 'bg-card text-primary shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Grid view"
@@ -214,7 +235,7 @@ export default function MediaLibraryPage() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   viewMode === 'list' ? 'bg-card text-primary shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="List view"
@@ -223,36 +244,64 @@ export default function MediaLibraryPage() {
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Grid View */}
-          {viewMode === 'grid' ? (
-            filteredMedia.length === 0 ? (
-              <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-3">
-                <ImageIcon className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                <div className="font-semibold text-sm text-foreground">No media assets found</div>
-                <p className="text-xs text-muted-foreground">Upload your first image to populate this directory.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Grid View */}
+        {viewMode === 'grid' ? (
+          filteredMedia.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-3">
+              <ImageIcon className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+              <div className="font-semibold text-sm text-foreground">No media assets found</div>
+              <p className="text-xs text-muted-foreground">Upload your first image to populate this directory.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4">
                 {paginatedMedia.map((item) => (
                   <Card
                     key={item.id}
                     onClick={() => setInspectItem(item)}
-                    className="group cursor-pointer overflow-hidden border-border bg-card hover:border-primary/50 hover:shadow-md transition-all space-y-2 p-2.5 rounded-2xl"
+                    className="group cursor-pointer overflow-hidden border-border bg-card hover:border-primary/50 hover:shadow-md transition-all space-y-2 p-2.5 rounded-2xl relative"
                   >
                     {/* Thumbnail Box */}
-                    <div className="relative aspect-video rounded-xl bg-muted/50 flex items-center justify-center overflow-hidden border border-border/50">
-                      {item.url && item.url.startsWith('http') || item.url?.startsWith('data:') ? (
+                    <div className="relative aspect-video rounded-xl bg-muted/40 flex items-center justify-center overflow-hidden border border-border/50">
+                      {item.url && !failedImages[item.id] && (item.url.startsWith('http') || item.url.startsWith('data:')) ? (
                         <img
                           src={item.url}
                           alt={item.altText || item.title}
+                          onError={() => setFailedImages((prev) => ({ ...prev, [item.id]: true }))}
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                       ) : (
-                        <ImageIcon className="h-8 w-8 text-muted-foreground/40 group-hover:scale-110 transition-transform" />
+                        <div className="flex flex-col items-center justify-center text-muted-foreground/40 gap-1.5 p-3 text-center">
+                          <ImageIcon className="h-7 w-7 group-hover:scale-110 transition-transform text-muted-foreground/40" />
+                          <span className="text-[10px] text-muted-foreground/60 font-mono truncate max-w-[120px]">
+                            {item.filename}
+                          </span>
+                        </div>
                       )}
-                      <div className="absolute top-1.5 right-1.5">
-                        <Badge variant="outline" className="text-[9px] font-mono bg-background/90 text-foreground">
+
+                      {/* Top-Left Corner: Copy URL Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyUrl(item.url, item.id);
+                        }}
+                        className="absolute top-2 left-2 z-10 h-7 w-7 rounded-lg bg-background/90 hover:bg-background text-foreground shadow-xs border border-border/60 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-xs"
+                        title="Copy image URL"
+                        aria-label="Copy image URL"
+                      >
+                        {copiedId === item.id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-500 animate-in zoom-in-50 duration-150" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        )}
+                      </button>
+
+                      {/* Top-Right Corner: Dimensions Badge */}
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge variant="outline" className="text-[9px] font-mono bg-background/90 text-foreground backdrop-blur-xs">
                           {item.width}x{item.height}
                         </Badge>
                       </div>
@@ -271,11 +320,29 @@ export default function MediaLibraryPage() {
                   </Card>
                 ))}
               </div>
-            )
-          ) : (
-            /* List View */
-            <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-              <table className="w-full text-xs">
+
+              {/* Standard Pagination Card (Same as other pages) */}
+              {filteredMedia.length > 0 && (
+                <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+                  <TablePagination
+                    currentPage={page}
+                    totalItems={filteredMedia.length}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    pageSizeOptions={[12, 24, 48, 96]}
+                    itemLabel="assets"
+                    className="border-t-0"
+                  />
+                </div>
+              )}
+            </div>
+          )
+        ) : (
+          /* List View */
+          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-xs min-w-[640px]">
                 <thead className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
                   <tr>
                     <th className="text-left p-3.5 pl-4">Filename</th>
@@ -295,8 +362,13 @@ export default function MediaLibraryPage() {
                     >
                       <td className="p-3.5 pl-4 font-medium text-foreground flex items-center space-x-2.5">
                         <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.url && (item.url.startsWith('http') || item.url.startsWith('data:')) ? (
-                            <img src={item.url} alt="" className="h-full w-full object-cover" />
+                          {item.url && !failedImages[item.id] && (item.url.startsWith('http') || item.url.startsWith('data:')) ? (
+                            <img
+                              src={item.url}
+                              alt=""
+                              onError={() => setFailedImages((prev) => ({ ...prev, [item.id]: true }))}
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <ImageIcon className="h-4 w-4 text-muted-foreground" />
                           )}
@@ -312,42 +384,56 @@ export default function MediaLibraryPage() {
                       </td>
                       <td className="p-3.5 font-mono text-foreground">{item.usageCount} refs</td>
                       <td className="p-3.5 pr-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTargetId(item.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                            onClick={() => handleCopyUrl(item.url, item.id)}
+                            title="Copy image URL"
+                          >
+                            {copiedId === item.id ? (
+                              <Check className="h-4 w-4 text-emerald-500 animate-in zoom-in-50 duration-150" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"
+                            onClick={() => setDeleteTargetId(item.id)}
+                            title="Delete media"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
 
-          {filteredMedia.length > 0 && (
-            <TablePagination
-              currentPage={page}
-              totalItems={filteredMedia.length}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              pageSizeOptions={[12, 24, 48, 96]}
-              itemLabel="assets"
-            />
-          )}
-        </div>
+            {/* Standard Pagination in Table Footer (Same as other pages) */}
+            {filteredMedia.length > 0 && (
+              <TablePagination
+                currentPage={page}
+                totalItems={filteredMedia.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={[12, 24, 48, 96]}
+                itemLabel="assets"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* ─── Slide-Out Inspector Drawer ───────────────────────── */}
       <Sheet open={!!inspectItem} onOpenChange={(open) => !open && setInspectItem(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md bg-card border-l border-border p-6 shadow-2xl">
+        <SheetContent side="right" className="w-full sm:max-w-md max-w-[90vw] bg-card border-l border-border p-5 sm:p-6 shadow-2xl overflow-y-auto">
           {inspectItem && (
             <div className="space-y-5 h-full flex flex-col">
               <SheetHeader className="text-left">
@@ -361,10 +447,18 @@ export default function MediaLibraryPage() {
 
               {/* Preview Display */}
               <div className="aspect-video rounded-xl bg-muted/40 border border-border flex items-center justify-center overflow-hidden">
-                {inspectItem.url && (inspectItem.url.startsWith('http') || inspectItem.url.startsWith('data:')) ? (
-                  <img src={inspectItem.url} alt={inspectItem.altText} className="h-full w-full object-contain" />
+                {inspectItem.url && !failedImages[inspectItem.id] && (inspectItem.url.startsWith('http') || inspectItem.url.startsWith('data:')) ? (
+                  <img
+                    src={inspectItem.url}
+                    alt={inspectItem.altText}
+                    onError={() => setFailedImages((prev) => ({ ...prev, [inspectItem.id]: true }))}
+                    className="h-full w-full object-contain"
+                  />
                 ) : (
-                  <ImageIcon className="h-16 w-16 text-muted-foreground/40" />
+                  <div className="flex flex-col items-center justify-center text-muted-foreground/40 gap-2 p-4 text-center">
+                    <ImageIcon className="h-14 w-14 text-muted-foreground/40" />
+                    <span className="text-xs text-muted-foreground/60 font-mono">{inspectItem.filename}</span>
+                  </div>
                 )}
               </div>
 

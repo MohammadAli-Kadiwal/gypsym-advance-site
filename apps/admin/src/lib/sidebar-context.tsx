@@ -25,6 +25,18 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Auto-collapse on compact screens / tablets (768px - 1100px) to maximize content space
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && window.innerWidth < 1100) {
+        setCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const toggleSidebar = React.useCallback(() => {
     setCollapsed((prev) => !prev);
   }, []);

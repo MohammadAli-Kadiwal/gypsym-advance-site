@@ -10,7 +10,16 @@ interface GlobalWebsiteLoaderProps {
 export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
   const [progress, setProgress] = React.useState<number>(0);
   const [isExiting, setIsExiting] = React.useState<boolean>(false);
-  const [shouldRender, setShouldRender] = React.useState<boolean>(true);
+  const [shouldRender, setShouldRender] = React.useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem('gypsym_intro_shown') !== 'true';
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
 
   // Dynamic branding attributes with local storage synchronization
   const [companyName, setCompanyName] = React.useState<string>(brand?.companyName || 'Gypsym Technology');
@@ -33,6 +42,13 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    try {
+      if (sessionStorage.getItem('gypsym_intro_shown') === 'true') {
+        setShouldRender(false);
+        return;
+      }
+    } catch {}
+
     const barEl = document.getElementById('gypsym-loader-bar');
     const pctEl = document.getElementById('gypsym-loader-pct');
     const phaseEl = document.getElementById('gypsym-loader-phase');
@@ -51,7 +67,7 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
     };
 
     const startTime = performance.now();
-    const duration = 1200; // Smooth 1.2s progression
+    const duration = 380; // Ultra-fast 380ms high-tech progression
     let animFrame: number;
     let isDone = false;
 
@@ -70,12 +86,15 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
       } else {
         isDone = true;
         updateUI(100);
+        try {
+          sessionStorage.setItem('gypsym_intro_shown', 'true');
+        } catch {}
         setTimeout(() => {
           setIsExiting(true);
           setTimeout(() => {
             setShouldRender(false);
-          }, 450);
-        }, 180);
+          }, 180);
+        }, 80);
       }
     };
 
@@ -86,10 +105,13 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
       if (!isDone) {
         isDone = true;
         updateUI(100);
+        try {
+          sessionStorage.setItem('gypsym_intro_shown', 'true');
+        } catch {}
         setIsExiting(true);
-        setTimeout(() => setShouldRender(false), 300);
+        setTimeout(() => setShouldRender(false), 120);
       }
-    }, 2200);
+    }, 600);
 
     return () => {
       cancelAnimationFrame(animFrame);

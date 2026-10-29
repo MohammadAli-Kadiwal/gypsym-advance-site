@@ -1,7 +1,7 @@
 import { API_CONFIG } from './config';
 import { PageDto, NavigationDto, BrandSettingsDto, HeaderDataDto, FooterDataDto } from '../cms-types';
 
-const API_BASE_URL = API_CONFIG.baseURL;
+const getBaseUrl = () => API_CONFIG.baseURL;
 
 /**
  * Fetch dynamic page with active sections by slug from NestJS CMS API.
@@ -9,7 +9,7 @@ const API_BASE_URL = API_CONFIG.baseURL;
  */
 export async function getPageBySlug(slug: string): Promise<PageDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/pages/${slug}`, {
+    const res = await fetch(`${getBaseUrl()}/pages/${slug}`, {
       cache: 'no-store',
       next: { tags: [`page-${slug}`, 'pages'], revalidate: 0 },
     });
@@ -28,7 +28,7 @@ export async function getPageBySlug(slug: string): Promise<PageDto | null> {
  */
 export async function getNavigation(key: string): Promise<NavigationDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/navigation/${key}`, {
+    const res = await fetch(`${getBaseUrl()}/navigation/${key}`, {
       cache: 'no-store',
       next: { tags: [`nav-${key}`], revalidate: 0 },
     });
@@ -47,7 +47,7 @@ export async function getNavigation(key: string): Promise<NavigationDto | null> 
  */
 export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/branding`, {
+    const res = await fetch(`${getBaseUrl()}/branding`, {
       cache: 'no-store',
       next: { tags: ['brand-settings'], revalidate: 0 },
     });
@@ -66,7 +66,7 @@ export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
  */
 export async function getSiteSettings(): Promise<Record<string, any>> {
   try {
-    const res = await fetch(`${API_BASE_URL}/settings`, {
+    const res = await fetch(`${getBaseUrl()}/settings`, {
       cache: 'no-store',
       next: { tags: ['site-settings'], revalidate: 0 },
     });
@@ -85,7 +85,7 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
  */
 export async function getScriptSettings(): Promise<any | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/settings/scripts`, {
+    const res = await fetch(`${getBaseUrl()}/settings/scripts`, {
       cache: 'no-store',
       next: { tags: ['scripts-configuration'], revalidate: 0 },
     });
@@ -104,7 +104,7 @@ export async function getScriptSettings(): Promise<any | null> {
  */
 export async function getHeaderData(): Promise<HeaderDataDto> {
   try {
-    const res = await fetch(`${API_BASE_URL}/header`, {
+    const res = await fetch(`${getBaseUrl()}/header`, {
       cache: 'no-store',
       next: { tags: ['header-all'], revalidate: 0 },
     });
@@ -129,7 +129,7 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
  */
 export async function getFooterData(): Promise<FooterDataDto> {
   try {
-    const res = await fetch(`${API_BASE_URL}/footer`, {
+    const res = await fetch(`${getBaseUrl()}/footer`, {
       cache: 'no-store',
       next: { tags: ['footer-all'], revalidate: 0 },
     });
@@ -185,7 +185,7 @@ export interface PortfolioProjectItemDto {
 
 export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/portfolio/categories`, {
+    const res = await fetch(`${getBaseUrl()}/portfolio/categories`, {
       cache: 'no-store',
       next: { tags: ['portfolio-categories'], revalidate: 0 },
     });
@@ -201,7 +201,7 @@ export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]>
 
 export async function getPortfolioProjects(categorySlug?: string): Promise<PortfolioProjectItemDto[]> {
   try {
-    const url = new URL(`${API_BASE_URL}/portfolio`);
+    const url = new URL(`${getBaseUrl()}/portfolio`);
     if (categorySlug && categorySlug !== 'all') {
       url.searchParams.set('category', categorySlug);
     }
@@ -221,7 +221,7 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
 
 export async function getPortfolioProjectBySlug(slug: string): Promise<PortfolioProjectItemDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/portfolio/${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${getBaseUrl()}/portfolio/${encodeURIComponent(slug)}`, {
       cache: 'no-store',
       next: { tags: [`portfolio-project-${slug}`], revalidate: 0 },
     });
@@ -292,7 +292,7 @@ export interface ServiceItemDto {
 
 export async function getServices(): Promise<ServiceItemDto[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/services?status=PUBLISHED`, {
+    const res = await fetch(`${getBaseUrl()}/services?status=PUBLISHED`, {
       cache: 'no-store',
       next: { tags: ['services'], revalidate: 0 },
     });
@@ -308,7 +308,7 @@ export async function getServices(): Promise<ServiceItemDto[]> {
 
 export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/services/${slug}?status=PUBLISHED`, {
+    const res = await fetch(`${getBaseUrl()}/services/${slug}?status=PUBLISHED`, {
       cache: 'no-store',
       next: { tags: [`service-${slug}`], revalidate: 0 },
     });
@@ -331,7 +331,7 @@ export interface CmsPageSummary {
 
 export async function getPublishedPages(): Promise<CmsPageSummary[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/pages`, {
+    const res = await fetch(`${getBaseUrl()}/pages`, {
       cache: 'no-store',
       next: { tags: ['cms-pages'], revalidate: 0 },
     });
@@ -349,7 +349,7 @@ export async function getPublishedPages(): Promise<CmsPageSummary[]> {
 
 export async function getClients(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/clients?status=PUBLISHED`, {
+    const res = await fetch(`${getBaseUrl()}/clients?status=PUBLISHED`, {
       cache: 'no-store',
       next: { tags: ['clients'], revalidate: 0 },
     });
@@ -365,12 +365,12 @@ export async function getClients(): Promise<any[]> {
 
 export async function getTeamMembers(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/team`, {
+    const res = await fetch(`${getBaseUrl()}/team`, {
       cache: 'no-store',
       next: { tags: ['team'], revalidate: 0 },
     });
     if (!res.ok) {
-      const fallback = await fetch(`${API_BASE_URL}/cms/collections/team`, { cache: 'no-store', next: { tags: ['team'], revalidate: 0 } }).catch(() => null);
+      const fallback = await fetch(`${getBaseUrl()}/cms/collections/team`, { cache: 'no-store', next: { tags: ['team'], revalidate: 0 } }).catch(() => null);
       if (fallback?.ok) {
         const fj = await fallback.json();
         const flist = fj?.data ?? fj;
@@ -455,7 +455,7 @@ export interface BlogPostDetailDto extends BlogPostItemDto {
 
 export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/blog/categories`, {
+    const res = await fetch(`${getBaseUrl()}/blog/categories`, {
       cache: 'no-store',
       next: { tags: ['blog-categories'], revalidate: 0 },
     });
@@ -486,7 +486,7 @@ export async function getBlogPosts(options?: {
     }
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_BASE_URL}/blog${qs}`, {
+    const res = await fetch(`${getBaseUrl()}/blog${qs}`, {
       cache: 'no-store',
       next: { tags: ['blog-posts'], revalidate: 0 },
     });
@@ -501,7 +501,7 @@ export async function getBlogPosts(options?: {
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/blog/${slug}`, {
+    const res = await fetch(`${getBaseUrl()}/blog/${slug}`, {
       cache: 'no-store',
       next: { tags: [`blog-${slug}`], revalidate: 0 },
     });
@@ -532,7 +532,7 @@ export interface SeoDefaultsDto {
 
 export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/settings/seo`, {
+    const res = await fetch(`${getBaseUrl()}/settings/seo`, {
       cache: 'no-store',
       next: { tags: ['seo-settings'], revalidate: 0 },
     });
@@ -593,7 +593,7 @@ export const DEFAULT_CONTACT_SETTINGS: ContactSettingsDto = {
 
 export async function getContactSettings(): Promise<ContactSettingsDto> {
   try {
-    const res = await fetch(`${API_BASE_URL}/settings/contact`, {
+    const res = await fetch(`${getBaseUrl()}/settings/contact`, {
       cache: 'no-store',
       next: { tags: ['contact-settings'], revalidate: 0 },
     });

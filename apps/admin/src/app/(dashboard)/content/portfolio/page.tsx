@@ -84,6 +84,7 @@ interface ProjectFormState {
   description: string;
   tagsString: string;
   status: string;
+  showOnHomepage: boolean;
 }
 
 const EMPTY_PROJECT_FORM: ProjectFormState = {
@@ -99,6 +100,7 @@ const EMPTY_PROJECT_FORM: ProjectFormState = {
   description: '',
   tagsString: '',
   status: 'PUBLISHED',
+  showOnHomepage: true,
 };
 
 interface CategoryFormState {
@@ -125,12 +127,16 @@ interface ProjectDialogProps {
   initial?: PortfolioProjectRecord | null;
   categories: PortfolioCategoryRecord[];
   saving: boolean;
+  isFeaturedOnHome?: boolean;
   onClose: () => void;
-  onSubmit: (form: Record<string, any>) => void;
+  onSubmit: (form: Record<string, any>, showOnHomepage: boolean) => void;
 }
 
-function getInitialProjectForm(initial?: PortfolioProjectRecord | null): ProjectFormState {
-  if (!initial) return EMPTY_PROJECT_FORM;
+function getInitialProjectForm(
+  initial?: PortfolioProjectRecord | null,
+  isFeaturedOnHome: boolean = true
+): ProjectFormState {
+  if (!initial) return { ...EMPTY_PROJECT_FORM, showOnHomepage: isFeaturedOnHome };
   const initialDate = (initial.projectDate
     ? String(initial.projectDate).split('T')[0]
     : initial.createdAt
@@ -150,6 +156,7 @@ function getInitialProjectForm(initial?: PortfolioProjectRecord | null): Project
     description: initial.description || '',
     tagsString: Array.isArray(initial.tags) ? initial.tags.join(', ') : '',
     status: (initial.status as string) || 'PUBLISHED',
+    showOnHomepage: isFeaturedOnHome,
   };
 }
 
@@ -159,10 +166,13 @@ function ProjectDialog({
   initial,
   categories,
   saving,
+  isFeaturedOnHome = true,
   onClose,
   onSubmit,
 }: ProjectDialogProps) {
-  const [form, setForm] = React.useState<ProjectFormState>(() => getInitialProjectForm(initial));
+  const [form, setForm] = React.useState<ProjectFormState>(() =>
+    getInitialProjectForm(initial, isFeaturedOnHome)
+  );
   const [imageTab, setImageTab] = React.useState<'upload' | 'url'>(() =>
     initial?.imageUrl?.startsWith('http') ? 'url' : 'upload'
   );
@@ -175,21 +185,21 @@ function ProjectDialog({
   React.useEffect(() => {
     if (open) {
       if (initial) {
-        setForm(getInitialProjectForm(initial));
+        setForm(getInitialProjectForm(initial, isFeaturedOnHome));
         if (initial.imageUrl?.startsWith('http')) {
           setImageTab('url');
         } else {
           setImageTab('upload');
         }
       } else {
-        setForm(EMPTY_PROJECT_FORM);
+        setForm({ ...EMPTY_PROJECT_FORM, showOnHomepage: isFeaturedOnHome });
         setImageTab('upload');
       }
       setFileName('');
       setFileSize('');
       setImageError(false);
     }
-  }, [open, initial]);
+  }, [open, initial, isFeaturedOnHome]);
 
   const patch = (key: keyof ProjectFormState, value: string) => {
     setForm((f) => {
@@ -268,20 +278,23 @@ function ProjectDialog({
           .filter(Boolean)
       : [];
 
-    onSubmit({
-      orderNumber: form.orderNumber || undefined,
-      title: form.title.trim(),
-      slug: form.slug.trim() || undefined,
-      client: form.client.trim() || undefined,
-      categoryId: form.categoryId || null,
-      projectDate: form.projectDate || undefined,
-      metrics: form.metrics.trim() || undefined,
-      projectUrl: form.projectUrl.trim() || undefined,
-      imageUrl: form.imageUrl.trim(),
-      description: form.description.trim() || undefined,
-      tags,
-      status: form.status,
-    });
+    onSubmit(
+      {
+        orderNumber: form.orderNumber || undefined,
+        title: form.title.trim(),
+        slug: form.slug.trim() || undefined,
+        client: form.client.trim() || undefined,
+        categoryId: form.categoryId || null,
+        projectDate: form.projectDate || undefined,
+        metrics: form.metrics.trim() || undefined,
+        projectUrl: form.projectUrl.trim() || undefined,
+        imageUrl: form.imageUrl.trim(),
+        description: form.description.trim() || undefined,
+        tags,
+        status: form.status,
+      },
+      form.showOnHomepage
+    );
   };
 
   return (
@@ -407,6 +420,33 @@ function ProjectDialog({
             value={form.status}
             onChange={(status) => patch('status', status)}
           />
+
+          {/* Home Page Showcase Visibility Toggle */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/80 bg-slate-50/70 dark:bg-slate-900/40">
+            <div className="space-y-0.5 pr-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  Show on Home Page
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    form.showOnHomepage
+                      ? 'bg-[#d9127b]/10 text-[#d9127b]'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  }`}
+                >
+                  {form.showOnHomepage ? 'Featured on Home' : 'Hidden from Home'}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Control whether this project appears in the curated portfolio showcase grid on the Home page.
+              </p>
+            </div>
+            <Switch
+              checked={form.showOnHomepage}
+              onCheckedChange={(checked) => setForm((f) => ({ ...f, showOnHomepage: checked }))}
+            />
+          </div>
 
           {/* Section 4: Direct Image Upload / URL Tabbed Media Asset */}
           <div className="space-y-2 pt-1 border-t border-slate-100">
@@ -869,6 +909,7 @@ export default function PortfolioAdminPage() {
   const [categories, setCategories] = React.useState<PortfolioCategoryRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [portfolioSection, setPortfolioSection] = React.useState<{ id: string; contentPayload: Record<string, any> } | null>(null);
+  const [homePortfolioSection, setHomePortfolioSection] = React.useState<{ id: string; contentPayload: Record<string, any> } | null>(null);
   const [settingsSaving, setSettingsSaving] = React.useState(false);
 
   // Dialog states
@@ -884,13 +925,31 @@ export default function PortfolioAdminPage() {
   const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const [projData, catData, pageRes] = await Promise.all([
-        fetchApi<PortfolioProjectRecord[]>('/portfolio/admin/projects'),
-        fetchApi<PortfolioCategoryRecord[]>('/portfolio/admin/categories'),
+      const [projData, catData, pageRes, homeRes] = await Promise.all([
+        fetchApi<any>('/portfolio/admin/projects').catch(() =>
+          fetchApi<any>('/portfolio').then((r: any) => r?.projects || r?.data?.projects || r || [])
+        ),
+        fetchApi<any>('/portfolio/admin/categories').catch(() =>
+          fetchApi<any>('/portfolio/categories').then((r: any) => r?.data || r || [])
+        ),
         fetchApi<any>('/pages/portfolio').catch(() => null),
+        fetchApi<any>('/pages/home').catch(() => null),
       ]);
-      setProjects(Array.isArray(projData) ? projData : []);
-      setCategories(Array.isArray(catData) ? catData : []);
+
+      const resolvedProjects = Array.isArray(projData)
+        ? projData
+        : (Array.isArray(projData?.projects)
+          ? projData.projects
+          : (Array.isArray(projData?.data?.projects)
+            ? projData.data.projects
+            : (Array.isArray(projData?.data) ? projData.data : [])));
+
+      const resolvedCategories = Array.isArray(catData)
+        ? catData
+        : (Array.isArray(catData?.data) ? catData.data : []);
+
+      setProjects(resolvedProjects);
+      setCategories(resolvedCategories);
 
       const pageData = pageRes?.data || pageRes;
       if (pageData?.sections) {
@@ -898,11 +957,26 @@ export default function PortfolioAdminPage() {
           (s: any) =>
             s.sectionIdentifier === 'our-work-portfolio' ||
             s.sectionIdentifier === 'portfolio-showcase' ||
-            s.componentType === 'PORTFOLIO' ||
-            s.componentType === 'FEATURE_GRID',
+            s.sectionIdentifier === 'portfolio' ||
+            s.componentType === 'PORTFOLIO',
         );
         if (sec) {
           setPortfolioSection({ id: sec.id, contentPayload: sec.contentPayload || {} });
+        }
+      }
+
+      const homeData = homeRes?.data || homeRes;
+      if (homeData?.sections) {
+        const hSec = homeData.sections.find(
+          (s: any) =>
+            s.sectionIdentifier === 'portfolio-showcase' ||
+            s.sectionIdentifier === 'our-work' ||
+            s.sectionIdentifier === 'our-work-portfolio' ||
+            s.sectionIdentifier === 'portfolio' ||
+            s.componentType === 'PORTFOLIO',
+        );
+        if (hSec) {
+          setHomePortfolioSection({ id: hSec.id, contentPayload: hSec.contentPayload || {} });
         }
       }
     } catch (err) {
@@ -940,15 +1014,77 @@ export default function PortfolioAdminPage() {
     }
   };
 
+  // Update Home page portfolio setting toggle
+  const handleUpdateHomeSetting = async (key: string, value: any) => {
+    if (!homePortfolioSection) return;
+    const nextPayload = {
+      ...homePortfolioSection.contentPayload,
+      [key]: value,
+    };
+    setHomePortfolioSection({ ...homePortfolioSection, contentPayload: nextPayload });
+    setSettingsSaving(true);
+    try {
+      await fetchApi(`/sections/${homePortfolioSection.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          contentPayload: nextPayload,
+        }),
+      });
+      notify.success('Home page portfolio settings saved.');
+    } catch {
+      notify.error('Failed to save Home page portfolio settings.');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  // Toggle a project on the Home Page showcase
+  const handleToggleShowOnHome = async (projectId: string, currentStatus: boolean) => {
+    if (!homePortfolioSection) {
+      notify.error('Home page portfolio section not found.');
+      return;
+    }
+    const currentSelected: string[] = Array.isArray(homePortfolioSection.contentPayload.selectedProjectIds)
+      ? homePortfolioSection.contentPayload.selectedProjectIds
+      : [];
+
+    const nextSelected = currentStatus
+      ? currentSelected.filter((id) => id !== projectId)
+      : [...currentSelected, projectId];
+
+    const nextPayload = {
+      ...homePortfolioSection.contentPayload,
+      selectedProjectIds: nextSelected,
+    };
+    setHomePortfolioSection({ ...homePortfolioSection, contentPayload: nextPayload });
+    try {
+      await fetchApi(`/sections/${homePortfolioSection.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ contentPayload: nextPayload }),
+      });
+      notify.success(
+        currentStatus
+          ? 'Project removed from Home page showcase.'
+          : 'Project added to Home page showcase.'
+      );
+    } catch (err) {
+      notify.error(normalizeErrorMessage(err, 'Failed to update Home page showcase.'));
+    }
+  };
+
   // ─── Project Operations ──────────────────────────────────────────────────────
 
-  const handleCreateProject = async (form: Record<string, any>) => {
+  const handleCreateProject = async (form: Record<string, any>, showOnHomepage?: boolean) => {
     setProjectSaving(true);
     try {
-      await fetchApi('/portfolio', {
+      const res: any = await fetchApi('/portfolio', {
         method: 'POST',
         body: JSON.stringify(form),
       });
+      const newId = res?.id || res?.data?.id;
+      if (newId && showOnHomepage !== undefined && homePortfolioSection) {
+        await handleToggleShowOnHome(newId, !showOnHomepage);
+      }
       notify.success('Portfolio project created successfully.');
       setProjectDialogOpen(false);
       loadData();
@@ -959,13 +1095,21 @@ export default function PortfolioAdminPage() {
     }
   };
 
-  const handleUpdateProject = async (id: string, form: Record<string, any>) => {
+  const handleUpdateProject = async (id: string, form: Record<string, any>, showOnHomepage?: boolean) => {
     setProjectSaving(true);
     try {
       await fetchApi(`/portfolio/${id}`, {
         method: 'PUT',
         body: JSON.stringify(form),
       });
+      if (showOnHomepage !== undefined && homePortfolioSection) {
+        const currentlySelected = Array.isArray(homePortfolioSection.contentPayload?.selectedProjectIds)
+          ? homePortfolioSection.contentPayload.selectedProjectIds.includes(id)
+          : false;
+        if (currentlySelected !== showOnHomepage) {
+          await handleToggleShowOnHome(id, currentlySelected);
+        }
+      }
       notify.success('Portfolio project updated successfully.');
       setProjectDialogOpen(false);
       setTimeout(() => setEditingProject(null), 300);
@@ -1176,6 +1320,38 @@ export default function PortfolioAdminPage() {
       ),
     },
     {
+      key: 'homeShowcase',
+      header: 'Home Page',
+      className: 'min-w-[130px] whitespace-nowrap text-center',
+      render: (item) => {
+        const selectedOnHome = Array.isArray(homePortfolioSection?.contentPayload?.selectedProjectIds)
+          ? homePortfolioSection.contentPayload.selectedProjectIds.includes(item.id)
+          : false;
+        return (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleShowOnHome(item.id, selectedOnHome);
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+              selectedOnHome
+                ? 'bg-[#d9127b]/15 text-[#d9127b] border border-[#d9127b]/30 shadow-2xs hover:bg-[#d9127b]/25'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700'
+            }`}
+            title={selectedOnHome ? 'Click to remove from Home page' : 'Click to feature on Home page'}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                selectedOnHome ? 'bg-[#d9127b]' : 'bg-slate-400'
+              }`}
+            />
+            <span>{selectedOnHome ? 'Featured' : 'Hidden'}</span>
+          </button>
+        );
+      },
+    },
+    {
       key: 'updatedAt',
       header: 'Updated',
       sortable: true,
@@ -1343,16 +1519,23 @@ export default function PortfolioAdminPage() {
             mode={editingProject ? 'edit' : 'create'}
             initial={editingProject}
             categories={categories}
+            isFeaturedOnHome={
+              editingProject
+                ? (Array.isArray(homePortfolioSection?.contentPayload?.selectedProjectIds)
+                  ? homePortfolioSection.contentPayload.selectedProjectIds.includes(editingProject.id)
+                  : true)
+                : true
+            }
             saving={projectSaving}
             onClose={() => {
               setProjectDialogOpen(false);
               setTimeout(() => setEditingProject(null), 300);
             }}
-            onSubmit={(form) => {
+            onSubmit={(form, showOnHomepage) => {
               if (editingProject) {
-                handleUpdateProject(editingProject.id, form);
+                handleUpdateProject(editingProject.id, form, showOnHomepage);
               } else {
-                handleCreateProject(form);
+                handleCreateProject(form, showOnHomepage);
               }
             }}
           />
@@ -1486,6 +1669,79 @@ export default function PortfolioAdminPage() {
                     disabled={!portfolioSection || settingsSaving}
                   />
                 </div>
+              </div>
+
+              {/* ── Home Page Showcase Settings ── */}
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-[#d9127b] shrink-0" />
+                      <span className="font-semibold text-sm">
+                        Home Page Showcase Settings
+                      </span>
+                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#d9127b]/10 text-[#d9127b] font-bold">
+                        Home Page Section
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Configure how portfolio projects appear in the Home page showcase grid.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background">
+                    <div>
+                      <span className="text-xs font-semibold block">Show Category Tabs on Home Page</span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Keep off to hide category tabs on Home page
+                      </p>
+                    </div>
+                    <Switch
+                      checked={Boolean(homePortfolioSection?.contentPayload?.showCategoryFilter)}
+                      onCheckedChange={(checked) => handleUpdateHomeSetting('showCategoryFilter', checked)}
+                      disabled={!homePortfolioSection || settingsSaving}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background">
+                    <div>
+                      <span className="text-xs font-semibold block">Show &quot;View All Portfolio&quot; Button</span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Links visitors directly to full /portfolio
+                      </p>
+                    </div>
+                    <Switch
+                      checked={homePortfolioSection?.contentPayload?.showViewAllButton !== false}
+                      onCheckedChange={(checked) => handleUpdateHomeSetting('showViewAllButton', checked)}
+                      disabled={!homePortfolioSection || settingsSaving}
+                    />
+                  </div>
+                </div>
+
+                {homePortfolioSection?.contentPayload?.showViewAllButton !== false && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-foreground">Button Label</label>
+                      <Input
+                        value={homePortfolioSection?.contentPayload?.viewAllButtonLabel || 'View All Portfolio'}
+                        onChange={(e) => handleUpdateHomeSetting('viewAllButtonLabel', e.target.value)}
+                        placeholder="View All Portfolio"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-foreground">Button URL</label>
+                      <Input
+                        value={homePortfolioSection?.contentPayload?.viewAllButtonUrl || '/portfolio'}
+                        onChange={(e) => handleUpdateHomeSetting('viewAllButtonUrl', e.target.value)}
+                        placeholder="/portfolio"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-border/40 text-xs text-muted-foreground">

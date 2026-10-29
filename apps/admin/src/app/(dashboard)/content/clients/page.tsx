@@ -127,18 +127,18 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-md rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-md rounded-2xl border-border bg-card shadow-2xl p-0 overflow-hidden">
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+        <DialogHeader className="px-6 py-5 border-b border-border/60 bg-muted/20">
+          <div className="flex items-center space-x-3.5">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold text-slate-900">
+              <DialogTitle className="text-base font-bold text-foreground">
                 {mode === 'create' ? 'Add New Client' : 'Edit Client'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 {mode === 'create'
                   ? 'Fill in the client details. The logo will appear in the marquee strip on the website.'
                   : 'Update the client name, logo, or website URL.'}
@@ -148,22 +148,22 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
         </DialogHeader>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Logo Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700">
-                Client Logo <span className="text-slate-400 font-normal">(SVG, PNG, WebP)</span>
+              <label className="text-xs font-semibold text-foreground">
+                Client Logo <span className="text-muted-foreground font-normal">(SVG, PNG, WebP)</span>
               </label>
               {/* Tab Switcher: Direct Upload vs URL */}
-              <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200/80">
+              <div className="inline-flex rounded-lg p-0.5 bg-muted border border-border">
                 <button
                   type="button"
                   onClick={() => setTab('upload')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                     tab === 'upload'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Upload className="h-3 w-3" />
@@ -172,10 +172,10 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                 <button
                   type="button"
                   onClick={() => setTab('url')}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                     tab === 'url'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Link2 className="h-3 w-3" />
@@ -199,9 +199,9 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
             {tab === 'upload' ? (
               form.logoUrl ? (
                 /* Logo uploaded preview card */
-                <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border border-border bg-muted/30">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-12 w-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-1.5 overflow-hidden shrink-0 shadow-xs">
+                    <div className="h-12 w-12 rounded-lg bg-card border border-border flex items-center justify-center p-1.5 overflow-hidden shrink-0 shadow-xs">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={form.logoUrl}
@@ -211,10 +211,10 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-800 truncate">
+                      <p className="text-xs font-semibold text-foreground truncate">
                         {fileName || 'Client Logo Selected'}
                       </p>
-                      <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 mt-0.5">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
                         Ready to save {fileSize ? `(${fileSize})` : ''}
                       </p>
@@ -226,7 +226,7 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                       variant="outline"
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
-                      className="h-7 px-2.5 text-[11px] font-medium rounded-lg border-slate-200 text-slate-600 hover:bg-white"
+                      className="h-7 px-2.5 text-[11px] font-medium rounded-lg cursor-pointer"
                     >
                       Replace
                     </Button>
@@ -235,7 +235,7 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                       variant="ghost"
                       size="sm"
                       onClick={clearLogo}
-                      className="h-7 w-7 p-0 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50"
+                      className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
@@ -251,19 +251,19 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                   onDragLeave={() => setDragActive(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`flex flex-col items-center justify-center p-5 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center ${
+                  className={`flex flex-col items-center justify-center py-5 px-4 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center ${
                     dragActive
-                      ? 'border-blue-500 bg-blue-50/50'
-                      : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50/60 bg-white'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50 hover:bg-muted/40 bg-card'
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
-                    <Upload className="h-5 w-5" />
+                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                    <Upload className="h-4 w-4" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700">
-                    Click to browse <span className="font-normal text-slate-500">or drag & drop logo</span>
+                  <p className="text-xs font-semibold text-foreground">
+                    Click to browse <span className="font-normal text-muted-foreground">or drag &amp; drop logo</span>
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
                     Supports SVG, PNG, WebP or JPEG (max 3MB)
                   </p>
                 </div>
@@ -271,8 +271,8 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
             ) : (
               /* URL Input Mode */
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center overflow-hidden shrink-0">
                     {form.logoUrl && !logoError ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -282,7 +282,7 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                         onError={() => setLogoError(true)}
                       />
                     ) : (
-                      <ImageOff className="h-5 w-5 text-slate-300" />
+                      <ImageOff className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -290,12 +290,12 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
                       value={form.logoUrl}
                       onChange={(e) => patch('logoUrl', e.target.value)}
                       placeholder="https://cdn.example.com/logo.svg"
-                      className="text-xs font-mono rounded-xl h-10"
+                      className="text-xs font-mono rounded-xl h-10 bg-background border-input"
                     />
                   </div>
                 </div>
                 {logoError && (
-                  <p className="text-[10px] text-rose-500">
+                  <p className="text-[10px] text-destructive">
                     Could not load image from this URL. Please verify the URL is public and accessible.
                   </p>
                 )}
@@ -305,31 +305,31 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
 
           {/* Client Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">
-              Client Name <span className="text-rose-500">*</span>
+            <label className="text-xs font-semibold text-foreground">
+              Client Name <span className="text-destructive">*</span>
             </label>
             <Input
               value={form.name}
               onChange={(e) => patch('name', e.target.value)}
               placeholder="e.g. Apex Cloud Technologies"
-              className="text-xs rounded-xl"
+              className="h-10 text-xs rounded-xl border-input bg-background"
               autoFocus
             />
           </div>
 
           {/* Website URL */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center space-x-1.5">
               <Globe className="h-3 w-3" />
               <span>
-                Website URL <span className="text-slate-400 font-normal">(optional)</span>
+                Website URL <span className="text-muted-foreground font-normal">(optional)</span>
               </span>
             </label>
             <Input
               value={form.websiteUrl}
               onChange={(e) => patch('websiteUrl', e.target.value)}
               placeholder="https://apexcloud.com"
-              className="text-xs font-mono rounded-xl"
+              className="h-10 text-xs font-mono rounded-xl border-input bg-background"
             />
           </div>
 
@@ -340,13 +340,13 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
           />
 
           {/* Footer Actions */}
-          <DialogFooter className="pt-2 gap-2 flex-row justify-end">
+          <DialogFooter className="pt-4 border-t border-border/60 gap-2 flex-row justify-end items-center">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl h-9 px-4 text-xs font-semibold border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="rounded-xl h-9 px-4 text-xs font-medium cursor-pointer"
             >
               <X className="h-3.5 w-3.5 mr-1.5" />
               Cancel
@@ -354,7 +354,7 @@ function ClientDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSub
             <Button
               type="submit"
               disabled={saving || !form.name.trim()}
-              className="rounded-xl h-9 px-5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="rounded-xl h-9 px-5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
             >
               {saving ? (
                 <>

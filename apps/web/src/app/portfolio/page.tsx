@@ -53,11 +53,11 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
   const selectedCategory = (searchParams?.category || 'all').toLowerCase();
 
   // Concurrently fetch CMS page settings, home page sections, categories, and live portfolio projects
-  const [page, homePage, categories, projects, contactSettings] = await Promise.all([
+  const [page, homePage, categories, liveProjects, contactSettings] = await Promise.all([
     getPageBySlug('portfolio'),
     getPageBySlug('home'),
     getPortfolioCategories(),
-    getPortfolioProjects(selectedCategory),
+    getPortfolioProjects(),
     getContactSettings(),
   ]);
 
@@ -73,6 +73,10 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
   );
 
   const cmsPayload = (rawSection?.contentPayload as Record<string, any>) || {};
+
+  // Resolve projects: prefer live API projects, fall back to CMS payload projects if API returned empty
+  const fallbackProjects = Array.isArray(cmsPayload.projects) ? cmsPayload.projects : [];
+  const projects = (liveProjects && liveProjects.length > 0) ? liveProjects : fallbackProjects;
 
   // Extract Homepage DIRECT ENGAGEMENT (Contact) and CTA sections
   const rawContactSection = homePage?.sections?.find(
@@ -136,6 +140,8 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
     displayOrder: 1,
     isActive: true,
     contentPayload: {
+      ...cmsPayload,
+      projects,
       eyebrow: cmsPayload.eyebrow || 'SELECTED D2C WORKS',
       title: cmsPayload.title || 'Stores we are proud of.',
       titleHighlight: cmsPayload.titleHighlight || 'proud',
@@ -159,13 +165,30 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
     },
   };
 
-  const filterCategories: PortfolioCategoryFilterItem[] = categories.map((c) => ({
+  let filterCategories: PortfolioCategoryFilterItem[] = (categories || []).map((c) => ({
     id: c.id,
     name: c.name,
     slug: c.slug,
     displayOrder: c.displayOrder,
     projectCount: c.projectCount,
   }));
+
+  if (filterCategories.length === 0 && projects.length > 0) {
+    const catMap = new Map<string, PortfolioCategoryFilterItem>();
+    projects.forEach((pr) => {
+      const slug = pr.categorySlug || pr.category?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const name = pr.category || pr.categorySlug || 'Other';
+      if (slug && !catMap.has(slug)) {
+        catMap.set(slug, {
+          id: pr.categoryId || slug,
+          name,
+          slug,
+          displayOrder: 0,
+        });
+      }
+    });
+    filterCategories = Array.from(catMap.values());
+  }
 
   // Hero credentials & agency qualifications (clean low content, toggleable via Admin Studio)
   const showHeroStrip = cmsPayload.showHeroStrip !== false;

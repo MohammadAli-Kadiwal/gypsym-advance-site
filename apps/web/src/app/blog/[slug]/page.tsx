@@ -80,6 +80,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const otherPosts = (allPosts || []).filter((p) => p.slug !== params.slug);
+  const relatedPosts =
+    post.related && post.related.length > 0
+      ? post.related
+      : otherPosts.slice(0, 3);
 
   const sections = post.bodyContent?.sections || [
     {
@@ -147,7 +151,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <div className="w-full bg-[#f4f3ef] dark:bg-background pt-28 sm:pt-32 lg:pt-36 pb-16 sm:pb-24">
+    <div className="w-full bg-[#f4f3ef] dark:bg-background pt-28 sm:pt-32 lg:pt-36">
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={customStructuredData || articleSchema} />
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
@@ -376,8 +380,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     </div>
 
         {/* ── Related Publications Grid ── */}
-        {post.related && post.related.length > 0 && (
-          <section className="mt-16 sm:mt-20">
+        {relatedPosts.length > 0 && (
+          <section className="mt-12 sm:mt-16">
             <ScrollReveal direction="up" intensity="subtle">
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -398,7 +402,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </ScrollReveal>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {post.related.map((rel, idx) => (
+              {relatedPosts.map((rel: any, idx: number) => (
                 <ScrollReveal key={rel.id} direction="up" delay={idx * 80} intensity="subtle">
                   <Link
                     href={`/blog/${rel.slug}`}
@@ -442,8 +446,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         )}
       </div>
 
-      {/* Bottom CTA Banner */}
-      <section className="mt-16 sm:mt-20 w-full relative overflow-x-clip">
+      {/* Bottom CTA Banner (Clean Spacing Matching Other Subpages) */}
+      <section id="blog-article-cta" className="w-full relative overflow-x-clip">
         <ScrollReveal direction="up" intensity="subtle" className="w-full">
           <CtaSection section={ctaSectionToRender} />
         </ScrollReveal>

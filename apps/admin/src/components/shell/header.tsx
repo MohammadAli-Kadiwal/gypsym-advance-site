@@ -37,6 +37,7 @@ function getActivePageName(path: string): { title: string; section?: string } {
   if (path.startsWith('/pages/countries')) return { title: 'Country Landing Pages', section: 'Content' };
   if (path.startsWith('/pages/roi-calculator')) return { title: 'ROI Calculator Studio', section: 'Pages' };
   if (path.startsWith('/pages')) return { title: 'Pages CMS', section: 'Content' };
+  if (path.startsWith('/media')) return { title: 'Media Library', section: 'Content' };
   if (path.startsWith('/tools/roi-calculator')) return { title: 'ROI Calculator Tool', section: 'Tools & Labs' };
   if (path.startsWith('/site/branding')) return { title: 'Branding & Colors', section: 'Site & Branding' };
   if (path.startsWith('/site/navigation')) return { title: 'Navigation & Header', section: 'Site & Branding' };

@@ -137,7 +137,7 @@ export function TablePagination({
         </Button>
 
         {/* Numbered Buttons */}
-        <div className="hidden xs:flex items-center gap-1 px-1">
+        <div className="hidden sm:flex items-center gap-1 px-1">
           {pages.map((p, idx) => {
             if (typeof p === 'string') {
               return (
@@ -172,7 +172,7 @@ export function TablePagination({
         </div>
 
         {/* Mobile current page indicator */}
-        <span className="xs:hidden px-2 font-medium text-xs text-foreground">
+        <span className="sm:hidden px-2 font-medium text-xs text-foreground">
           {safePage} / {totalPages}
         </span>
 

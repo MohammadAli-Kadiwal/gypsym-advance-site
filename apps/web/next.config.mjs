@@ -5,6 +5,8 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

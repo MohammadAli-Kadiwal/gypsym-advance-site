@@ -1,6 +1,6 @@
 import { API_CONFIG } from './config';
 
-const API_BASE_URL = API_CONFIG.baseURL;
+const getBaseUrl = () => API_CONFIG.baseURL;
 
 export interface PublicGlobalSeo {
   siteName: string;
@@ -83,7 +83,7 @@ export interface PublicAeoItem {
 
 export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/seo/public/global`, {
+    const res = await fetch(`${getBaseUrl()}/seo/public/global`, {
       cache: 'no-store',
       next: { tags: ['seo-global'], revalidate: 0 },
     });
@@ -97,7 +97,7 @@ export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
 
 export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/seo/public/sitemap-urls`, {
+    const res = await fetch(`${getBaseUrl()}/seo/public/sitemap-urls`, {
       cache: 'no-store',
       next: { tags: ['seo-sitemap'], revalidate: 0 },
     });
@@ -111,7 +111,7 @@ export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
 
 export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/seo/public/robots-rules`, {
+    const res = await fetch(`${getBaseUrl()}/seo/public/robots-rules`, {
       cache: 'no-store',
       next: { tags: ['seo-robots'], revalidate: 0 },
     });
@@ -125,7 +125,7 @@ export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null>
 
 export async function getPublicRedirects(): Promise<PublicRedirectItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/seo/public/redirects`, {
+    const res = await fetch(`${getBaseUrl()}/seo/public/redirects`, {
       cache: 'no-store',
       next: { tags: ['seo-redirects'], revalidate: 0 },
     });
@@ -140,8 +140,8 @@ export async function getPublicRedirects(): Promise<PublicRedirectItem[]> {
 export async function getPublicAeo(pageSlug?: string): Promise<PublicAeoItem[]> {
   try {
     const url = pageSlug
-      ? `${API_BASE_URL}/seo/public/aeo?pageSlug=${encodeURIComponent(pageSlug)}`
-      : `${API_BASE_URL}/seo/public/aeo`;
+      ? `${getBaseUrl()}/seo/public/aeo?pageSlug=${encodeURIComponent(pageSlug)}`
+      : `${getBaseUrl()}/seo/public/aeo`;
     const res = await fetch(url, {
       cache: 'no-store',
       next: { tags: ['seo-aeo', `seo-aeo-${pageSlug || 'all'}`], revalidate: 0 },

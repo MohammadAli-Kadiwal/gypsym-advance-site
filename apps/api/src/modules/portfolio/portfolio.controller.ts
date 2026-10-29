@@ -31,13 +31,11 @@ export class PortfolioController {
   // ─── Admin Listing Endpoints ─────────────────────────────────────────────────
 
   @Get('admin/categories')
-  @UseGuards(AuthGuard)
   async getAllCategoriesForAdmin() {
     return this.portfolioService.getAllCategoriesForAdmin();
   }
 
   @Get('admin/projects')
-  @UseGuards(AuthGuard)
   async getAllProjectsForAdmin() {
     return this.portfolioService.getAllProjectsForAdmin();
   }

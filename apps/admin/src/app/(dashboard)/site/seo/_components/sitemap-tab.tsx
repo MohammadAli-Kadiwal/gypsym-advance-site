@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { notify } from '@/lib/notifications';
-import { normalizeErrorMessage } from '@/lib/api';
+import { api, normalizeErrorMessage } from '@/lib/api';
 import { seoService, SitemapConfigData } from '@/services/seo.service';
 import { getSiteUrl } from '@/lib/site-url';
 
@@ -103,15 +103,14 @@ export function SitemapTab() {
     try {
       setLoadingXml(true);
       setShowXmlPreview(true);
-      const res = await fetch('/api/v1/seo/public/sitemap-urls');
-      const data = await res.json();
+      const data: any = await api.get('/seo/public/sitemap-urls');
       const urls: Array<{
         url: string;
         lastModified?: string;
         changeFrequency?: string;
         priority?: number;
         alternates?: { languages?: Record<string, string> };
-      }> = data?.data?.urls || [];
+      }> = data?.urls || data?.data?.urls || (Array.isArray(data) ? data : []);
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
       urls.forEach((u) => {

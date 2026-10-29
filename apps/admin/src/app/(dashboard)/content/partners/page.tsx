@@ -142,17 +142,17 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+      <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-border bg-card shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-5 border-b border-border/60 bg-muted/20">
+          <div className="flex items-center space-x-3.5">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Handshake className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-slate-900">
+              <DialogTitle className="text-base font-bold text-foreground">
                 {mode === 'create' ? 'Add Strategic Partner' : 'Edit Partner'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 {mode === 'create'
                   ? 'Add partner name and brand logo image.'
                   : 'Update partner name and brand logo image.'}
@@ -161,46 +161,38 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Partner Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">
-              Partner Name <span className="text-rose-500">*</span>
+            <label className="text-xs font-semibold text-foreground">
+              Partner Name <span className="text-destructive">*</span>
             </label>
             <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Amazon Web Services"
-              className="text-xs rounded-xl"
+              className="h-10 text-xs rounded-xl border-input bg-background"
               autoFocus
             />
           </div>
 
-          {/* Partner Logo / Image */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-800">
-                Partner Image / Logo
-              </label>
-              <span className="text-[10px] text-slate-400">SVG, PNG, or WebP recommended</span>
-            </div>
-            <ImageUploadField
-              value={form.logoUrl}
-              onChange={(url) => setForm((f) => ({ ...f, logoUrl: url }))}
-              label="Partner Logo"
-              description="Upload partner logo or brand image used across the site and partner grids."
-              placeholder="https://cdn.gypsym.com/partners/aws.svg"
-            />
-          </div>
+          {/* Partner Logo */}
+          <ImageUploadField
+            value={form.logoUrl}
+            onChange={(url) => setForm((f) => ({ ...f, logoUrl: url }))}
+            label="Partner Logo"
+            description="Upload SVG, PNG, or WebP brand logo, or paste a direct image URL."
+            placeholder="https://cdn.gypsym.com/partners/aws.svg"
+          />
 
           {/* Footer Actions */}
-          <DialogFooter className="pt-4 border-t border-slate-100 gap-2 flex-row justify-end">
+          <DialogFooter className="pt-4 border-t border-border/60 gap-2 flex-row justify-end items-center">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl h-9 px-4 text-xs font-semibold border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="rounded-xl h-9 px-4 text-xs font-medium cursor-pointer"
             >
               <X className="h-3.5 w-3.5 mr-1.5" />
               Cancel
@@ -208,7 +200,7 @@ function PartnerDialog({ open, mode, initial = EMPTY_FORM, saving, onClose, onSu
             <Button
               type="submit"
               disabled={saving || !form.name.trim()}
-              className="rounded-xl h-9 px-5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="rounded-xl h-9 px-5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
             >
               {saving ? (
                 <>
@@ -242,38 +234,38 @@ interface DeleteDialogProps {
 function DeletePartnerDialog({ open, partnerName, deleting, onClose, onConfirm }: DeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-sm rounded-2xl border-slate-200/90 bg-white shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+      <DialogContent className="w-[95vw] max-w-sm rounded-2xl border-border bg-card shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-5 border-b border-border/60 bg-muted/20">
+          <div className="flex items-center space-x-3.5">
+            <div className="h-10 w-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
               <Trash2 className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold text-slate-900">Delete Partner</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-0.5">
+              <DialogTitle className="text-sm font-bold text-foreground">Delete Partner</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 This will permanently delete this partner and remove it from all sections.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
-        <div className="px-6 py-5 space-y-4">
-          <p className="text-sm text-slate-700">
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-foreground">
             Are you sure you want to delete{' '}
-            <span className="font-bold text-slate-900">&ldquo;{partnerName}&rdquo;</span>? This action cannot be undone.
+            <span className="font-bold text-foreground">&ldquo;{partnerName}&rdquo;</span>? This action cannot be undone.
           </p>
-          <DialogFooter className="gap-2 flex-row justify-end">
+          <DialogFooter className="pt-2 gap-2 flex-row justify-end items-center">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={deleting}
-              className="rounded-xl h-9 px-4 text-xs font-semibold border-slate-200 text-slate-600"
+              className="rounded-xl h-9 px-4 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               onClick={onConfirm}
               disabled={deleting}
-              className="rounded-xl h-9 px-5 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
+              className="rounded-xl h-9 px-5 text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-xs cursor-pointer"
             >
               {deleting ? (
                 <>
@@ -734,18 +726,18 @@ export default function PartnersPage() {
             <Table>
             <TableHeader className="bg-muted/40">
               <TableRow className="border-b border-border/60">
-                <TableHead className="w-[40px] text-center">
+                <TableHead className="w-[48px] text-center px-3">
                   <Checkbox
                     checked={allFilteredSelected}
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all"
                   />
                 </TableHead>
-                <TableHead className="w-[80px] text-xs font-bold text-muted-foreground">Order</TableHead>
-                <TableHead className="w-[90px] text-xs font-bold text-muted-foreground">Logo / Image</TableHead>
-                <TableHead className="text-xs font-bold text-muted-foreground">Partner Name</TableHead>
-                <TableHead className="w-[110px] text-xs font-bold text-muted-foreground text-center">Status</TableHead>
-                <TableHead className="w-[100px] text-right text-xs font-bold text-muted-foreground">Actions</TableHead>
+                <TableHead className="w-[84px] text-xs font-bold text-muted-foreground whitespace-nowrap">Order</TableHead>
+                <TableHead className="w-[80px] text-xs font-bold text-muted-foreground whitespace-nowrap">Logo</TableHead>
+                <TableHead className="text-xs font-bold text-muted-foreground whitespace-nowrap">Partner Name</TableHead>
+                <TableHead className="w-[110px] text-xs font-bold text-muted-foreground text-center whitespace-nowrap">Status</TableHead>
+                <TableHead className="w-[100px] text-right text-xs font-bold text-muted-foreground whitespace-nowrap pr-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -757,7 +749,7 @@ export default function PartnersPage() {
                   }`}
                 >
                   {/* Select Checkbox */}
-                  <TableCell className="py-3 text-center">
+                  <TableCell className="py-3 px-3 text-center">
                     <Checkbox
                       checked={selectedIds.has(partner.id)}
                       onCheckedChange={() => handleToggleSelect(partner.id)}
@@ -766,17 +758,17 @@ export default function PartnersPage() {
                   </TableCell>
 
                   {/* Order with Quick Reorder Up/Down */}
-                  <TableCell className="py-3">
-                    <div className="flex items-center space-x-1 font-mono text-xs text-muted-foreground">
+                  <TableCell className="py-3 px-3">
+                    <div className="flex items-center space-x-1.5 font-mono text-xs text-muted-foreground">
                       <span className="font-bold text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px]">
                         {formatOrder(partner.displayOrder)}
                       </span>
-                      <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
                           onClick={() => handleMoveOrder(partner, 'up')}
                           disabled={idx === 0}
-                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer"
+                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer transition-colors"
                           title="Move Up"
                         >
                           <ChevronUp className="h-3 w-3" />
@@ -785,7 +777,7 @@ export default function PartnersPage() {
                           type="button"
                           onClick={() => handleMoveOrder(partner, 'down')}
                           disabled={idx === filteredPartners.length - 1}
-                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer"
+                          className="hover:text-primary disabled:opacity-20 p-0.5 cursor-pointer transition-colors"
                           title="Move Down"
                         >
                           <ChevronDown className="h-3 w-3" />
@@ -795,8 +787,8 @@ export default function PartnersPage() {
                   </TableCell>
 
                   {/* Logo Preview */}
-                  <TableCell className="py-3">
-                    <div className="h-11 w-11 rounded-xl border border-border bg-card flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
+                  <TableCell className="py-3 px-3">
+                    <div className="h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center overflow-hidden shrink-0 shadow-2xs p-1">
                       {partner.logoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -809,18 +801,25 @@ export default function PartnersPage() {
                           }}
                         />
                       ) : (
-                        <Handshake className="h-5 w-5 text-muted-foreground" />
+                        <Handshake className="h-4 w-4 text-muted-foreground/50" />
                       )}
                     </div>
                   </TableCell>
 
                   {/* Partner Name */}
-                  <TableCell className="py-3">
-                    <span className="font-semibold text-xs text-foreground">{partner.name}</span>
+                  <TableCell className="py-3 px-3">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-xs text-foreground">{partner.name}</span>
+                      {partner.slug && (
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          /{partner.slug}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
 
                   {/* Status */}
-                  <TableCell className="py-3 text-center">
+                  <TableCell className="py-3 px-3 text-center">
                     <button
                       type="button"
                       onClick={() => handleTogglePartnerStatus(partner)}
@@ -836,8 +835,8 @@ export default function PartnersPage() {
                   </TableCell>
 
                   {/* Actions */}
-                  <TableCell className="py-3 text-right">
-                    <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <TableCell className="py-3 pr-4 text-right">
+                    <div className="flex items-center justify-end space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -871,6 +870,7 @@ export default function PartnersPage() {
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
               itemLabel="partners"
+              className="border-t border-border"
             />
           )}
           </>
@@ -914,45 +914,45 @@ export default function PartnersPage() {
 
       {/* ─── Floating Bulk Action Dock ─────────────────────────────── */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-slate-200 bg-white/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <span className="text-xs font-semibold text-slate-800 pr-2 border-r border-slate-200">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-2.5 rounded-2xl border border-border bg-card/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-xs font-semibold text-foreground pr-2 border-r border-border">
             {selectedIds.size} selected
           </span>
 
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            className="h-8 text-xs rounded-xl border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 cursor-pointer"
             onClick={() => handleBulkStatus('PUBLISHED')}
           >
-            <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+            <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
             <span>Publish</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            className="h-8 text-xs rounded-xl border-border hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/30 cursor-pointer"
             onClick={() => handleBulkStatus('DRAFT')}
           >
-            <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600" />
+            <FileClock className="h-3.5 w-3.5 mr-1 text-amber-600 dark:text-amber-400" />
             <span>Draft</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs rounded-xl border-slate-200 hover:bg-slate-100"
+            className="h-8 text-xs rounded-xl border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={() => handleBulkStatus('ARCHIVED')}
           >
-            <Archive className="h-3.5 w-3.5 mr-1 text-slate-500" />
+            <Archive className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
             <span>Archive</span>
           </Button>
 
           <Button
             variant="destructive"
             size="sm"
-            className="h-8 text-xs rounded-xl bg-rose-600 hover:bg-rose-700"
+            className="h-8 text-xs rounded-xl shadow-xs cursor-pointer"
             onClick={() => setBulkDeleteConfirm(true)}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -962,7 +962,7 @@ export default function PartnersPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-xs text-slate-400 hover:text-slate-600 rounded-xl ml-1"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground rounded-xl ml-1 cursor-pointer"
             onClick={() => setSelectedIds(new Set())}
           >
             Clear

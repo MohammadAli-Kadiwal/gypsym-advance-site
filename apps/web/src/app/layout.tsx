@@ -161,7 +161,10 @@ export default async function RootLayout({
         <DynamicBrandStyleTag tokens={{ faviconUrl: rawFavicon }} />
         <ScriptInjector settings={scriptSettings} />
       </head>
-      <body className="min-h-screen flex flex-col justify-between bg-[#f4f3ef] text-neutral-900 antialiased selection:bg-lime-200">
+      <body
+        className="min-h-screen flex flex-col justify-between bg-[#f4f3ef] text-neutral-900 antialiased selection:bg-lime-200"
+        suppressHydrationWarning
+      >
         <ThemeProvider defaultTheme="light">
           <SmoothScrollProvider>
             <GlobalWebsiteLoader brand={headerData?.branding} />
