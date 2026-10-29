@@ -1,15 +1,28 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 
 export type ContentStatusType = 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED' | 'TRASHED';
 
 @Injectable()
 export class PortfolioService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: MemoryCacheService,
+  ) {}
+
+  invalidateCache() {
+    this.cache.deleteByPrefix('portfolio:');
+    this.cache.deleteByPrefix('page:');
+  }
 
   // ─── Public Categories ───────────────────────────────────────────────────────
 
   async getCategories() {
+    const cacheKey = 'portfolio:categories';
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const categories = await this.prisma.portfolioCategory.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { displayOrder: 'asc' },
@@ -24,7 +37,7 @@ export class PortfolioService {
       },
     });
 
-    return categories.map((cat: any) => ({
+    const result = categories.map((cat: any) => ({
       id: cat.id,
       name: cat.name,
       slug: cat.slug,
@@ -33,6 +46,8 @@ export class PortfolioService {
       status: cat.status,
       projectCount: cat._count?.projects ?? 0,
     }));
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
   // ─── Admin Categories ────────────────────────────────────────────────────────
@@ -215,6 +230,10 @@ export class PortfolioService {
     page?: number;
     limit?: number;
   }) {
+    const cacheKey = `portfolio:projects:${JSON.stringify(query)}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const status = (query.status as any) || 'PUBLISHED';
     const categorySlug = query.category?.trim().toLowerCase();
 
@@ -251,7 +270,7 @@ export class PortfolioService {
       this.prisma.portfolioProjectItem.count({ where }),
     ]);
 
-    return {
+    const result = {
       projects: projects.map((p: any) => ({
         id: p.id,
         orderNumber: p.orderNumber,
@@ -278,6 +297,8 @@ export class PortfolioService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
   async getAllProjectsForAdmin() {
@@ -318,6 +339,10 @@ export class PortfolioService {
   }
 
   async getProjectBySlug(slug: string) {
+    const cacheKey = `portfolio:project:${slug}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const project = await this.prisma.portfolioProjectItem.findFirst({
       where: { slug },
       include: {
@@ -335,7 +360,7 @@ export class PortfolioService {
       throw new NotFoundException(`Project with slug '${slug}' not found.`);
     }
 
-    return {
+    const result = {
       id: project.id,
       orderNumber: project.orderNumber,
       title: project.title,
@@ -355,6 +380,8 @@ export class PortfolioService {
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     };
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
   async createProject(data: {
@@ -408,7 +435,7 @@ export class PortfolioService {
       ? new Date(data.createdAt)
       : undefined;
 
-    return this.prisma.portfolioProjectItem.create({
+    const res = await this.prisma.portfolioProjectItem.create({
       data: {
         orderNumber: data.orderNumber?.trim() || null,
         title: data.title.trim(),
@@ -429,6 +456,8 @@ export class PortfolioService {
         category: true,
       },
     });
+    this.invalidateCache();
+    return res;
   }
 
   async updateProject(
@@ -480,7 +509,7 @@ export class PortfolioService {
       ? new Date(data.createdAt)
       : undefined;
 
-    return this.prisma.portfolioProjectItem.update({
+    const res = await this.prisma.portfolioProjectItem.update({
       where: { id },
       data: {
         ...(data.orderNumber !== undefined && { orderNumber: data.orderNumber?.trim() || null }),
@@ -502,6 +531,8 @@ export class PortfolioService {
         category: true,
       },
     });
+    this.invalidateCache();
+    return res;
   }
 
   async deleteProject(id: string) {
@@ -512,9 +543,11 @@ export class PortfolioService {
       throw new NotFoundException(`Project with ID '${id}' not found.`);
     }
 
-    return this.prisma.portfolioProjectItem.delete({
+    const res = await this.prisma.portfolioProjectItem.delete({
       where: { id },
     });
+    this.invalidateCache();
+    return res;
   }
 
   async bulkDeleteProjects(ids: string[]) {

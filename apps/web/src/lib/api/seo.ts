@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { API_CONFIG } from './config';
 
 const getBaseUrl = () => API_CONFIG.baseURL;
@@ -81,11 +82,10 @@ export interface PublicAeoItem {
   entity?: string;
 }
 
-export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
+export const getPublicGlobalSeo = cache(async (): Promise<PublicGlobalSeo | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/seo/public/global`, {
-      cache: 'no-store',
-      next: { tags: ['seo-global'], revalidate: 0 },
+      next: { tags: ['seo-global'], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -93,13 +93,12 @@ export async function getPublicGlobalSeo(): Promise<PublicGlobalSeo | null> {
   } catch {
     return null;
   }
-}
+});
 
-export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
+export const getPublicSitemapUrls = cache(async (): Promise<SitemapUrlItem[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/seo/public/sitemap-urls`, {
-      cache: 'no-store',
-      next: { tags: ['seo-sitemap'], revalidate: 0 },
+      next: { tags: ['seo-sitemap'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -107,13 +106,12 @@ export async function getPublicSitemapUrls(): Promise<SitemapUrlItem[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null> {
+export const getPublicRobotsRules = cache(async (): Promise<PublicRobotsConfig | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/seo/public/robots-rules`, {
-      cache: 'no-store',
-      next: { tags: ['seo-robots'], revalidate: 0 },
+      next: { tags: ['seo-robots'], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -121,13 +119,12 @@ export async function getPublicRobotsRules(): Promise<PublicRobotsConfig | null>
   } catch {
     return null;
   }
-}
+});
 
-export async function getPublicRedirects(): Promise<PublicRedirectItem[]> {
+export const getPublicRedirects = cache(async (): Promise<PublicRedirectItem[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/seo/public/redirects`, {
-      cache: 'no-store',
-      next: { tags: ['seo-redirects'], revalidate: 0 },
+      next: { tags: ['seo-redirects'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -135,16 +132,15 @@ export async function getPublicRedirects(): Promise<PublicRedirectItem[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getPublicAeo(pageSlug?: string): Promise<PublicAeoItem[]> {
+export const getPublicAeo = cache(async (pageSlug?: string): Promise<PublicAeoItem[]> => {
   try {
     const url = pageSlug
       ? `${getBaseUrl()}/seo/public/aeo?pageSlug=${encodeURIComponent(pageSlug)}`
       : `${getBaseUrl()}/seo/public/aeo`;
     const res = await fetch(url, {
-      cache: 'no-store',
-      next: { tags: ['seo-aeo', `seo-aeo-${pageSlug || 'all'}`], revalidate: 0 },
+      next: { tags: ['seo-aeo', `seo-aeo-${pageSlug || 'all'}`], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -152,4 +148,4 @@ export async function getPublicAeo(pageSlug?: string): Promise<PublicAeoItem[]> 
   } catch {
     return [];
   }
-}
+});

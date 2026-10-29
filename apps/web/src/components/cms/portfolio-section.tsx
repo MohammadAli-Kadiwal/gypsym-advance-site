@@ -127,9 +127,18 @@ export function PortfolioSection({
   }, [activeCategoryProp, urlCategory, p.defaultCategory]);
 
   const activeCategory = activeCategoryProp || activeCategoryState;
+  const isInitialFetchMount = React.useRef(true);
 
   // ── Call Live Portfolio API from Client ───────────────────────────────────
   React.useEffect(() => {
+    // If SSR already provided projects and activeCategory is default, skip initial mount fetch
+    if (isInitialFetchMount.current) {
+      isInitialFetchMount.current = false;
+      if (initialProjects.length > 0 && (!activeCategory || activeCategory === 'all')) {
+        return;
+      }
+    }
+
     let isCancelled = false;
 
     async function loadPortfolioData() {
@@ -145,9 +154,7 @@ export function PortfolioSection({
             ? `?category=${encodeURIComponent(activeCategory)}`
             : '';
 
-        const res = await fetch(`${apiBase}/portfolio${categoryQuery}`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(`${apiBase}/portfolio${categoryQuery}`);
 
         if (res.ok) {
           const json = await res.json();
@@ -174,6 +181,11 @@ export function PortfolioSection({
 
   // ── Call Live Categories API from Client ─────────────────────────────────
   React.useEffect(() => {
+    // If categories are already supplied by SSR or not showing filter, don't fetch
+    if (!showCategoryFilter || (categoriesProp && categoriesProp.length > 0)) {
+      return;
+    }
+
     let isCancelled = false;
 
     async function loadCategoriesData() {
@@ -183,9 +195,7 @@ export function PortfolioSection({
             ? (process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//${window.location.hostname}:4000/api/v1`)
             : 'http://127.0.0.1:4000/api/v1';
 
-        const res = await fetch(`${apiBase}/portfolio/categories`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(`${apiBase}/portfolio/categories`);
 
         if (res.ok) {
           const json = await res.json();
@@ -212,7 +222,7 @@ export function PortfolioSection({
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [showCategoryFilter, categoriesProp]);
 
   const hoverEffectsEnabled = p.hoverEffectsEnabled !== false;
   const imageZoomEnabled = p.imageZoomEnabled !== false;

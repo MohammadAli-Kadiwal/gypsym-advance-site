@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { API_MESSAGES } from '../../common/messages';
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 
 @Injectable()
 export class CmsService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: MemoryCacheService,
+  ) {}
 
   async onModuleInit() {
     await this.seedFooterIfMissing();
@@ -2323,6 +2327,10 @@ export class CmsService implements OnModuleInit {
 
   // 7. Dynamic Brand Settings
   async getBrandSettings(): Promise<any> {
+    const cacheKey = 'cms:brand_settings';
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     try {
       const brand = await this.prisma.brandSetting.findFirst({
         where: { isActive: true },
@@ -2335,7 +2343,7 @@ export class CmsService implements OnModuleInit {
       });
 
       if (brand) {
-        return {
+        const result = {
           id: brand.id,
           companyName: brand.companyName,
           colors: brand.colors,
@@ -2345,6 +2353,8 @@ export class CmsService implements OnModuleInit {
           logoDark: this.logoUrlFromMedia(brand.logoDark) || brand.logoDark?.storageKey || null,
           favicon: this.logoUrlFromMedia(brand.favicon) || brand.favicon?.storageKey || null,
         };
+        this.cache.set(cacheKey, result, 300);
+        return result;
       }
     } catch {
       // Gracefully fall back to defaults if database connection is temporarily lagging
@@ -3242,6 +3252,10 @@ export class CmsService implements OnModuleInit {
   }
 
   async getPageBySlug(slug: string): Promise<any> {
+    const cacheKey = `page:${slug}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const candidateSlugs = this.resolveCandidateSlugs(slug);
     let page = await this.prisma.page.findFirst({
       where: {
@@ -3584,7 +3598,9 @@ export class CmsService implements OnModuleInit {
       return section;
     });
 
-    return { ...page, sections };
+    const result = { ...page, sections };
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
 
@@ -3615,6 +3631,10 @@ export class CmsService implements OnModuleInit {
 
   // 11. Consolidated Dynamic Header
   async getHeaderData(): Promise<any> {
+    const cacheKey = 'cms:header_data';
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const [branding, navigation, headerSetting] = await Promise.all([
       this.getBrandSettings().catch(() => null),
       this.getNavigationByKey('header').catch(() => null),
@@ -3623,15 +3643,20 @@ export class CmsService implements OnModuleInit {
         .then((s) => s?.value || null),
     ]);
 
-    return {
+    const result = {
       branding,
       navigation,
       config: headerSetting,
     };
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
   // 11b. Consolidated Dynamic Footer
   async getFooterData(): Promise<any> {
+    const cacheKey = 'cms:footer_data';
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
     let [branding, navigation, footerSetting, contactSetting, entitySetting] = await Promise.all([
       this.getBrandSettings().catch(() => null),
       this.getNavigationByKey('footer').catch(() => null),
@@ -3664,13 +3689,15 @@ export class CmsService implements OnModuleInit {
       navigation = await this.seedInitialFooterNavigation();
     }
 
-    return {
+    const result = {
       branding,
       navigation,
       config: footerSetting,
       contact: contactSetting,
       entity: entitySetting,
     };
+    this.cache.set(cacheKey, result, 300);
+    return result;
   }
 
   async getAdminFooterData(): Promise<any> {
@@ -4158,6 +4185,13 @@ export class CmsService implements OnModuleInit {
     return map[normalized] || 'FEATURE_GRID';
   }
 
+  invalidateCmsCache(): void {
+    this.cache.deleteByPrefix('page:');
+    this.cache.delete('cms:header_data');
+    this.cache.delete('cms:footer_data');
+    this.cache.delete('cms:brand_settings');
+  }
+
   async updateSection(id: string, payload: any): Promise<any> {
     const section = await this.prisma.pageSection.findUnique({ where: { id } });
     if (!section) throw new NotFoundException(`Section '${id}' not found`);
@@ -4172,10 +4206,12 @@ export class CmsService implements OnModuleInit {
       data.componentType = this.normalizeComponentType(payload.componentType);
     }
 
-    return this.prisma.pageSection.update({
+    const res = await this.prisma.pageSection.update({
       where: { id },
       data,
     });
+    this.invalidateCmsCache();
+    return res;
   }
 
   async createSection(slug: string, payload: any): Promise<any> {
@@ -4200,7 +4236,7 @@ export class CmsService implements OnModuleInit {
     });
 
     if (existingSection) {
-      return this.prisma.pageSection.update({
+      const res = await this.prisma.pageSection.update({
         where: { id: existingSection.id },
         data: {
           componentType,
@@ -4210,9 +4246,11 @@ export class CmsService implements OnModuleInit {
           ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
         },
       });
+      this.invalidateCmsCache();
+      return res;
     }
 
-    return this.prisma.pageSection.create({
+    const res = await this.prisma.pageSection.create({
       data: {
         pageId: page.id,
         sectionIdentifier: identifier,
@@ -4223,10 +4261,14 @@ export class CmsService implements OnModuleInit {
         isActive: payload.isActive ?? true,
       },
     });
+    this.invalidateCmsCache();
+    return res;
   }
 
   async deleteSection(id: string): Promise<any> {
-    return this.prisma.pageSection.delete({ where: { id } });
+    const res = await this.prisma.pageSection.delete({ where: { id } });
+    this.invalidateCmsCache();
+    return res;
   }
 
   // ── Clients ──────────────────────────────────────────────────────────────────

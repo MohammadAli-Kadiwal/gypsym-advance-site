@@ -24,9 +24,11 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { MemoryCacheModule } from './common/cache/memory-cache.module';
 
 @Module({
   imports: [
+    MemoryCacheModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnvironment,

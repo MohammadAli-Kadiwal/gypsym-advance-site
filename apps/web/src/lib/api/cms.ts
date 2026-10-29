@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { API_CONFIG } from './config';
 import { PageDto, NavigationDto, BrandSettingsDto, HeaderDataDto, FooterDataDto } from '../cms-types';
 
@@ -5,13 +6,12 @@ const getBaseUrl = () => API_CONFIG.baseURL;
 
 /**
  * Fetch dynamic page with active sections by slug from NestJS CMS API.
- * Server Component data fetching with Next.js ISR tags.
+ * Server Component data fetching with Next.js ISR tags and React render deduplication.
  */
-export async function getPageBySlug(slug: string): Promise<PageDto | null> {
+export const getPageBySlug = cache(async (slug: string): Promise<PageDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/pages/${slug}`, {
-      cache: 'no-store',
-      next: { tags: [`page-${slug}`, 'pages'], revalidate: 0 },
+      next: { tags: [`page-${slug}`, 'pages'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -21,16 +21,15 @@ export async function getPageBySlug(slug: string): Promise<PageDto | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Fetch dynamic navigation tree by key (e.g. 'header', 'footer') from NestJS CMS API.
  */
-export async function getNavigation(key: string): Promise<NavigationDto | null> {
+export const getNavigation = cache(async (key: string): Promise<NavigationDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/navigation/${key}`, {
-      cache: 'no-store',
-      next: { tags: [`nav-${key}`], revalidate: 0 },
+      next: { tags: [`nav-${key}`], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -40,16 +39,15 @@ export async function getNavigation(key: string): Promise<NavigationDto | null> 
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Fetch active brand settings (theme tokens, logos, company name) from NestJS CMS API.
  */
-export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
+export const getBrandSettings = cache(async (): Promise<BrandSettingsDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/branding`, {
-      cache: 'no-store',
-      next: { tags: ['brand-settings'], revalidate: 0 },
+      next: { tags: ['brand-settings'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -59,16 +57,15 @@ export async function getBrandSettings(): Promise<BrandSettingsDto | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Fetch dynamic site settings dictionary from NestJS CMS API.
  */
-export async function getSiteSettings(): Promise<Record<string, any>> {
+export const getSiteSettings = cache(async (): Promise<Record<string, any>> => {
   try {
     const res = await fetch(`${getBaseUrl()}/settings`, {
-      cache: 'no-store',
-      next: { tags: ['site-settings'], revalidate: 0 },
+      next: { tags: ['site-settings'], revalidate: 60 },
     });
     if (!res.ok) {
       return {};
@@ -78,16 +75,15 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
   } catch {
     return {};
   }
-}
+});
 
 /**
  * Fetch dynamic analytics, Google Analytics, Meta Pixel, and header/footer scripts.
  */
-export async function getScriptSettings(): Promise<any | null> {
+export const getScriptSettings = cache(async (): Promise<any | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/settings/scripts`, {
-      cache: 'no-store',
-      next: { tags: ['scripts-configuration'], revalidate: 0 },
+      next: { tags: ['scripts-configuration'], revalidate: 60 },
     });
     if (!res.ok) {
       return null;
@@ -97,16 +93,15 @@ export async function getScriptSettings(): Promise<any | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Fetch consolidated Header data (Branding, Navigation, Header Configuration)
  */
-export async function getHeaderData(): Promise<HeaderDataDto> {
+export const getHeaderData = cache(async (): Promise<HeaderDataDto> => {
   try {
     const res = await fetch(`${getBaseUrl()}/header`, {
-      cache: 'no-store',
-      next: { tags: ['header-all'], revalidate: 0 },
+      next: { tags: ['header-all'], revalidate: 60 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -122,16 +117,15 @@ export async function getHeaderData(): Promise<HeaderDataDto> {
     navigation: null,
     config: null,
   };
-}
+});
 
 /**
  * Fetch consolidated dynamic Footer data
  */
-export async function getFooterData(): Promise<FooterDataDto> {
+export const getFooterData = cache(async (): Promise<FooterDataDto> => {
   try {
     const res = await fetch(`${getBaseUrl()}/footer`, {
-      cache: 'no-store',
-      next: { tags: ['footer-all'], revalidate: 0 },
+      next: { tags: ['footer-all'], revalidate: 60 },
     });
     if (res.ok) {
       const json = await res.json();
@@ -149,7 +143,7 @@ export async function getFooterData(): Promise<FooterDataDto> {
     contact: null,
     entity: null,
   };
-}
+});
 
 export interface PortfolioCategoryItem {
   id: string;
@@ -183,11 +177,10 @@ export interface PortfolioProjectItemDto {
   projectDate?: string;
 }
 
-export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]> {
+export const getPortfolioCategories = cache(async (): Promise<PortfolioCategoryItem[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/portfolio/categories`, {
-      cache: 'no-store',
-      next: { tags: ['portfolio-categories'], revalidate: 0 },
+      next: { tags: ['portfolio-categories'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -197,17 +190,16 @@ export async function getPortfolioCategories(): Promise<PortfolioCategoryItem[]>
   } catch {
     return [];
   }
-}
+});
 
-export async function getPortfolioProjects(categorySlug?: string): Promise<PortfolioProjectItemDto[]> {
+export const getPortfolioProjects = cache(async (categorySlug?: string): Promise<PortfolioProjectItemDto[]> => {
   try {
     const url = new URL(`${getBaseUrl()}/portfolio`);
     if (categorySlug && categorySlug !== 'all') {
       url.searchParams.set('category', categorySlug);
     }
     const res = await fetch(url.toString(), {
-      cache: 'no-store',
-      next: { tags: ['portfolio-projects'], revalidate: 0 },
+      next: { tags: ['portfolio-projects'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -217,13 +209,12 @@ export async function getPortfolioProjects(categorySlug?: string): Promise<Portf
   } catch {
     return [];
   }
-}
+});
 
-export async function getPortfolioProjectBySlug(slug: string): Promise<PortfolioProjectItemDto | null> {
+export const getPortfolioProjectBySlug = cache(async (slug: string): Promise<PortfolioProjectItemDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/portfolio/${encodeURIComponent(slug)}`, {
-      cache: 'no-store',
-      next: { tags: [`portfolio-project-${slug}`], revalidate: 0 },
+      next: { tags: [`portfolio-project-${slug}`], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -232,7 +223,7 @@ export async function getPortfolioProjectBySlug(slug: string): Promise<Portfolio
   } catch {
     return null;
   }
-}
+});
 
 export interface ServiceProcessStep {
   step: string;
@@ -290,11 +281,10 @@ export interface ServiceItemDto {
   } | null;
 }
 
-export async function getServices(): Promise<ServiceItemDto[]> {
+export const getServices = cache(async (): Promise<ServiceItemDto[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/services?status=PUBLISHED`, {
-      cache: 'no-store',
-      next: { tags: ['services'], revalidate: 0 },
+      next: { tags: ['services'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -304,13 +294,12 @@ export async function getServices(): Promise<ServiceItemDto[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | null> {
+export const getServiceBySlug = cache(async (slug: string): Promise<ServiceItemDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/services/${slug}?status=PUBLISHED`, {
-      cache: 'no-store',
-      next: { tags: [`service-${slug}`], revalidate: 0 },
+      next: { tags: [`service-${slug}`], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -320,7 +309,7 @@ export async function getServiceBySlug(slug: string): Promise<ServiceItemDto | n
   } catch {
     return null;
   }
-}
+});
 
 export interface CmsPageSummary {
   id: string;
@@ -329,11 +318,10 @@ export interface CmsPageSummary {
   status: string;
 }
 
-export async function getPublishedPages(): Promise<CmsPageSummary[]> {
+export const getPublishedPages = cache(async (): Promise<CmsPageSummary[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/pages`, {
-      cache: 'no-store',
-      next: { tags: ['cms-pages'], revalidate: 0 },
+      next: { tags: ['cms-pages'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -345,13 +333,12 @@ export async function getPublishedPages(): Promise<CmsPageSummary[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getClients(): Promise<any[]> {
+export const getClients = cache(async (): Promise<any[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/clients?status=PUBLISHED`, {
-      cache: 'no-store',
-      next: { tags: ['clients'], revalidate: 0 },
+      next: { tags: ['clients'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -361,16 +348,15 @@ export async function getClients(): Promise<any[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getTeamMembers(): Promise<any[]> {
+export const getTeamMembers = cache(async (): Promise<any[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/team`, {
-      cache: 'no-store',
-      next: { tags: ['team'], revalidate: 0 },
+      next: { tags: ['team'], revalidate: 60 },
     });
     if (!res.ok) {
-      const fallback = await fetch(`${getBaseUrl()}/cms/collections/team`, { cache: 'no-store', next: { tags: ['team'], revalidate: 0 } }).catch(() => null);
+      const fallback = await fetch(`${getBaseUrl()}/cms/collections/team`, { next: { tags: ['team'], revalidate: 60 } }).catch(() => null);
       if (fallback?.ok) {
         const fj = await fallback.json();
         const flist = fj?.data ?? fj;
@@ -386,7 +372,7 @@ export async function getTeamMembers(): Promise<any[]> {
   } catch {
     return [];
   }
-}
+});
 
 export interface BlogCategoryDto {
   id: string;
@@ -453,11 +439,10 @@ export interface BlogPostDetailDto extends BlogPostItemDto {
   related?: BlogPostItemDto[];
 }
 
-export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
+export const getBlogCategories = cache(async (): Promise<BlogCategoryDto[]> => {
   try {
     const res = await fetch(`${getBaseUrl()}/blog/categories`, {
-      cache: 'no-store',
-      next: { tags: ['blog-categories'], revalidate: 0 },
+      next: { tags: ['blog-categories'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -466,13 +451,13 @@ export async function getBlogCategories(): Promise<BlogCategoryDto[]> {
   } catch {
     return [];
   }
-}
+});
 
-export async function getBlogPosts(options?: {
+export const getBlogPosts = cache(async (options?: {
   category?: string;
   search?: string;
   limit?: number;
-}): Promise<BlogPostItemDto[]> {
+}): Promise<BlogPostItemDto[]> => {
   try {
     const params = new URLSearchParams();
     if (options?.category && options.category !== 'all') {
@@ -487,8 +472,7 @@ export async function getBlogPosts(options?: {
 
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await fetch(`${getBaseUrl()}/blog${qs}`, {
-      cache: 'no-store',
-      next: { tags: ['blog-posts'], revalidate: 0 },
+      next: { tags: ['blog-posts'], revalidate: 60 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -497,13 +481,12 @@ export async function getBlogPosts(options?: {
   } catch {
     return [];
   }
-}
+});
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto | null> {
+export const getBlogPostBySlug = cache(async (slug: string): Promise<BlogPostDetailDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/blog/${slug}`, {
-      cache: 'no-store',
-      next: { tags: [`blog-${slug}`], revalidate: 0 },
+      next: { tags: [`blog-${slug}`], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -511,7 +494,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDto
   } catch {
     return null;
   }
-}
+});
 
 export interface SeoDefaultsDto {
   metaTitleTemplate?: string;
@@ -530,11 +513,10 @@ export interface SeoDefaultsDto {
   baiduVerification?: string;
 }
 
-export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
+export const getSeoSettings = cache(async (): Promise<SeoDefaultsDto | null> => {
   try {
     const res = await fetch(`${getBaseUrl()}/settings/seo`, {
-      cache: 'no-store',
-      next: { tags: ['seo-settings'], revalidate: 0 },
+      next: { tags: ['seo-settings'], revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -542,7 +524,7 @@ export async function getSeoSettings(): Promise<SeoDefaultsDto | null> {
   } catch {
     return null;
   }
-}
+});
 
 export interface ContactSettingsDto {
   primaryEmail: string;
@@ -591,11 +573,10 @@ export const DEFAULT_CONTACT_SETTINGS: ContactSettingsDto = {
   country: 'United Kingdom',
 };
 
-export async function getContactSettings(): Promise<ContactSettingsDto> {
+export const getContactSettings = cache(async (): Promise<ContactSettingsDto> => {
   try {
     const res = await fetch(`${getBaseUrl()}/settings/contact`, {
-      cache: 'no-store',
-      next: { tags: ['contact-settings'], revalidate: 0 },
+      next: { tags: ['contact-settings'], revalidate: 60 },
     });
     if (!res.ok) return DEFAULT_CONTACT_SETTINGS;
     const json = await res.json();
@@ -604,5 +585,5 @@ export async function getContactSettings(): Promise<ContactSettingsDto> {
   } catch {
     return DEFAULT_CONTACT_SETTINGS;
   }
-}
+});
 

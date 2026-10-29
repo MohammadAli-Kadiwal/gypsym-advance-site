@@ -12,7 +12,7 @@ import { SubpageHero } from '@/components/ui/subpage-hero';
 import { JsonLd, buildBreadcrumbsSchema, buildPortfolioSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface PortfolioPageProps {
   searchParams: {
