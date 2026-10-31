@@ -14,10 +14,11 @@ import {
 import { getBlogPostBySlug, getPageBySlug, getBlogPosts } from '@/lib/api';
 import { ArticleShareBar } from './share-bar';
 import { BlogSidebar } from './blog-sidebar';
+import { BlogFaqAccordion, getDefaultBlogFaqs } from './blog-faq-accordion';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { ScrollReveal } from '@/components/motion';
-import { JsonLd, buildBreadcrumbsSchema, buildArticleSchema } from '@/components/seo/json-ld';
+import { JsonLd, buildBreadcrumbsSchema, buildArticleSchema, buildFaqSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
 export const revalidate = 60;
@@ -150,10 +151,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     }
   }
 
+  const postFaqs = (post.faqs && post.faqs.length > 0)
+    ? post.faqs
+    : ((post.bodyContent as any)?.faqs && (post.bodyContent as any).faqs.length > 0)
+    ? (post.bodyContent as any).faqs
+    : getDefaultBlogFaqs(post.title);
+
+  const faqSchema = buildFaqSchema(
+    postFaqs
+      .map((f: any) => ({
+        question: f.question || f.q || '',
+        answer: f.answer || f.a || '',
+      }))
+      .filter((f: any) => f.question && f.answer)
+  );
+
   return (
     <div className="w-full bg-[#f4f3ef] dark:bg-background pt-28 sm:pt-32 lg:pt-36">
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={customStructuredData || articleSchema} />
+      {faqSchema && <JsonLd data={faqSchema} />}
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Main Reading Area (Left Side) */}
@@ -198,31 +215,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <p className="mt-6 text-base sm:text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed border-l-3 border-[#d9287c] pl-4 italic">
             {post.excerpt}
           </p>
-
-          {/* Author Metadata Bar & Share Actions */}
-          <div className="mt-8 pt-6 pb-6 border-y border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              {post.author?.avatar && (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 shrink-0"
-                />
-              )}
-              <div>
-                <div className="text-sm font-bold text-neutral-900 dark:text-white">
-                  {post.author?.name}
-                </div>
-                <div className="text-xs text-neutral-500">
-                  {post.author?.role || 'Chief Technology Officer & Lead Architect'}
-                </div>
-              </div>
-            </div>
-
-            <ArticleShareBar title={post.title} slug={post.slug} />
-          </div>
 
           {/* Cover Media Banner */}
           {post.coverImage && (
@@ -331,31 +323,32 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
           )}
 
-          {/* Author Footer Card */}
-          <div className="mt-12 p-6 sm:p-8 rounded-[22px] bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            {post.author?.avatar && (
-              <img
-                src={post.author.avatar}
-                alt={post.author.name}
-                loading="lazy"
-                decoding="async"
-                className="w-16 h-16 rounded-full object-cover border-2 border-neutral-300 shrink-0"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-[#d9287c] uppercase tracking-wider">About the Author</div>
-              <h3 className="text-lg font-bold text-neutral-900 dark:text-white mt-0.5">
-                {post.author?.name}
-              </h3>
-              {post.author?.role && (
-                <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                  {post.author.role}
-                </div>
+          {/* Frequently Asked Questions */}
+          <BlogFaqAccordion faqs={postFaqs} articleTitle={post.title} />
+
+          {/* Author Details & Share Actions Bar (Moved After FAQs) */}
+          <div className="mt-12 pt-6 pb-6 border-y border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              {post.author?.avatar && (
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700 shrink-0"
+                />
               )}
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1.5 leading-relaxed">
-                {post.author?.extendedBio || post.author?.bio || 'Leads systems architecture and global engineering practice at Gypsym Technology, advising enterprise retailers and financial institutions on active-active cloud topologies and sovereign AI.'}
-              </p>
+              <div>
+                <div className="text-sm font-bold text-neutral-900 dark:text-white">
+                  {post.author?.name}
+                </div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {post.author?.role || 'Chief Technology Officer & Lead Architect'}
+                </div>
+              </div>
             </div>
+
+            <ArticleShareBar title={post.title} slug={post.slug} />
           </div>
 
           {/* Back button */}

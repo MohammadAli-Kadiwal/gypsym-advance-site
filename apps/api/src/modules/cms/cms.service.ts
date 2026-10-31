@@ -1829,9 +1829,34 @@ export class CmsService implements OnModuleInit {
     const authorSetting = await this.getAuthorSettings().catch(() => null);
     const related = relatedRaw.map((r) => this.formatBlogPostSummary(r, authorSetting));
 
+    const bodyContentObj = p.bodyContent && typeof p.bodyContent === 'object' ? (p.bodyContent as any) : {};
+    let faqs = Array.isArray(bodyContentObj.faqs) && bodyContentObj.faqs.length > 0
+      ? bodyContentObj.faqs
+      : Array.isArray((p as any).faqs) && (p as any).faqs.length > 0
+      ? (p as any).faqs
+      : [
+          {
+            question: `What are the primary architectural takeaways from "${p.title}"?`,
+            answer: `This publication presents production-verified engineering strategies, performance benchmarks, and architectural paradigms designed to scale enterprise digital operations with zero downtime and high fault tolerance.`,
+          },
+          {
+            question: `How does Gypsym assist enterprise teams with these technologies?`,
+            answer: `Our Senior Technical Fellows and Principal Engineers collaborate directly with client teams to conduct architectural audits, implement modernization pipelines, and ensure seamless production deployments.`,
+          },
+          {
+            question: `Can these methodologies be integrated into our existing legacy systems?`,
+            answer: `Yes. We specialize in incremental modernization and decoupled service architectures, enabling teams to adopt modern engineering advantages without risky and disruptive re-platforming.`,
+          },
+          {
+            question: `How can our engineering leadership schedule a technical consultation?`,
+            answer: `You can reach our engineering desk via the contact form or reserve a dedicated discovery session on our advisory calendar.`,
+          },
+        ];
+
     return {
       ...this.formatBlogPostSummary(p, authorSetting),
       bodyContent: p.bodyContent,
+      faqs,
       related,
     };
   }
@@ -1842,6 +1867,13 @@ export class CmsService implements OnModuleInit {
     const authorAvatar = authorSetting?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
     const authorBio = authorSetting?.bio || 'Leading high-concurrency cloud architectures and distributed microservices.';
     const authorSocials = authorSetting?.socials || {};
+
+    const bodyContentObj = p.bodyContent && typeof p.bodyContent === 'object' ? (p.bodyContent as any) : {};
+    const faqs = Array.isArray(bodyContentObj.faqs)
+      ? bodyContentObj.faqs
+      : Array.isArray((p as any).faqs)
+      ? (p as any).faqs
+      : [];
 
     return {
       id: p.id,
@@ -1878,6 +1910,8 @@ export class CmsService implements OnModuleInit {
       publishedDate: p.publishedAt ? p.publishedAt.toISOString().split('T')[0] : p.createdAt.toISOString().split('T')[0],
       viewCount: Number(p.viewCount || 0),
       tags: p.tags?.map((t: any) => t.tag?.name).filter(Boolean) || [],
+      faqs,
+      bodyContent: p.bodyContent,
     };
   }
 
@@ -1946,14 +1980,19 @@ export class CmsService implements OnModuleInit {
 
     const slug = (dto.slug || dto.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).trim();
 
+    let initialBodyContent = dto.bodyContent || {
+      sections: [{ heading: 'Introduction', paragraphs: [dto.content || dto.excerpt || ''] }],
+    };
+    if (typeof initialBodyContent === 'object' && initialBodyContent !== null && Array.isArray(dto.faqs)) {
+      initialBodyContent = { ...initialBodyContent, faqs: dto.faqs };
+    }
+
     const post = await this.prisma.blogPost.create({
       data: {
         title: dto.title,
         slug,
         excerpt: dto.excerpt || '',
-        bodyContent: dto.bodyContent || {
-          sections: [{ heading: 'Introduction', paragraphs: [dto.content || dto.excerpt || ''] }],
-        },
+        bodyContent: initialBodyContent,
         readTimeMinutes: Number(dto.readTimeMinutes) || 8,
         status: dto.status || 'PUBLISHED',
         publishedAt: dto.status === 'PUBLISHED' ? new Date() : null,
@@ -2000,13 +2039,19 @@ export class CmsService implements OnModuleInit {
       if (cat) categoryId = cat.id;
     }
 
+    let nextBodyContent = dto.bodyContent !== undefined ? dto.bodyContent : existing.bodyContent;
+    if (Array.isArray(dto.faqs)) {
+      const existingObj = typeof nextBodyContent === 'object' && nextBodyContent !== null ? (nextBodyContent as any) : {};
+      nextBodyContent = { ...existingObj, faqs: dto.faqs };
+    }
+
     const updated = await this.prisma.blogPost.update({
       where: { id },
       data: {
         ...(dto.title ? { title: dto.title } : {}),
         ...(dto.slug ? { slug: dto.slug } : {}),
         ...(dto.excerpt !== undefined ? { excerpt: dto.excerpt } : {}),
-        ...(dto.bodyContent !== undefined ? { bodyContent: dto.bodyContent } : {}),
+        ...(nextBodyContent !== undefined ? { bodyContent: nextBodyContent } : {}),
         ...(dto.readTimeMinutes ? { readTimeMinutes: Number(dto.readTimeMinutes) } : {}),
         ...(dto.status ? { status: dto.status } : {}),
         ...(dto.status === 'PUBLISHED' && !existing.publishedAt ? { publishedAt: new Date() } : {}),

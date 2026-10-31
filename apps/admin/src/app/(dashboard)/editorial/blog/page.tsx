@@ -23,6 +23,7 @@ import {
   User,
   Upload,
   Tags,
+  HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ interface BlogPostRecord {
   viewCount: number;
   tags: string[];
   bodyContent?: any;
+  faqs?: Array<{ question: string; answer: string }>;
 }
 
 interface CategoryRecord {
@@ -133,6 +135,7 @@ export default function EditorialBlogAdminPage() {
     status: 'PUBLISHED' as 'PUBLISHED' | 'DRAFT',
     content: '',
     tags: '',
+    faqs: [] as Array<{ question: string; answer: string }>,
   });
 
   const [autoSlug, setAutoSlug] = React.useState(true);
@@ -211,6 +214,7 @@ export default function EditorialBlogAdminPage() {
       status: 'PUBLISHED',
       content: '',
       tags: 'Distributed Systems, Cloud Architecture',
+      faqs: [],
     });
     setIsDialogOpen(true);
   };
@@ -230,6 +234,29 @@ export default function EditorialBlogAdminPage() {
       contentText = post.bodyContent;
     }
 
+    const resolvedFaqs = Array.isArray(post.faqs) && post.faqs.length > 0
+      ? post.faqs
+      : Array.isArray(post.bodyContent?.faqs) && post.bodyContent.faqs.length > 0
+      ? post.bodyContent.faqs
+      : [
+          {
+            question: `What are the primary architectural takeaways from "${post.title}"?`,
+            answer: `This publication presents production-verified engineering strategies, performance benchmarks, and architectural paradigms designed to scale enterprise digital operations with zero downtime and high fault tolerance.`,
+          },
+          {
+            question: `How does Gypsym assist enterprise teams with these technologies?`,
+            answer: `Our Senior Technical Fellows and Principal Engineers collaborate directly with client teams to conduct architectural audits, implement modernization pipelines, and ensure seamless production deployments.`,
+          },
+          {
+            question: `Can these methodologies be integrated into our existing legacy systems?`,
+            answer: `Yes. We specialize in incremental modernization and decoupled service architectures, enabling teams to adopt modern engineering advantages without risky and disruptive re-platforming.`,
+          },
+          {
+            question: `How can our engineering leadership schedule a technical consultation?`,
+            answer: `You can reach our engineering desk via the contact form or reserve a dedicated discovery session on our advisory calendar.`,
+          },
+        ];
+
     setFormData({
       title: post.title,
       slug: post.slug,
@@ -240,8 +267,37 @@ export default function EditorialBlogAdminPage() {
       status: (post.status as any) || 'PUBLISHED',
       content: contentText || post.excerpt,
       tags: post.tags?.join(', ') || '',
+      faqs: resolvedFaqs.map((f: any) => ({
+        question: f.question || f.q || '',
+        answer: f.answer || f.a || '',
+      })),
     });
     setIsDialogOpen(true);
+  };
+
+  // FAQ Handlers
+  const handleAddFaq = () => {
+    setFormData((prev) => ({
+      ...prev,
+      faqs: [
+        ...prev.faqs,
+        { question: '', answer: '' },
+      ],
+    }));
+  };
+
+  const handleRemoveFaq = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      faqs: prev.faqs.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleUpdateFaq = (index: number, field: 'question' | 'answer', value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      faqs: prev.faqs.map((f, i) => (i === index ? { ...f, [field]: value } : f)),
+    }));
   };
 
   // Handle Title change with Auto-Slug
@@ -323,6 +379,10 @@ export default function EditorialBlogAdminPage() {
         });
       }
 
+      const validFaqs = (formData.faqs || [])
+        .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+        .filter((f) => f.question || f.answer);
+
       const bodyPayload = {
         sections:
           sections.length > 0
@@ -333,6 +393,7 @@ export default function EditorialBlogAdminPage() {
                   paragraphs: [formData.excerpt],
                 },
               ],
+        faqs: validFaqs,
       };
 
       const payload = {
@@ -344,6 +405,7 @@ export default function EditorialBlogAdminPage() {
         readTimeMinutes: Number(formData.readTimeMinutes) || 8,
         status: formData.status,
         bodyContent: bodyPayload,
+        faqs: validFaqs,
       };
 
       if (editingPost) {
@@ -1171,6 +1233,102 @@ export default function EditorialBlogAdminPage() {
                 placeholder="Write your publication content in rich markdown. Upload images, use ## for sections, > for insights, and **bold** for emphasis..."
                 minHeight="380px"
               />
+            </div>
+
+            {/* ── Frequently Asked Questions (FAQs) ── */}
+            <div className="rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-900/60 p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-primary" />
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                      Frequently Asked Questions (FAQs)
+                    </h4>
+                    {formData.faqs.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                        {formData.faqs.length} {formData.faqs.length === 1 ? 'FAQ' : 'FAQs'}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Add Q&amp;A items for this publication. Displayed on the blog inner page and indexed in Google FAQ rich snippets.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddFaq}
+                  className="h-8 text-xs font-semibold gap-1.5 bg-background shadow-xs hover:bg-muted shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-primary" />
+                  Add FAQ
+                </Button>
+              </div>
+
+              {formData.faqs.length === 0 ? (
+                <div className="border border-dashed border-slate-300 dark:border-neutral-700 rounded-lg p-5 text-center bg-background/60">
+                  <p className="text-xs text-muted-foreground">
+                    No FAQs added yet for this publication.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAddFaq}
+                    className="mt-2 text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add your first Q&amp;A pair
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  {formData.faqs.map((faq, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 sm:p-4 rounded-lg border border-slate-200 dark:border-neutral-800 bg-background shadow-xs space-y-2.5 relative group"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-mono font-bold text-primary uppercase tracking-wider">
+                          Q&amp;A Item #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFaq(idx)}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md p-1 transition-colors cursor-pointer"
+                          title="Remove FAQ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-foreground mb-1">
+                          Question
+                        </label>
+                        <Input
+                          value={faq.question}
+                          onChange={(e) => handleUpdateFaq(idx, 'question', e.target.value)}
+                          placeholder="e.g. How does this architecture handle cross-region state drift?"
+                          className="text-xs h-9"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-foreground mb-1">
+                          Answer
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={faq.answer}
+                          onChange={(e) => handleUpdateFaq(idx, 'answer', e.target.value)}
+                          placeholder="Provide a comprehensive technical response..."
+                          className="w-full rounded-md border border-input bg-background p-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Status Toggle Field */}

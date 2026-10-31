@@ -382,6 +382,11 @@ export interface BlogCategoryDto {
   postCount: number;
 }
 
+export interface BlogFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface BlogPostItemDto {
   id: string;
   slug: string;
@@ -413,6 +418,7 @@ export interface BlogPostItemDto {
   publishedDate: string;
   viewCount: number;
   tags: string[];
+  faqs?: BlogFaqItem[];
 }
 
 export interface BlogPostDetailDto extends BlogPostItemDto {
@@ -435,7 +441,9 @@ export interface BlogPostDetailDto extends BlogPostItemDto {
         code: string;
       };
     }>;
+    faqs?: BlogFaqItem[];
   };
+  faqs?: BlogFaqItem[];
   related?: BlogPostItemDto[];
 }
 
