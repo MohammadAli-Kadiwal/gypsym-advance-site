@@ -10,16 +10,7 @@ interface GlobalWebsiteLoaderProps {
 export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
   const [progress, setProgress] = React.useState<number>(0);
   const [isExiting, setIsExiting] = React.useState<boolean>(false);
-  const [shouldRender, setShouldRender] = React.useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return sessionStorage.getItem('gypsym_intro_shown') !== 'true';
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  });
+  const [shouldRender, setShouldRender] = React.useState<boolean>(false);
 
   // Dynamic branding attributes with local storage synchronization
   const [companyName, setCompanyName] = React.useState<string>(brand?.companyName || 'Gypsym Technology');
@@ -47,7 +38,11 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
         setShouldRender(false);
         return;
       }
-    } catch {}
+    } catch {
+      return;
+    }
+
+    setShouldRender(true);
 
     const barEl = document.getElementById('gypsym-loader-bar');
     const pctEl = document.getElementById('gypsym-loader-pct');

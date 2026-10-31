@@ -9,9 +9,15 @@ const SearchModal = dynamic(
   () => import('@/components/search-modal').then((mod) => mod.SearchModal),
   { ssr: false }
 );
+
+const GlobalWebsiteLoader = dynamic(
+  () => import('@/components/motion/global-website-loader').then((mod) => mod.GlobalWebsiteLoader),
+  { ssr: false }
+);
+
 import { DynamicBrandStyleTag } from '@/components/branding-provider';
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider';
-import { GlobalWebsiteLoader, RouteProgressBar } from '@/components/motion';
+import { RouteProgressBar } from '@/components/motion';
 import { getHeaderData, getScriptSettings, getPublicGlobalSeo } from '@/lib/api';
 import { ScriptInjector } from '@/components/script-injector';
 import { getSiteUrl } from '@/lib/site-url';

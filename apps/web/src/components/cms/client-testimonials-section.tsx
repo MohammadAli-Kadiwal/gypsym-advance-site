@@ -5,9 +5,261 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PageSectionDto, ClientTestimonialsPayload, VideoTestimonialDto, TextTestimonialDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
-import { Play, Star, X, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Star, X, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, RevealItem, AnimatedCounter } from '@/components/motion';
 import { parseVideoUrl } from '@/lib/video-url';
+
+// ── Custom In-Canvas Video Player (Story / Reel agency style) ───────────────
+interface CustomCanvasVideoPlayerProps {
+  vid: VideoTestimonialDto;
+  embedUrl: string;
+  isDirectFile: boolean;
+  clientName: string;
+  loopVideos: boolean;
+  onClose: () => void;
+}
+
+function CustomCanvasVideoPlayer({
+  vid,
+  embedUrl,
+  isDirectFile,
+  clientName,
+  loopVideos,
+  onClose,
+}: CustomCanvasVideoPlayerProps) {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isPaused, setIsPaused] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
+  const [showCenterIcon, setShowCenterIcon] = React.useState(false);
+
+  // Programmatic play on mount without native autoPlay attribute
+  React.useEffect(() => {
+    // Silence/pause any other video elements on the entire page
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach((v) => {
+      if (v !== videoRef.current && !v.paused) {
+        v.pause();
+      }
+    });
+
+    const v = videoRef.current;
+    if (!v) return;
+    const playPromise = v.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        setIsPaused(true);
+      });
+    }
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
+  }, []);
+
+  const togglePlay = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      const p = v.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
+      setIsPaused(false);
+      setShowCenterIcon(true);
+      setTimeout(() => setShowCenterIcon(false), 500);
+    } else {
+      v.pause();
+      setIsPaused(true);
+      setShowCenterIcon(true);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setIsMuted(v.muted);
+  };
+
+  const handleTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const { currentTime, duration } = v;
+    if (duration > 0) {
+      setProgress((currentTime / duration) * 100);
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setIsPaused(true);
+    const v = videoRef.current;
+    if (!loopVideos && v) {
+      v.pause();
+    }
+  };
+
+  if (!isDirectFile) {
+    return (
+      <div className="relative w-full h-full bg-black flex items-center justify-center">
+        <iframe
+          src={embedUrl}
+          title={`Video testimonial - ${clientName}`}
+          className="w-full h-full border-0 rounded-[28px]"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-3.5 right-3.5 z-30 p-2.5 rounded-full bg-black/70 hover:bg-black text-white hover:scale-110 active:scale-95 transition-all shadow-lg backdrop-blur-md cursor-pointer focus:outline-none"
+          aria-label="Stop video playback and return to photo"
+          title="Close video"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative w-full h-full bg-black flex items-center justify-center select-none group/player overflow-hidden rounded-[28px]"
+      onClick={(e) => togglePlay(e)}
+    >
+      <video
+        ref={videoRef}
+        key={vid.id}
+        src={embedUrl}
+        playsInline
+        loop={loopVideos}
+        muted={isMuted}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleVideoEnded}
+        onPlay={() => setIsPaused(false)}
+        onPause={() => setIsPaused(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePlay(e);
+        }}
+        className="w-full h-full object-cover rounded-[28px] cursor-pointer"
+      />
+
+      {/* Top Floating Controls */}
+      <div className="absolute top-3.5 left-3.5 right-3.5 z-20 flex items-center justify-between pointer-events-none">
+        {/* Metric Badge */}
+        {vid.metricHighlight ? (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-neutral-900 backdrop-blur-md shadow-xs pointer-events-auto">
+            {vid.metricHighlight}
+          </span>
+        ) : (
+          <span />
+        )}
+
+        {/* Top-Right Dismiss / Close Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const v = videoRef.current;
+            if (v) v.pause();
+            onClose();
+          }}
+          className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white hover:scale-110 active:scale-95 transition-all shadow-lg backdrop-blur-md cursor-pointer pointer-events-auto focus:outline-none"
+          aria-label="Stop video playback and return to photo"
+          title="Close video"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Center Play/Pause Indicator (Clean White matching idle card when paused) */}
+      {(isPaused || showCenterIcon) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <div
+            onClick={(e) => togglePlay(e)}
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 pointer-events-auto cursor-pointer"
+            aria-label={isPaused ? 'Resume video' : 'Pause video'}
+          >
+            {isPaused ? (
+              <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-neutral-900 ml-1 text-neutral-900" />
+            ) : (
+              <Pause className="w-6 h-6 sm:w-7 sm:h-7 fill-neutral-900 text-neutral-900" />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Elegant Gradient Scrim for Bottom Information & Controls */}
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
+
+      {/* Bottom Information & Sleek Action Buttons */}
+      <div className="absolute bottom-3.5 left-4 right-4 z-20 flex items-end justify-between pointer-events-none">
+        {/* Founder Info */}
+        <div className="text-left text-white max-w-[65%]">
+          <h3 className="text-sm sm:text-base font-bold drop-shadow-md leading-tight truncate">
+            {clientName}
+          </h3>
+          <p className="text-[11px] sm:text-xs text-white/85 font-medium drop-shadow-sm truncate mt-0.5">
+            {vid.company}
+            {vid.location ? ` · ${vid.location}` : ''}
+          </p>
+        </div>
+
+        {/* Play/Pause & Sound Buttons */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          <button
+            type="button"
+            onClick={(e) => togglePlay(e)}
+            className="p-2 rounded-full bg-black/60 hover:bg-black/90 text-white hover:scale-110 active:scale-95 transition-all shadow-md backdrop-blur-md cursor-pointer focus:outline-none"
+            aria-label={isPaused ? 'Play' : 'Pause'}
+            title={isPaused ? 'Play' : 'Pause'}
+          >
+            {isPaused ? (
+              <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
+            ) : (
+              <Pause className="w-3.5 h-3.5 fill-white" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => toggleMute(e)}
+            className="p-2 rounded-full bg-black/60 hover:bg-black/90 text-white hover:scale-110 active:scale-95 transition-all shadow-md backdrop-blur-md cursor-pointer focus:outline-none"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-3.5 h-3.5" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Ultra-Sleek Bottom Edge Animated Progress Bar */}
+      <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-30">
+        <div
+          className="h-full bg-gradient-to-r from-[#d9127b] to-rose-400 transition-[width] duration-100 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface ClientTestimonialsSectionProps {
   section: PageSectionDto;
@@ -22,7 +274,8 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
   const description = p.description || '';
   const ratingSummary = p.ratingSummary;
   const bottomTrustBar = p.bottomTrustBar;
-  const autoplayVideos = p.autoplayVideos !== false;
+  const playOnHover = p.playOnHover ?? false;
+  const loopVideos = p.loopVideos ?? false;
 
   const rawVideos: VideoTestimonialDto[] = Array.isArray(p.videoTestimonials) ? p.videoTestimonials : [];
   const videos = rawVideos
@@ -57,8 +310,23 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
     ? allMobileTestimonials
     : allMobileTestimonials.slice(0, baseGridCount + 1);
 
-  // Video modal state
-  const [activeVideo, setActiveVideo] = React.useState<VideoTestimonialDto | null>(null);
+  // In-canvas single active video playback state
+  const [playingVideoId, setPlayingVideoId] = React.useState<string | null>(null);
+
+  // Desktop hover preview video state
+  const [hoveredVideoId, setHoveredVideoId] = React.useState<string | null>(null);
+
+  // Track viewport so ONLY ONE <video> element ever mounts in the entire DOM
+  const [isMobileViewport, setIsMobileViewport] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobileViewport(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Expanded text testimonials state ("Read more")
   const [expandedIds, setExpandedIds] = React.useState<Record<string, boolean>>({});
@@ -131,18 +399,18 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
     scrollTextTo(Math.min(displayedMobileTestimonials.length - 1, activeTextSlide + 1));
   };
 
-  // Keyboard close for modal (ESC)
+  // Keyboard close for active in-canvas video (ESC)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setActiveVideo(null);
+        setPlayingVideoId(null);
       }
     };
-    if (activeVideo) {
+    if (playingVideoId) {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeVideo]);
+  }, [playingVideoId]);
 
   return (
     <div
@@ -206,37 +474,83 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
         </ScrollReveal>
 
         {/* ── VIDEO TESTIMONIALS ──────────────────────────────────────────────── */}
-        {videos.length > 0 && (
-          <div>
-            {/* DESKTOP VIEW: 3-Card Grid */}
-            <StaggerContainer preset="fast" className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
-              {videos.map((vid) => (
-                <RevealItem key={vid.id}>
-                  <div
-                    className="group relative aspect-[3/4] rounded-[28px] overflow-hidden bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-sm cursor-pointer"
-                    onClick={() => setActiveVideo(vid)}
-                  >
-                    {/* Video Media: Autoplay loop without voice or fallback poster */}
-                    {vid.videoUrl && autoplayVideos ? (
+        {videos.length > 0 && (() => {
+          // ── Render Video Card (In-Canvas Playback & Single-Active Controller) ───────
+          const renderVideoCard = (vid: VideoTestimonialDto, isMobile = false) => {
+            // Strictly guard so only the active viewport's card mounts the <video> element
+            const isPlaying =
+              playingVideoId === vid.id &&
+              (isMobile ? isMobileViewport : !isMobileViewport);
+            const isHovered = playOnHover && !isMobile && hoveredVideoId === vid.id && !isPlaying;
+            const clientName = vid.clientName || (vid as any).name || 'Founder';
+            const parsed = parseVideoUrl(vid.videoUrl);
+
+            return (
+              <div
+                className={`group relative aspect-[3/4] rounded-[28px] overflow-hidden bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 transition-all duration-300 ${
+                  isMobile ? 'w-[82vw] max-w-[310px] shrink-0 snap-center' : ''
+                } ${
+                  isPlaying
+                    ? 'ring-1 ring-black/10 dark:ring-white/20 shadow-xl'
+                    : 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5'
+                }`}
+                onMouseEnter={() => {
+                  if (playOnHover && !isMobile) setHoveredVideoId(vid.id);
+                }}
+                onMouseLeave={() => {
+                  if (playOnHover && !isMobile) setHoveredVideoId(null);
+                }}
+                onClick={() => {
+                  if (!isPlaying && vid.videoUrl) {
+                    setPlayingVideoId(vid.id);
+                  }
+                }}
+              >
+                {isPlaying && parsed ? (
+                  /* Custom In-Canvas Story/Reel Video Player */
+                  <CustomCanvasVideoPlayer
+                    vid={vid}
+                    embedUrl={parsed.embedUrl}
+                    isDirectFile={parsed.isDirectFile}
+                    clientName={clientName}
+                    loopVideos={loopVideos}
+                    onClose={() => setPlayingVideoId(null)}
+                  />
+                ) : (
+                  /* Idle Founder Card with Photo Thumbnail, Badges & Centered Play Button */
+                  <>
+                    {/* Hover Video Preview or Photo Thumbnail */}
+                    {isHovered && parsed?.isDirectFile ? (
                       <video
-                        src={vid.videoUrl}
+                        src={parsed.embedUrl}
                         autoPlay
                         muted
                         loop
                         playsInline
-                        preload="metadata"
-                        poster={vid.thumbnailUrl}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+                        className="w-full h-full object-cover select-none"
                       />
                     ) : vid.thumbnailUrl ? (
                       <Image
                         src={vid.thumbnailUrl}
-                        alt={`${vid.clientName} - ${vid.company}`}
+                        alt={`${clientName} - ${vid.company}`}
                         fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes={isMobile ? '82vw' : '(max-width: 768px) 100vw, 33vw'}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105 select-none"
                       />
-                    ) : null}
+                    ) : (
+                      <div className="w-full h-full bg-neutral-900 flex items-center justify-center text-neutral-500 text-xs font-mono">
+                        No preview
+                      </div>
+                    )}
+
+                    {/* Top Metric Highlight Badge (Timing/Duration hidden per design request) */}
+                    {vid.metricHighlight && (
+                      <div className="absolute top-3.5 left-3.5 z-10 flex items-center gap-1.5 pointer-events-none">
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 dark:bg-black/85 text-neutral-900 dark:text-white backdrop-blur-md shadow-xs">
+                          {vid.metricHighlight}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Subtle Gradient Scrim */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
@@ -244,8 +558,8 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
                     {/* Centered Play Button */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white transition-all duration-200"
-                        aria-label={`Play video testimonial from ${vid.clientName}`}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white active:scale-95 transition-all duration-200"
+                        aria-label={`Play video testimonial from ${clientName}`}
                       >
                         <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-neutral-900 ml-1 text-neutral-900" aria-hidden="true" />
                       </div>
@@ -254,124 +568,89 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
                     {/* Bottom Card Content: Client Name & Company */}
                     <div className="absolute bottom-5 left-5 right-5 text-left text-white pointer-events-none">
                       <h3 className="text-base sm:text-lg font-bold drop-shadow-md leading-tight">
-                        {vid.clientName}
+                        {clientName}
                       </h3>
                       <p className="text-xs sm:text-sm text-white/85 font-medium drop-shadow-sm mt-0.5">
                         {vid.company}
                         {vid.location ? ` · ${vid.location}` : ''}
                       </p>
                     </div>
-                  </div>
-                </RevealItem>
-              ))}
-            </StaggerContainer>
-
-            {/* MOBILE VIEW: Touch Swipeable Horizontal Slider */}
-            <div className="block md:hidden space-y-3">
-              <div
-                ref={videoSliderRef}
-                onScroll={handleVideoScroll}
-                className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-4 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
-              >
-                {videos.map((vid) => (
-                  <div
-                    key={vid.id}
-                    className="w-[82vw] max-w-[310px] shrink-0 snap-center group relative aspect-[3/4] rounded-[28px] overflow-hidden bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800 shadow-md cursor-pointer"
-                    onClick={() => setActiveVideo(vid)}
-                  >
-                    {/* Video Media: Autoplay loop without voice or fallback poster */}
-                    {vid.videoUrl && autoplayVideos ? (
-                      <video
-                        src={vid.videoUrl}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        poster={vid.thumbnailUrl}
-                        className="w-full h-full object-cover pointer-events-none"
-                      />
-                    ) : vid.thumbnailUrl ? (
-                      <Image
-                        src={vid.thumbnailUrl}
-                        alt={`${vid.clientName} - ${vid.company}`}
-                        fill
-                        sizes="82vw"
-                        className="object-cover"
-                      />
-                    ) : null}
-
-                    {/* Subtle Gradient Scrim */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-
-                    {/* Centered Play Button */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div
-                        className="w-14 h-14 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-xl active:scale-95 transition-transform"
-                        aria-label={`Play video testimonial from ${vid.clientName}`}
-                      >
-                        <Play className="w-6 h-6 fill-neutral-900 ml-1 text-neutral-900" aria-hidden="true" />
-                      </div>
-                    </div>
-
-                    {/* Bottom Card Content */}
-                    <div className="absolute bottom-5 left-5 right-5 text-left text-white pointer-events-none">
-                      <h3 className="text-base font-bold drop-shadow-md leading-tight">
-                        {vid.clientName}
-                      </h3>
-                      <p className="text-xs text-white/85 font-medium drop-shadow-sm mt-0.5">
-                        {vid.company}
-                        {vid.location ? ` · ${vid.location}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  </>
+                )}
               </div>
+            );
+          };
 
-              {/* Mobile Video Slider Controls: Prev/Next Buttons + Dot Pagination */}
-              <div className="flex items-center justify-between pt-1 px-1">
-                {/* Dots indicator */}
-                <div className="flex items-center gap-1.5">
-                  {videos.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => scrollVideoTo(i)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        activeVideoSlide === i
-                          ? 'w-6 bg-[#d9287c]'
-                          : 'w-2 bg-neutral-300 dark:bg-neutral-700'
-                      }`}
-                      aria-label={`Go to video slide ${i + 1}`}
-                    />
+          return (
+            <div>
+              {/* DESKTOP VIEW: 3-Card Grid */}
+              <StaggerContainer preset="fast" className="hidden md:grid md:grid-cols-3 gap-5 sm:gap-6">
+                {videos.map((vid) => (
+                  <RevealItem key={vid.id}>
+                    {renderVideoCard(vid, false)}
+                  </RevealItem>
+                ))}
+              </StaggerContainer>
+
+              {/* MOBILE VIEW: Touch Swipeable Horizontal Slider */}
+              <div className="block md:hidden space-y-3">
+                <div
+                  ref={videoSliderRef}
+                  onScroll={handleVideoScroll}
+                  className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden gap-4 -mx-4 px-4 pb-2 pt-1 scroll-smooth"
+                >
+                  {videos.map((vid) => (
+                    <React.Fragment key={vid.id}>
+                      {renderVideoCard(vid, true)}
+                    </React.Fragment>
                   ))}
                 </div>
 
-                {/* Arrow Navigation */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={scrollVideoPrev}
-                    disabled={activeVideoSlide === 0}
-                    className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                    aria-label="Previous video testimonial"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={scrollVideoNext}
-                    disabled={activeVideoSlide >= videos.length - 1}
-                    className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                    aria-label="Next video testimonial"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                {/* Mobile Video Slider Controls: Prev/Next Buttons + Dot Pagination */}
+                <div className="flex items-center justify-between pt-1 px-1">
+                  {/* Dots indicator */}
+                  <div className="flex items-center gap-1.5">
+                    {videos.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => scrollVideoTo(i)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          activeVideoSlide === i
+                            ? 'w-6 bg-[#d9287c]'
+                            : 'w-2 bg-neutral-300 dark:bg-neutral-700'
+                        }`}
+                        aria-label={`Go to video slide ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Arrow Navigation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={scrollVideoPrev}
+                      disabled={activeVideoSlide === 0}
+                      className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      aria-label="Previous video testimonial"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={scrollVideoNext}
+                      disabled={activeVideoSlide >= videos.length - 1}
+                      className="w-9 h-9 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      aria-label="Next video testimonial"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── TEXT TESTIMONIALS: FEATURED + GRID ─────────────────────────────── */}
         {testimonials.length > 0 && (
@@ -772,49 +1051,6 @@ export function ClientTestimonialsSection({ section }: ClientTestimonialsSection
           );
         })()}
       </div>
-
-      {/* ── ACCESSIBLE VIDEO PLAYBACK MODAL ─────────────────────────────────── */}
-      {activeVideo && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Video testimonial from ${activeVideo.clientName}`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in-0"
-        >
-          <div className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden bg-black border border-neutral-800 shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setActiveVideo(null)}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-neutral-900/80 text-white hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
-              aria-label="Close video player"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {(() => {
-              const parsed = parseVideoUrl(activeVideo.videoUrl);
-              if (!parsed) return null;
-              return parsed.isDirectFile ? (
-                <video
-                  src={parsed.embedUrl}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <iframe
-                  src={parsed.embedUrl}
-                  title={`Video testimonial - ${activeVideo.clientName}`}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              );
-            })()}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

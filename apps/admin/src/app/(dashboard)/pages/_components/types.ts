@@ -202,6 +202,8 @@ export interface ClientTestimonialsPayload {
   titleHighlight?: string;
   description?: string;
   autoplayVideos?: boolean;
+  playOnHover?: boolean;
+  loopVideos?: boolean;
   ratingSummary?: RatingSummary;
   videoTestimonials?: VideoTestimonial[];
   textTestimonials?: TextTestimonial[];

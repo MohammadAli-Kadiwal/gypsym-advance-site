@@ -16,6 +16,11 @@ import {
   Play,
   Quote,
   Eye,
+  Upload,
+  Link2,
+  ImageOff,
+  Film,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,6 +83,49 @@ export default function TestimonialsManagementPage() {
   const [reviewModalOpen, setReviewModalOpen] = React.useState(false);
   const [editingReviewIndex, setEditingReviewIndex] = React.useState<number | null>(null);
   const [reviewForm, setReviewForm] = React.useState<Partial<TextTestimonial>>({});
+
+  // Media upload & preview states
+  const [videoThumbnailTab, setVideoThumbnailTab] = React.useState<'upload' | 'url'>('url');
+  const [videoThumbnailError, setVideoThumbnailError] = React.useState(false);
+  const videoFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [reviewAvatarTab, setReviewAvatarTab] = React.useState<'upload' | 'url'>('url');
+  const [reviewAvatarError, setReviewAvatarError] = React.useState(false);
+  const reviewFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleVideoThumbnailSelect = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('Thumbnail file size exceeds 5MB. Please choose a smaller image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        setVideoThumbnailError(false);
+        setVideoForm((v) => ({ ...v, thumbnailUrl: result }));
+        notify.success(`Thumbnail ready: ${file.name}`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleReviewAvatarSelect = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error('Avatar file size exceeds 5MB. Please choose a smaller image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        setReviewAvatarError(false);
+        setReviewForm((r) => ({ ...r, avatarUrl: result }));
+        notify.success(`Avatar ready: ${file.name}`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Delete Confirm Dialog State
   const [deleteDialog, setDeleteDialog] = React.useState<{
@@ -178,6 +226,8 @@ export default function TestimonialsManagementPage() {
   // ─── Video CRUD Helpers ────────────────────────────────────────────────────────
   const openCreateVideo = () => {
     setEditingVideoIndex(null);
+    setVideoThumbnailTab('url');
+    setVideoThumbnailError(false);
     setVideoForm({
       id: `vid-${Date.now()}`,
       clientName: '',
@@ -197,6 +247,12 @@ export default function TestimonialsManagementPage() {
   const openEditVideo = (index: number) => {
     setEditingVideoIndex(index);
     const vid = videos[index];
+    setVideoThumbnailError(false);
+    if (vid?.thumbnailUrl?.startsWith('data:image')) {
+      setVideoThumbnailTab('upload');
+    } else {
+      setVideoThumbnailTab('url');
+    }
     setVideoForm({
       ...vid,
       clientName: vid?.clientName || (vid as any)?.name || '',
@@ -279,6 +335,8 @@ export default function TestimonialsManagementPage() {
   // ─── Review CRUD Helpers ───────────────────────────────────────────────────────
   const openCreateReview = () => {
     setEditingReviewIndex(null);
+    setReviewAvatarTab('url');
+    setReviewAvatarError(false);
     setReviewForm({
       id: `text-${Date.now()}`,
       clientName: '',
@@ -300,6 +358,12 @@ export default function TestimonialsManagementPage() {
   const openEditReview = (index: number) => {
     setEditingReviewIndex(index);
     const rev = reviews[index];
+    setReviewAvatarError(false);
+    if (rev?.avatarUrl?.startsWith('data:image')) {
+      setReviewAvatarTab('upload');
+    } else {
+      setReviewAvatarTab('url');
+    }
     setReviewForm({
       ...rev,
       clientName: rev?.clientName || (rev as any)?.name || '',
@@ -616,6 +680,74 @@ export default function TestimonialsManagementPage() {
                 <Plus className="h-3.5 w-3.5" />
                 Add Video Testimonial
               </Button>
+            </div>
+
+            {/* ── Video Playback & Interaction Settings ── */}
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Film className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Video Playback & Interaction Settings</h3>
+                    <p className="text-xs text-muted-foreground">Configure hover behavior, looping, and autoplay for video cards on the website</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Play on Hover */}
+                <div className="flex items-start justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5 pr-3">
+                    <div className="text-xs font-bold text-foreground">Play on Hover Preview</div>
+                    <div className="text-[11px] text-muted-foreground leading-normal">
+                      Stream muted video automatically when desktop visitors hover over a video card.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={p.playOnHover ?? false}
+                    onCheckedChange={(val) => {
+                      const next = updatePayload({ playOnHover: val });
+                      if (next) handleSaveAll(next);
+                    }}
+                  />
+                </div>
+
+                {/* 2. Loop on Finish */}
+                <div className="flex items-start justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5 pr-3">
+                    <div className="text-xs font-bold text-foreground">Loop Video on Finish</div>
+                    <div className="text-[11px] text-muted-foreground leading-normal">
+                      Automatically replay the video when it reaches the end instead of stopping at the final frame.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={p.loopVideos ?? false}
+                    onCheckedChange={(val) => {
+                      const next = updatePayload({ loopVideos: val });
+                      if (next) handleSaveAll(next);
+                    }}
+                  />
+                </div>
+
+                {/* 3. Single-Active Playback */}
+                <div className="flex items-start justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5 pr-3">
+                    <div className="text-xs font-bold text-foreground">Single-Active Video Mode</div>
+                    <div className="text-[11px] text-muted-foreground leading-normal">
+                      Starting a new video automatically pauses any other video and returns the old card to its photo.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={p.autoplayVideos ?? true}
+                    onCheckedChange={(val) => {
+                      const next = updatePayload({ autoplayVideos: val });
+                      if (next) handleSaveAll(next);
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1030,14 +1162,14 @@ export default function TestimonialsManagementPage() {
 
       {/* ── Video Modal Dialog ────────────────────────────────────────────────── */}
       <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
-        <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-border/90 bg-card shadow-2xl p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[92vh] rounded-2xl border-border bg-card shadow-2xl p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                 <Video className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-sm font-bold text-foreground">
+                <DialogTitle className="text-base font-bold text-foreground">
                   {editingVideoIndex !== null ? 'Edit Video Testimonial' : 'Add Video Testimonial'}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -1047,10 +1179,13 @@ export default function TestimonialsManagementPage() {
             </div>
           </DialogHeader>
 
-          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {/* Row 1: Executive Name & Company */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Executive Name *</label>
+                <label className="text-xs font-semibold text-foreground">
+                  Executive Name <span className="text-destructive">*</span>
+                </label>
                 <Input
                   value={videoForm.clientName || ''}
                   onChange={(e) => setVideoForm((v) => ({ ...v, clientName: e.target.value }))}
@@ -1070,7 +1205,8 @@ export default function TestimonialsManagementPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Row 2: Role / Title & Location */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Role / Title</label>
                 <Input
@@ -1081,6 +1217,19 @@ export default function TestimonialsManagementPage() {
                 />
               </div>
               <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Location</label>
+                <Input
+                  value={videoForm.location || ''}
+                  onChange={(e) => setVideoForm((v) => ({ ...v, location: e.target.value }))}
+                  placeholder="e.g. San Francisco, CA"
+                  className="text-xs rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Metric Pill & Duration */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Metric Highlight Pill</label>
                 <Input
                   value={videoForm.metricHighlight || ''}
@@ -1089,9 +1238,6 @@ export default function TestimonialsManagementPage() {
                   className="text-xs rounded-xl text-emerald-600 font-semibold"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Duration (e.g. 1:45)</label>
                 <Input
@@ -1101,28 +1247,205 @@ export default function TestimonialsManagementPage() {
                   className="text-xs rounded-xl font-mono"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Thumbnail Image URL</label>
-                <Input
-                  value={videoForm.thumbnailUrl || ''}
-                  onChange={(e) => setVideoForm((v) => ({ ...v, thumbnailUrl: e.target.value }))}
-                  placeholder="/images/testimonials/founder-1.jpg"
-                  className="text-xs rounded-xl font-mono"
-                />
-              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Video Asset URL (MP4)</label>
+            {/* Row 4: Thumbnail Image (Direct Upload / URL) */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <span>Thumbnail Image</span>
+                  <span className="text-muted-foreground font-normal text-[11px]">(Portrait 3:4 recommended)</span>
+                </label>
+                <div className="inline-flex rounded-lg p-0.5 bg-muted border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setVideoThumbnailTab('upload')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                      videoThumbnailTab === 'upload'
+                        ? 'bg-background text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Upload className="h-3 w-3" />
+                    Direct Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVideoThumbnailTab('url')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                      videoThumbnailTab === 'url'
+                        ? 'bg-background text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Image URL
+                  </button>
+                </div>
+              </div>
+
+              <input
+                ref={videoFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleVideoThumbnailSelect(e.target.files[0]);
+                }}
+              />
+
+              {videoThumbnailTab === 'upload' ? (
+                videoForm.thumbnailUrl ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/40">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-14 w-12 rounded-lg bg-neutral-900 border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                        {!videoThumbnailError ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={videoForm.thumbnailUrl}
+                            alt="Thumbnail Preview"
+                            className="h-full w-full object-cover"
+                            onError={() => setVideoThumbnailError(true)}
+                          />
+                        ) : (
+                          <ImageOff className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          Founder Thumbnail Image
+                        </p>
+                        <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                          Thumbnail ready
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => videoFileInputRef.current?.click()}
+                        className="text-xs h-8 cursor-pointer"
+                      >
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setVideoForm((v) => ({ ...v, thumbnailUrl: '' }))}
+                        className="text-xs h-8 text-destructive hover:bg-destructive/10 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => videoFileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border hover:border-primary/60 rounded-xl cursor-pointer bg-muted/20 hover:bg-muted/40 transition-colors text-center"
+                  >
+                    <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="text-xs font-medium text-foreground">Click to upload executive thumbnail</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">PNG, JPG, WebP up to 5MB</p>
+                  </div>
+                )
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={videoForm.thumbnailUrl || ''}
+                    onChange={(e) => {
+                      setVideoThumbnailError(false);
+                      setVideoForm((v) => ({ ...v, thumbnailUrl: e.target.value }));
+                    }}
+                    placeholder="https://... or /images/testimonials/founder-1.jpg"
+                    className="text-xs font-mono rounded-xl"
+                  />
+                  {videoForm.thumbnailUrl && (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/40">
+                      <div className="h-14 w-12 rounded-lg bg-neutral-900 border border-border overflow-hidden shrink-0 flex items-center justify-center">
+                        {!videoThumbnailError ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={videoForm.thumbnailUrl}
+                            alt="Thumbnail Preview"
+                            className="h-full w-full object-cover"
+                            onError={() => setVideoThumbnailError(true)}
+                          />
+                        ) : (
+                          <ImageOff className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {videoThumbnailError ? 'Invalid image URL or failed to load' : 'Thumbnail loaded successfully'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">{videoForm.thumbnailUrl}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Row 5: Video Asset URL & Live Video Preview */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-primary" />
+                  <span>Video Asset URL</span>
+                  <span className="text-muted-foreground font-normal text-[11px]">(Direct MP4, WebM, or CDN link)</span>
+                </label>
+                {videoForm.videoUrl && (
+                  <a
+                    href={videoForm.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Open Asset
+                  </a>
+                )}
+              </div>
               <Input
                 value={videoForm.videoUrl || ''}
                 onChange={(e) => setVideoForm((v) => ({ ...v, videoUrl: e.target.value }))}
                 placeholder="https://assets.mixkit.co/videos/preview/..."
-                className="text-xs rounded-xl font-mono"
+                className="text-xs font-mono rounded-xl"
               />
+
+              {/* In-Modal Live Video Preview Player */}
+              {videoForm.videoUrl ? (
+                <div className="rounded-xl border border-border overflow-hidden bg-black/90 p-2.5">
+                  <div className="text-[11px] text-muted-foreground mb-2 flex items-center justify-between px-1">
+                    <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                      <Play className="w-3 h-3" /> Live Video Preview
+                    </span>
+                    <span className="text-[10px]">Verify stream playback inside dialog</span>
+                  </div>
+                  <video
+                    key={videoForm.videoUrl}
+                    src={videoForm.videoUrl}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    className="w-full max-h-52 rounded-lg bg-black object-contain shadow-inner"
+                  />
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl border border-dashed border-border bg-muted/20 text-center">
+                  <p className="text-[11px] text-muted-foreground">
+                    Enter a video asset link above to preview video playback inside this dialog.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-1.5">
+            {/* Row 6: Quote Snippet */}
+            <div className="space-y-1.5 pt-2 border-t border-border">
               <label className="text-xs font-semibold text-foreground">Quote Snippet</label>
               <Textarea
                 value={videoForm.quote || ''}
@@ -1133,13 +1456,14 @@ export default function TestimonialsManagementPage() {
               />
             </div>
 
+            {/* Row 7: Publication Status Toggle */}
             <StatusToggleField
               value={videoForm.isActive === false ? 'DRAFT' : 'PUBLISHED'}
               onChange={(_status, isActive) => setVideoForm((v) => ({ ...v, isActive }))}
             />
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
+          <DialogFooter className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
@@ -1161,14 +1485,14 @@ export default function TestimonialsManagementPage() {
 
       {/* ── Review Modal Dialog ───────────────────────────────────────────────── */}
       <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
-        <DialogContent className="w-[95vw] max-w-lg rounded-2xl border-border/90 bg-card shadow-2xl p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[92vh] rounded-2xl border-border bg-card shadow-2xl p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Quote className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-sm font-bold text-foreground">
+                <DialogTitle className="text-base font-bold text-foreground">
                   {editingReviewIndex !== null ? 'Edit Client Review' : 'Add Client Review'}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -1178,10 +1502,13 @@ export default function TestimonialsManagementPage() {
             </div>
           </DialogHeader>
 
-          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {/* Row 1: Client Name & Company */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Client Name *</label>
+                <label className="text-xs font-semibold text-foreground">
+                  Client Name <span className="text-destructive">*</span>
+                </label>
                 <Input
                   value={reviewForm.clientName || ''}
                   onChange={(e) => setReviewForm((r) => ({ ...r, clientName: e.target.value }))}
@@ -1201,7 +1528,8 @@ export default function TestimonialsManagementPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Row 2: Role & Title & Project Type Badge */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Role & Title</label>
                 <Input
@@ -1222,9 +1550,15 @@ export default function TestimonialsManagementPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Row 3: Rating & Location */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Star Rating (1-5)</label>
+                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                  <span>Star Rating</span>
+                  <span className="text-amber-500 font-bold flex items-center gap-1">
+                    {'★'.repeat(reviewForm.rating ?? 5)} ({reviewForm.rating ?? 5}/5)
+                  </span>
+                </label>
                 <Input
                   type="number"
                   min={1}
@@ -1235,18 +1569,162 @@ export default function TestimonialsManagementPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Avatar Image URL</label>
+                <label className="text-xs font-semibold text-foreground">Location</label>
                 <Input
-                  value={reviewForm.avatarUrl || ''}
-                  onChange={(e) => setReviewForm((r) => ({ ...r, avatarUrl: e.target.value }))}
-                  placeholder="/images/testimonials/avatar-1.jpg"
-                  className="text-xs rounded-xl font-mono"
+                  value={reviewForm.location || ''}
+                  onChange={(e) => setReviewForm((r) => ({ ...r, location: e.target.value }))}
+                  placeholder="e.g. Toronto, Canada"
+                  className="text-xs rounded-xl"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Review Quote *</label>
+            {/* Row 4: Avatar Image (Direct Upload / URL) */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <span>Client Avatar</span>
+                  <span className="text-muted-foreground font-normal text-[11px]">(Square 1:1 recommended)</span>
+                </label>
+                <div className="inline-flex rounded-lg p-0.5 bg-muted border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setReviewAvatarTab('upload')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                      reviewAvatarTab === 'upload'
+                        ? 'bg-background text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Upload className="h-3 w-3" />
+                    Direct Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReviewAvatarTab('url')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                      reviewAvatarTab === 'url'
+                        ? 'bg-background text-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Image URL
+                  </button>
+                </div>
+              </div>
+
+              <input
+                ref={reviewFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleReviewAvatarSelect(e.target.files[0]);
+                }}
+              />
+
+              {reviewAvatarTab === 'upload' ? (
+                reviewForm.avatarUrl ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/40">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-12 w-12 rounded-full bg-neutral-900 border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                        {!reviewAvatarError ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={reviewForm.avatarUrl}
+                            alt="Avatar Preview"
+                            className="h-full w-full object-cover"
+                            onError={() => setReviewAvatarError(true)}
+                          />
+                        ) : (
+                          <ImageOff className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          Client Avatar Photo
+                        </p>
+                        <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                          Avatar ready
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => reviewFileInputRef.current?.click()}
+                        className="text-xs h-8 cursor-pointer"
+                      >
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReviewForm((r) => ({ ...r, avatarUrl: '' }))}
+                        className="text-xs h-8 text-destructive hover:bg-destructive/10 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => reviewFileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border hover:border-primary/60 rounded-xl cursor-pointer bg-muted/20 hover:bg-muted/40 transition-colors text-center"
+                  >
+                    <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="text-xs font-medium text-foreground">Click to upload avatar photo</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">PNG, JPG, WebP up to 5MB</p>
+                  </div>
+                )
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={reviewForm.avatarUrl || ''}
+                    onChange={(e) => {
+                      setReviewAvatarError(false);
+                      setReviewForm((r) => ({ ...r, avatarUrl: e.target.value }));
+                    }}
+                    placeholder="https://... or /images/testimonials/avatar-1.jpg"
+                    className="text-xs font-mono rounded-xl"
+                  />
+                  {reviewForm.avatarUrl && (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/40">
+                      <div className="h-12 w-12 rounded-full bg-neutral-900 border border-border overflow-hidden shrink-0 flex items-center justify-center">
+                        {!reviewAvatarError ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={reviewForm.avatarUrl}
+                            alt="Avatar Preview"
+                            className="h-full w-full object-cover"
+                            onError={() => setReviewAvatarError(true)}
+                          />
+                        ) : (
+                          <ImageOff className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {reviewAvatarError ? 'Invalid image URL or failed to load' : 'Avatar loaded successfully'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">{reviewForm.avatarUrl}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Row 5: Review Quote */}
+            <div className="space-y-1.5 pt-2 border-t border-border">
+              <label className="text-xs font-semibold text-foreground">
+                Review Quote <span className="text-destructive">*</span>
+              </label>
               <Textarea
                 value={reviewForm.content || reviewForm.quote || ''}
                 onChange={(e) => setReviewForm((r) => ({ ...r, content: e.target.value, quote: e.target.value }))}
@@ -1256,7 +1734,8 @@ export default function TestimonialsManagementPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            {/* Row 6: Badges & Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
                 <div>
                   <div className="text-xs font-bold text-foreground">Repeat Client</div>
@@ -1280,13 +1759,14 @@ export default function TestimonialsManagementPage() {
               </div>
             </div>
 
+            {/* Row 7: Publication Status */}
             <StatusToggleField
               value={reviewForm.isActive === false ? 'DRAFT' : 'PUBLISHED'}
               onChange={(_status, isActive) => setReviewForm((r) => ({ ...r, isActive }))}
             />
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
+          <DialogFooter className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
