@@ -85,7 +85,7 @@ export default function EmailSmtpSettingsPage() {
     bookingNotificationsEnabled: true,
     bookingNotificationRecipients: [],
     bookingNotificationSubject: 'New Discovery Call Scheduled',
-    sendAutoReply: false,
+    sendAutoReply: true,
     autoReplySubject: 'Thank you for contacting Gypsym Technology',
     autoReplyBody:
       'Thank you for contacting Gypsym Technology. We have received your inquiry and our enterprise team will respond shortly.',
@@ -108,7 +108,12 @@ export default function EmailSmtpSettingsPage() {
     try {
       const data: any = await settingsService.getSmtp();
       if (data) {
-        setSettings(data);
+        setSettings({
+          ...data,
+          sendAutoReply: data.sendAutoReply !== undefined ? Boolean(data.sendAutoReply) : true,
+          notificationsEnabled: data.notificationsEnabled !== undefined ? Boolean(data.notificationsEnabled) : true,
+          bookingNotificationsEnabled: data.bookingNotificationsEnabled !== undefined ? Boolean(data.bookingNotificationsEnabled) : true,
+        });
         const resolvedAdminList = Array.isArray(data.adminNotificationRecipients) && data.adminNotificationRecipients.length > 0
           ? data.adminNotificationRecipients
           : Array.isArray(data.notificationRecipients) && data.notificationRecipients.length > 0
@@ -306,6 +311,21 @@ export default function EmailSmtpSettingsPage() {
           </div>
         }
       />
+
+      {/* Unconfigured Alert Callout */}
+      {!settings.isConfigured && (
+        <div className="rounded-2xl border border-amber-200/90 bg-amber-50/80 dark:bg-amber-950/20 dark:border-amber-900/50 p-4 sm:p-5 flex items-start gap-3.5 shadow-xs">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold text-amber-950 dark:text-amber-200">
+              SMTP Outbound Gateway Not Configured
+            </h4>
+            <p className="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
+              Inbound contact inquiry alerts and client confirmation receipts cannot reach external inboxes until valid SMTP credentials (Host, Port, User, Password) are configured and saved below.
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* ── SMTP Server Details ─────────────────────────────────────────── */}

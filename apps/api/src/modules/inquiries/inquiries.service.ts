@@ -132,20 +132,54 @@ export class InquiriesService {
 
     this.logger.log(`New contact submission created with ID: ${submission.id}`);
 
-    // Trigger async email notifications (do not await to avoid blocking user response)
-    Promise.all([
+    const serviceName =
+      rawData.serviceCategory ||
+      rawData.serviceInterest ||
+      rawData.serviceName ||
+      rawData.service ||
+      'Solutions Consultation';
+
+    // In-app real-time notification
+    this.prisma.notification
+      .create({
+        data: {
+          type: 'LEAD_RECEIVED',
+          title: `New Lead: ${submission.fullName}`,
+          message: `${submission.companyName ? submission.companyName + ' • ' : ''}${serviceName} - ${submission.projectDescription ? submission.projectDescription.slice(0, 140) : 'Inquiry received'}`,
+          linkUrl: '/content/submissions',
+        },
+      })
+      .catch((err) => {
+        this.logger.debug(`Could not write in-app notification: ${err?.message}`);
+      });
+
+    // Trigger async email notifications (independent promises)
+    Promise.allSettled([
       this.emailService.sendInquiryNotification({
         fullName: submission.fullName,
         businessEmail: submission.businessEmail,
         phone: submission.phone,
         companyName: submission.companyName,
+        serviceName,
         projectDescription: submission.projectDescription,
         submittedData: rawData,
         createdAt: submission.createdAt,
       }),
-      this.emailService.sendAutoReply(submission.businessEmail, submission.fullName, rawData),
-    ]).catch((err) => {
-      this.logger.error(`Error in async email dispatch: ${err?.message || err}`);
+      this.emailService.sendAutoReply(submission.businessEmail, submission.fullName, {
+        companyName: submission.companyName,
+        serviceName,
+        projectDescription: submission.projectDescription,
+        ...rawData,
+      }),
+    ]).then((results) => {
+      results.forEach((res, idx) => {
+        const type = idx === 0 ? 'Admin Inquiry Alert' : 'Client Auto-Reply';
+        if (res.status === 'fulfilled') {
+          this.logger.log(`✓ ${type} successfully processed for submission ${submission.id}`);
+        } else {
+          this.logger.warn(`⚠ ${type} failed for submission ${submission.id}: ${res.reason}`);
+        }
+      });
     });
 
     return {
