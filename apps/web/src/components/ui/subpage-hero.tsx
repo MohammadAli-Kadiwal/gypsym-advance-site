@@ -174,8 +174,7 @@ export function SubpageHero({
                           value={item.value}
                           duration={1.8}
                           delay={i * 120}
-                          threshold={0}
-                          rootMargin="100px 0px 100px 0px"
+                          threshold={0.15}
                         />
                       </span>
                     </div>

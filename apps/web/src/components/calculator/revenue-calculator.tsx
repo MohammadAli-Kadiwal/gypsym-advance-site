@@ -16,6 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AnimatedCounter } from '@/components/motion';
 import { getSiteUrl } from '@/lib/site-url';
 
 interface CurrencyConfig {
@@ -41,6 +42,7 @@ export function RevenueUpliftCalculator() {
   const [currentAov, setCurrentAov] = React.useState<number>(125); // $125
   const [currentTtfb, setCurrentTtfb] = React.useState<number>(2.4); // 2.4s
   const [copied, setCopied] = React.useState(false);
+  const [hasInteracted, setHasInteracted] = React.useState(false);
 
   const activeCurrency = (CURRENCIES[currency] ?? CURRENCIES['USD'])!;
 
@@ -118,7 +120,10 @@ Explore: ${getSiteUrl()}/roi-calculator`;
             <button
               key={cur}
               type="button"
-              onClick={() => setCurrency(cur)}
+              onClick={() => {
+                setHasInteracted(true);
+                setCurrency(cur);
+              }}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
                 currency === cur
                   ? 'bg-card text-foreground shadow-xs'
@@ -149,7 +154,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                   <span>Current Annual GMV / Revenue</span>
                 </label>
                 <span className="font-mono text-sm sm:text-base font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20">
-                  {formatMoney(annualGmv, true)}
+                  {hasInteracted ? (
+                    formatMoney(annualGmv, true)
+                  ) : (
+                    <AnimatedCounter
+                      value={formatMoney(annualGmv, true)}
+                      duration={1.6}
+                      delay={100}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
               </div>
               <input
@@ -158,7 +172,10 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 max={50000000}
                 step={500000}
                 value={annualGmv}
-                onChange={(e) => setAnnualGmv(Number(e.target.value))}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setAnnualGmv(Number(e.target.value));
+                }}
                 className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
               />
               <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
@@ -176,7 +193,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                   <span>Current Store Conversion Rate (CVR)</span>
                 </label>
                 <span className="font-mono text-sm sm:text-base font-bold text-foreground bg-muted px-2.5 py-0.5 rounded-lg border border-border">
-                  {currentCvr.toFixed(2)}%
+                  {hasInteracted ? (
+                    `${currentCvr.toFixed(2)}%`
+                  ) : (
+                    <AnimatedCounter
+                      value={`${currentCvr.toFixed(2)}%`}
+                      duration={1.6}
+                      delay={150}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
               </div>
               <input
@@ -185,7 +211,10 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 max={4.5}
                 step={0.1}
                 value={currentCvr}
-                onChange={(e) => setCurrentCvr(Number(e.target.value))}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setCurrentCvr(Number(e.target.value));
+                }}
                 className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
               />
               <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
@@ -203,7 +232,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                   <span>Average Order Value (AOV)</span>
                 </label>
                 <span className="font-mono text-sm sm:text-base font-bold text-foreground bg-muted px-2.5 py-0.5 rounded-lg border border-border">
-                  {formatMoney(currentAov)}
+                  {hasInteracted ? (
+                    formatMoney(currentAov)
+                  ) : (
+                    <AnimatedCounter
+                      value={formatMoney(currentAov)}
+                      duration={1.6}
+                      delay={200}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
               </div>
               <input
@@ -212,7 +250,10 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 max={400}
                 step={5}
                 value={currentAov}
-                onChange={(e) => setCurrentAov(Number(e.target.value))}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setCurrentAov(Number(e.target.value));
+                }}
                 className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
               />
               <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
@@ -230,7 +271,20 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                   <span>Current Mobile Server TTFB Latency</span>
                 </label>
                 <span className="font-mono text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
-                  {currentTtfb.toFixed(1)}s ({(currentTtfb * 1000).toFixed(0)}ms)
+                  {hasInteracted ? (
+                    `${currentTtfb.toFixed(1)}s (${(currentTtfb * 1000).toFixed(0)}ms)`
+                  ) : (
+                    <>
+                      <AnimatedCounter
+                        value={`${currentTtfb.toFixed(1)}s`}
+                        duration={1.6}
+                        delay={250}
+                        threshold={0.15}
+                      />
+                      {' '}
+                      <span className="text-xs opacity-80">({(currentTtfb * 1000).toFixed(0)}ms)</span>
+                    </>
+                  )}
                 </span>
               </div>
               <input
@@ -239,7 +293,10 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 max={4.2}
                 step={0.1}
                 value={currentTtfb}
-                onChange={(e) => setCurrentTtfb(Number(e.target.value))}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setCurrentTtfb(Number(e.target.value));
+                }}
                 className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
               />
               <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
@@ -256,6 +313,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 <button
                   type="button"
                   onClick={() => {
+                    setHasInteracted(true);
                     setAnnualGmv(5000000);
                     setCurrentCvr(1.4);
                     setCurrentAov(85);
@@ -268,6 +326,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 <button
                   type="button"
                   onClick={() => {
+                    setHasInteracted(true);
                     setAnnualGmv(18000000);
                     setCurrentCvr(2.1);
                     setCurrentAov(160);
@@ -280,6 +339,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 <button
                   type="button"
                   onClick={() => {
+                    setHasInteracted(true);
                     setAnnualGmv(35000000);
                     setCurrentCvr(1.9);
                     setCurrentAov(280);
@@ -321,7 +381,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                 Projected Annual Incremental Lift
               </span>
               <div className="text-3xl sm:text-5xl font-extrabold tracking-tight text-primary font-mono">
-                +{formatMoney(annualIncrementalRevenue, true)}
+                {hasInteracted ? (
+                  `+${formatMoney(annualIncrementalRevenue, true)}`
+                ) : (
+                  <AnimatedCounter
+                    value={`+${formatMoney(annualIncrementalRevenue, true)}`}
+                    duration={1.8}
+                    delay={150}
+                    threshold={0.15}
+                  />
+                )}
                 <span className="text-xs sm:text-sm font-semibold text-muted-foreground font-sans ml-1">/ year</span>
               </div>
               <p className="text-[11px] text-muted-foreground pt-1">
@@ -335,7 +404,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-1">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground block">Monthly Expansion</span>
                 <span className="text-lg font-bold font-mono text-foreground block">
-                  +{formatMoney(monthlyCashflow, true)}
+                  {hasInteracted ? (
+                    `+${formatMoney(monthlyCashflow, true)}`
+                  ) : (
+                    <AnimatedCounter
+                      value={`+${formatMoney(monthlyCashflow, true)}`}
+                      duration={1.6}
+                      delay={250}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
                 <span className="text-[10px] text-muted-foreground">Every 30 days</span>
               </div>
@@ -343,7 +421,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-1">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground block">Daily Incremental</span>
                 <span className="text-lg font-bold font-mono text-foreground block">
-                  +{formatMoney(dailySurge, true)}
+                  {hasInteracted ? (
+                    `+${formatMoney(dailySurge, true)}`
+                  ) : (
+                    <AnimatedCounter
+                      value={`+${formatMoney(dailySurge, true)}`}
+                      duration={1.6}
+                      delay={350}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
                 <span className="text-[10px] text-muted-foreground">24-hour revenue</span>
               </div>
@@ -351,7 +438,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-1">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground block">New Conversion Rate</span>
                 <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 block">
-                  {newCvr.toFixed(2)}%
+                  {hasInteracted ? (
+                    `${newCvr.toFixed(2)}%`
+                  ) : (
+                    <AnimatedCounter
+                      value={`${newCvr.toFixed(2)}%`}
+                      duration={1.6}
+                      delay={400}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
                 <span className="text-[10px] text-muted-foreground">from {currentCvr.toFixed(2)}%</span>
               </div>
@@ -359,7 +455,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-1">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground block">Extra Annual Orders</span>
                 <span className="text-lg font-bold font-mono text-foreground block">
-                  +{Math.round(incrementalOrders).toLocaleString()}
+                  {hasInteracted ? (
+                    `+${Math.round(incrementalOrders).toLocaleString()}`
+                  ) : (
+                    <AnimatedCounter
+                      value={`+${Math.round(incrementalOrders).toLocaleString()}`}
+                      duration={1.6}
+                      delay={450}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
                 <span className="text-[10px] text-muted-foreground">completed checkouts</span>
               </div>
@@ -370,7 +475,16 @@ Explore: ${getSiteUrl()}/roi-calculator`;
               <div className="flex items-center justify-between text-[11px] font-semibold">
                 <span className="text-muted-foreground">Speed Delta</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  {(latencyDeltaSeconds * 1000).toFixed(0)}ms Faster
+                  {hasInteracted ? (
+                    `${(latencyDeltaSeconds * 1000).toFixed(0)}ms Faster`
+                  ) : (
+                    <AnimatedCounter
+                      value={`${(latencyDeltaSeconds * 1000).toFixed(0)}ms Faster`}
+                      duration={1.5}
+                      delay={300}
+                      threshold={0.15}
+                    />
+                  )}
                 </span>
               </div>
               <div className="space-y-1.5">

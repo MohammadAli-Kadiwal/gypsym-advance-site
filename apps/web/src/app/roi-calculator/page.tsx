@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { RevenueUpliftCalculator } from '@/components/calculator/revenue-calculator';
 import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildFaqSchema, buildWebPageSchema } from '@/components/seo/json-ld';
 import { getPageBySlug } from '@/lib/api';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
@@ -56,17 +56,20 @@ const HERO_CREDENTIALS: CredentialItem[] = [
 const EMPIRICAL_METRICS = [
   {
     source: 'Deloitte Digital (2024)',
-    stat: '+8.4% Retail CVR',
+    stat: '+8.4%',
+    unit: 'Retail CVR',
     desc: 'Average conversion rate increase across 37 flagship e-commerce brands for every 100ms mobile speed reduction.',
   },
   {
     source: 'Google Core Web Vitals',
-    stat: '-44% Bounce Rate',
+    stat: '-44%',
+    unit: 'Bounce Rate',
     desc: 'Sub-second Largest Contentful Paint (LCP) and 40ms TTFB slash checkout drop-off by nearly half.',
   },
   {
     source: 'Amazon Research',
-    stat: '+$1.4M / 100ms',
+    stat: '+$1.4M',
+    unit: '/ 100ms',
     desc: 'Calculated impact per $100M GMV. Latency directly suppresses organic and paid ad return on ad spend (ROAS).',
   },
 ];
@@ -235,9 +238,21 @@ export default async function RoiCalculatorPage() {
                   <span className="text-xs font-mono font-semibold text-neutral-500 block uppercase tracking-wider">
                     {item.source}
                   </span>
-                  <span className="text-3xl sm:text-4xl font-extrabold text-neutral-900 font-mono block">
-                    {item.stat}
-                  </span>
+                  <div className="flex items-baseline gap-2 font-mono">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tracking-tight">
+                      <AnimatedCounter
+                        value={item.stat}
+                        duration={1.8}
+                        delay={idx * 150}
+                        threshold={0.15}
+                      />
+                    </span>
+                    {item.unit && (
+                      <span className="text-base sm:text-lg font-bold text-neutral-600 font-sans tracking-tight">
+                        {item.unit}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm leading-relaxed text-neutral-600">
                     {item.desc}
                   </p>
