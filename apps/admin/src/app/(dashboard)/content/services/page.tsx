@@ -165,6 +165,7 @@ const DEFAULT_PRICING: ServicePriceTier[] = [
       { currency: 'USD', symbol: '$', amount: '4,999' },
       { currency: 'GBP', symbol: '£', amount: '3,999' },
       { currency: 'AED', symbol: 'AED ', amount: '18,500' },
+      { currency: 'INR', symbol: '₹', amount: '4,15,000' },
     ],
     features: [
       'Custom Theme Setup & Styling',
@@ -183,6 +184,7 @@ const DEFAULT_PRICING: ServicePriceTier[] = [
       { currency: 'USD', symbol: '$', amount: '9,999' },
       { currency: 'GBP', symbol: '£', amount: '7,999' },
       { currency: 'AED', symbol: 'AED ', amount: '36,500' },
+      { currency: 'INR', symbol: '₹', amount: '8,30,000' },
     ],
     features: [
       '100% Bespoke UI/UX Design in Figma',
@@ -201,6 +203,7 @@ const DEFAULT_PRICING: ServicePriceTier[] = [
       { currency: 'USD', symbol: '$', amount: '24,999+' },
       { currency: 'GBP', symbol: '£', amount: '19,999+' },
       { currency: 'AED', symbol: 'AED ', amount: '91,500+' },
+      { currency: 'INR', symbol: '₹', amount: '20,75,000+' },
     ],
     features: [
       'Multi-Region & Multi-Currency Architecture',
@@ -541,7 +544,7 @@ export default function ServicesAdminPage() {
         const prices = tier.prices || [];
         const existingIdx = prices.findIndex((p) => p.currency === currency);
         let nextPrices: ServicePriceCurrency[];
-        const symbol = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : 'AED ';
+        const symbol = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : currency === 'INR' ? '₹' : 'AED ';
         if (existingIdx >= 0) {
           nextPrices = prices.map((p, pIdx) => (pIdx === existingIdx ? { ...p, amount } : p));
         } else {
@@ -746,8 +749,8 @@ export default function ServicesAdminPage() {
 
       {/* ── Rich Multi-Tab Dialog Editor ────────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-indigo-600/10 text-indigo-600 flex items-center justify-center font-bold">
                 <Layers className="w-5 h-5" />
@@ -763,28 +766,28 @@ export default function ServicesAdminPage() {
             </div>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 sm:px-6 pt-3 border-b border-slate-100 bg-white overflow-x-auto no-scrollbar scroll-smooth">
-              <TabsList className="bg-slate-100/80 p-1 inline-flex sm:flex sm:flex-wrap h-auto gap-1 min-w-full sm:min-w-0">
-                <TabsTrigger value="basic" className="text-xs font-semibold shrink-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="px-4 sm:px-6 py-2.5 border-b border-slate-200/90 bg-slate-50/80 overflow-x-auto no-scrollbar shrink-0">
+              <TabsList className="bg-slate-200/60 p-1 inline-flex items-center gap-1 h-auto min-h-[38px] rounded-xl border border-slate-200/80 w-max">
+                <TabsTrigger value="basic" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   1. General & Icon
                 </TabsTrigger>
-                <TabsTrigger value="content" className="text-xs font-semibold shrink-0">
+                <TabsTrigger value="content" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   2. Messaging
                 </TabsTrigger>
-                <TabsTrigger value="deliverables" className="text-xs font-semibold shrink-0">
+                <TabsTrigger value="deliverables" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   3. Deliverables & Stack
                 </TabsTrigger>
-                <TabsTrigger value="playbook" className="text-xs font-semibold shrink-0">
+                <TabsTrigger value="playbook" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   4. 4-Step Playbook
                 </TabsTrigger>
-                <TabsTrigger value="pricing" className="text-xs font-semibold text-emerald-700 data-[state=active]:text-emerald-900 shrink-0">
+                <TabsTrigger value="pricing" className="text-xs font-semibold px-3 py-1.5 rounded-lg text-emerald-700 data-[state=active]:bg-white data-[state=active]:text-emerald-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   5. Pricing Packages
                 </TabsTrigger>
-                <TabsTrigger value="benefits" className="text-xs font-semibold shrink-0">
+                <TabsTrigger value="benefits" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   6. Key Benefits
                 </TabsTrigger>
-                <TabsTrigger value="faqs" className="text-xs font-semibold shrink-0">
+                <TabsTrigger value="faqs" className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all shrink-0">
                   7. FAQs
                 </TabsTrigger>
               </TabsList>
@@ -1070,14 +1073,14 @@ export default function ServicesAdminPage() {
 
               {/* ── TAB 5: Pricing Packages ── */}
               <TabsContent value="pricing" className="m-0 space-y-5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                       <DollarSign className="w-4 h-4 text-emerald-600" />
                       <span>Interactive Pricing Packages & Multi-Currency SLA</span>
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Configures the 3-column pricing tier cards with dynamic USD ($), GBP (£), and AED (AED) switcher.
+                      Configures the 3-column pricing tier cards with dynamic USD ($), GBP (£), AED (د.إ), and INR (₹) switcher.
                     </p>
                   </div>
                   <Button
@@ -1085,7 +1088,7 @@ export default function ServicesAdminPage() {
                     variant="outline"
                     size="sm"
                     onClick={addPricingTier}
-                    className="text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0"
+                    className="text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0 self-start sm:self-center"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> Add Tier
                   </Button>
@@ -1096,39 +1099,43 @@ export default function ServicesAdminPage() {
                     const usdPrice = tier.prices?.find((p) => p.currency === 'USD')?.amount || '';
                     const gbpPrice = tier.prices?.find((p) => p.currency === 'GBP')?.amount || '';
                     const aedPrice = tier.prices?.find((p) => p.currency === 'AED')?.amount || '';
+                    const inrPrice = tier.prices?.find((p) => p.currency === 'INR')?.amount || '';
 
                     return (
                       <div
                         key={tierIdx}
-                        className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5 space-y-4 relative group"
+                        className="rounded-2xl border border-slate-200 bg-slate-50/40 p-5 space-y-4 relative transition-all hover:border-slate-300"
                       >
                         {/* Header: Tier Name, Popular Switch, Delete */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-                          <div className="flex-1 space-y-1">
-                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                              Package Tier #{tierIdx + 1} Name
-                            </label>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                          <div className="flex-1 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                Package Tier #{tierIdx + 1}
+                              </span>
+                              <label className="text-xs font-semibold text-slate-700">Tier Name</label>
+                            </div>
                             <Input
                               value={tier.name}
                               onChange={(e) => updatePricingTierField(tierIdx, 'name', e.target.value)}
                               placeholder="e.g. Starter Store, Growth Store, Enterprise"
-                              className="text-sm font-bold bg-white"
+                              className="text-sm font-semibold bg-white"
                             />
                           </div>
 
-                          <div className="flex items-center gap-4 shrink-0">
-                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
-                              <span className="text-xs font-semibold text-slate-700">Most Popular Badge</span>
+                          <div className="flex items-center gap-3 shrink-0 sm:self-end">
+                            <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer select-none shadow-2xs">
+                              <span className="text-xs font-semibold text-slate-700">Most Popular</span>
                               <Switch
                                 checked={Boolean(tier.isPopular)}
                                 onCheckedChange={(checked) => updatePricingTierField(tierIdx, 'isPopular', checked)}
                               />
-                            </div>
+                            </label>
                             {form.pricing.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removePricingTier(tierIdx)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                                 title="Remove pricing tier"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1138,8 +1145,8 @@ export default function ServicesAdminPage() {
                         </div>
 
                         {/* Description / Subtitle */}
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-semibold text-slate-600">Target Audience Description</label>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-700">Target Audience Description</label>
                           <Input
                             value={tier.description}
                             onChange={(e) => updatePricingTierField(tierIdx, 'description', e.target.value)}
@@ -1150,45 +1157,58 @@ export default function ServicesAdminPage() {
 
                         {/* Multi-Currency Price Grid */}
                         <div className="space-y-1.5 pt-1">
-                          <label className="text-[11px] font-semibold text-slate-700 block">
+                          <label className="text-xs font-semibold text-slate-700 block">
                             Multi-Currency Pricing Amounts
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="space-y-1">
-                              <span className="text-[10px] font-mono text-slate-500">USD ($) Amount</span>
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">$</span>
+                              <span className="text-[11px] font-medium text-slate-500">USD ($)</span>
+                              <div className="relative flex items-center">
+                                <span className="absolute left-3 text-xs font-bold text-slate-400 select-none pointer-events-none">$</span>
                                 <Input
                                   value={usdPrice}
                                   onChange={(e) => updatePriceCurrency(tierIdx, 'USD', e.target.value)}
                                   placeholder="9,999"
-                                  className="text-xs font-mono font-semibold pl-6 bg-white"
+                                  className="text-xs font-mono font-semibold pl-7 bg-white h-9"
                                 />
                               </div>
                             </div>
 
                             <div className="space-y-1">
-                              <span className="text-[10px] font-mono text-slate-500">GBP (£) Amount</span>
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-400">£</span>
+                              <span className="text-[11px] font-medium text-slate-500">GBP (£)</span>
+                              <div className="relative flex items-center">
+                                <span className="absolute left-3 text-xs font-bold text-slate-400 select-none pointer-events-none">£</span>
                                 <Input
                                   value={gbpPrice}
                                   onChange={(e) => updatePriceCurrency(tierIdx, 'GBP', e.target.value)}
                                   placeholder="7,999"
-                                  className="text-xs font-mono font-semibold pl-6 bg-white"
+                                  className="text-xs font-mono font-semibold pl-7 bg-white h-9"
                                 />
                               </div>
                             </div>
 
                             <div className="space-y-1">
-                              <span className="text-[10px] font-mono text-slate-500">AED (AED) Amount</span>
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-2 text-[10px] font-bold text-slate-400">AED</span>
+                              <span className="text-[11px] font-medium text-slate-500">AED (د.إ)</span>
+                              <div className="relative flex items-center">
+                                <span className="absolute left-3 text-[11px] font-bold text-slate-400 select-none pointer-events-none">AED</span>
                                 <Input
                                   value={aedPrice}
                                   onChange={(e) => updatePriceCurrency(tierIdx, 'AED', e.target.value)}
                                   placeholder="36,500"
-                                  className="text-xs font-mono font-semibold pl-10 bg-white"
+                                  className="text-xs font-mono font-semibold pl-11 bg-white h-9"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-medium text-slate-500">INR (₹)</span>
+                              <div className="relative flex items-center">
+                                <span className="absolute left-3 text-xs font-bold text-slate-400 select-none pointer-events-none">₹</span>
+                                <Input
+                                  value={inrPrice}
+                                  onChange={(e) => updatePriceCurrency(tierIdx, 'INR', e.target.value)}
+                                  placeholder="8,30,000"
+                                  className="text-xs font-mono font-semibold pl-7 bg-white h-9"
                                 />
                               </div>
                             </div>
@@ -1196,11 +1216,14 @@ export default function ServicesAdminPage() {
                         </div>
 
                         {/* Included Features Checklist */}
-                        <div className="space-y-2 pt-2 border-t border-slate-200/80">
+                        <div className="space-y-2.5 pt-2 border-t border-slate-200/80">
                           <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-semibold text-slate-700">
-                              Included Deliverables & Features ({tier.features?.length || 0})
+                            <label className="text-xs font-semibold text-slate-700">
+                              Included Deliverables & Features
                             </label>
+                            <span className="text-[11px] font-medium text-slate-500">
+                              {tier.features?.length || 0} features added
+                            </span>
                           </div>
 
                           <div className="flex gap-2">
@@ -1216,40 +1239,42 @@ export default function ServicesAdminPage() {
                                 }
                               }}
                               placeholder="e.g. 100% Bespoke UI/UX Design in Figma..."
-                              className="text-xs bg-white"
+                              className="text-xs bg-white h-9"
                             />
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
                               onClick={() => addTierFeature(tierIdx)}
-                              className="text-xs shrink-0"
+                              className="text-xs shrink-0 h-9 font-medium"
                             >
                               <Plus className="w-3.5 h-3.5 mr-1" /> Add Feature
                             </Button>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                            {(tier.features || []).map((feat, fIdx) => (
-                              <div
-                                key={fIdx}
-                                className="flex items-center justify-between p-2 rounded-lg border border-slate-200 bg-white text-xs text-slate-700"
-                              >
-                                <div className="flex items-center gap-1.5 truncate pr-2">
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                  <span className="truncate">{feat}</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeTierFeature(tierIdx, fIdx)}
-                                  className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors shrink-0"
-                                  title="Remove feature"
+                          {tier.features && tier.features.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 max-h-52 overflow-y-auto pr-1">
+                              {tier.features.map((feat, fIdx) => (
+                                <div
+                                  key={fIdx}
+                                  className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 shadow-2xs hover:border-slate-300 transition-colors"
                                 >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                                  <div className="flex items-center gap-2 truncate pr-2">
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span className="truncate">{feat}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTierFeature(tierIdx, fIdx)}
+                                    className="text-slate-400 hover:text-rose-500 p-1 rounded-md transition-colors shrink-0"
+                                    title="Remove feature"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

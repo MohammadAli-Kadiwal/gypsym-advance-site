@@ -4,15 +4,43 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import { ServicePriceTier } from '@/lib/api';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 
 interface ServicePricingProps {
   pricing?: ServicePriceTier[];
   serviceTitle: string;
 }
 
+function getTierPrice(tier: ServicePriceTier, currency: 'USD' | 'GBP' | 'AED' | 'INR') {
+  const explicit = tier.prices?.find((p) => p.currency === currency);
+  if (explicit && explicit.amount) {
+    return explicit;
+  }
+
+  // If INR is selected but not explicitly provided in the CMS data:
+  if (currency === 'INR') {
+    const usdPrice = tier.prices?.find((p) => p.currency === 'USD') || tier.prices?.[0];
+    if (usdPrice && usdPrice.amount) {
+      const rawNum = parseFloat(usdPrice.amount.replace(/[^0-9.]/g, ''));
+      if (!isNaN(rawNum)) {
+        // Standard INR commercial pricing conversion (~83/USD) rounded to nearest 1,000
+        const inrAmount = Math.round((rawNum * 83) / 1000) * 1000;
+        const hasPlus = usdPrice.amount.includes('+');
+        return {
+          currency: 'INR',
+          symbol: '₹',
+          amount: inrAmount.toLocaleString('en-IN') + (hasPlus ? '+' : ''),
+          period: usdPrice.period,
+        };
+      }
+    }
+  }
+
+  return tier.prices?.find((p) => p.currency === currency) || tier.prices?.[0] || null;
+}
+
 export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingProps) {
-  const [selectedCurrency, setSelectedCurrency] = React.useState<'USD' | 'GBP' | 'AED'>('USD');
+  const [selectedCurrency, setSelectedCurrency] = React.useState<'USD' | 'GBP' | 'AED' | 'INR'>('USD');
 
   if (!pricing || pricing.length === 0) {
     return null;
@@ -37,21 +65,21 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
             </p>
 
             {/* Currency Toggle Switcher */}
-            <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80">
-              {(['USD', 'GBP', 'AED'] as const).map((curr) => {
+            <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-neutral-100 border border-neutral-200/80 flex-wrap justify-center gap-1">
+              {(['USD', 'GBP', 'AED', 'INR'] as const).map((curr) => {
                 const isActive = selectedCurrency === curr;
                 return (
                   <button
                     key={curr}
                     type="button"
                     onClick={() => setSelectedCurrency(curr)}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                    className={`px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
                       isActive
                         ? 'bg-white text-neutral-900 shadow-sm'
                         : 'text-neutral-500 hover:text-neutral-900'
                     }`}
                   >
-                    {curr === 'USD' ? 'USD ($)' : curr === 'GBP' ? 'GBP (£)' : 'AED (د.إ)'}
+                    {curr === 'USD' ? 'USD ($)' : curr === 'GBP' ? 'GBP (£)' : curr === 'AED' ? 'AED (د.إ)' : 'INR (₹)'}
                   </button>
                 );
               })}
@@ -62,8 +90,7 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
           {pricing.map((tier, idx) => {
-            const priceObj =
-              tier.prices.find((p) => p.currency === selectedCurrency) || tier.prices[0];
+            const priceObj = getTierPrice(tier, selectedCurrency);
             const isPopular = tier.isPopular;
 
             return (
@@ -98,8 +125,18 @@ export function ServicePricingSection({ pricing, serviceTitle }: ServicePricingP
 
                   {/* Price Display */}
                   <div className="mt-6 pt-5 border-t border-current/10 flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                      {priceObj ? `${priceObj.symbol}${priceObj.amount}` : 'Custom'}
+                    <span className="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono">
+                      {priceObj ? (
+                        <AnimatedCounter
+                          value={`${priceObj.symbol}${priceObj.amount}`}
+                          duration={1.6}
+                          delay={idx * 120}
+                          threshold={0.15}
+                          once={false}
+                        />
+                      ) : (
+                        'Custom'
+                      )}
                     </span>
                     {priceObj?.period && (
                       <span

@@ -18,7 +18,7 @@ import { getPortfolioProjectBySlug, getPortfolioProjects, getPageBySlug } from '
 import { formatDateDDMMYYYY } from '@/lib/utils';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
@@ -421,7 +421,15 @@ export default async function PortfolioProjectPage({ params }: PortfolioProjectP
               {project.metrics && (
                 <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold text-xs sm:text-sm shadow-xs">
                   <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Impact Metric: {project.metrics}</span>
+                  <span>
+                    Impact Metric:{' '}
+                    <AnimatedCounter
+                      value={project.metrics}
+                      duration={1.6}
+                      threshold={0.15}
+                      once={false}
+                    />
+                  </span>
                 </div>
               )}
             </div>
@@ -532,7 +540,14 @@ export default async function PortfolioProjectPage({ params }: PortfolioProjectP
                     {project.metrics && (
                       <div className="flex justify-between items-start gap-4 pt-2 border-t border-neutral-200/50 dark:border-neutral-800">
                         <dt className="text-neutral-500 font-medium">Impact Result</dt>
-                        <dd className="text-emerald-700 dark:text-emerald-400 font-bold text-right">{project.metrics}</dd>
+                        <dd className="text-emerald-700 dark:text-emerald-400 font-bold text-right font-mono">
+                          <AnimatedCounter
+                            value={project.metrics}
+                            duration={1.6}
+                            threshold={0.15}
+                            once={false}
+                          />
+                        </dd>
                       </div>
                     )}
 

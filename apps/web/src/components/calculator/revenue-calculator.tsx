@@ -162,6 +162,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={100}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -201,6 +202,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={150}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -240,6 +242,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={200}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -280,6 +283,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                         duration={1.6}
                         delay={250}
                         threshold={0.15}
+                        once={false}
                       />
                       {' '}
                       <span className="text-xs opacity-80">({(currentTtfb * 1000).toFixed(0)}ms)</span>
@@ -389,6 +393,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                     duration={1.8}
                     delay={150}
                     threshold={0.15}
+                    once={false}
                   />
                 )}
                 <span className="text-xs sm:text-sm font-semibold text-muted-foreground font-sans ml-1">/ year</span>
@@ -412,6 +417,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={250}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -429,6 +435,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={350}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -446,6 +453,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={400}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -463,6 +471,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.6}
                       delay={450}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>
@@ -483,6 +492,7 @@ Explore: ${getSiteUrl()}/roi-calculator`;
                       duration={1.5}
                       delay={300}
                       threshold={0.15}
+                      once={false}
                     />
                   )}
                 </span>

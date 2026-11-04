@@ -175,6 +175,7 @@ export function SubpageHero({
                           duration={1.8}
                           delay={i * 120}
                           threshold={0.15}
+                          once={false}
                         />
                       </span>
                     </div>

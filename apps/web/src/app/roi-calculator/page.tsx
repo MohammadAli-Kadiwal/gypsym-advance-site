@@ -245,6 +245,7 @@ export default async function RoiCalculatorPage() {
                         duration={1.8}
                         delay={idx * 150}
                         threshold={0.15}
+                        once={false}
                       />
                     </span>
                     {item.unit && (

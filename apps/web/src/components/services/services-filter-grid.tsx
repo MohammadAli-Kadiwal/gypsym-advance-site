@@ -16,7 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ServiceItemDto } from '@/lib/api';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   ShoppingBag,
@@ -135,8 +135,14 @@ export function ServicesFilterGrid({ services, showFilter = false }: ServicesFil
                   {starterPrice ? (
                     <div>
                       <span className="text-[11px] uppercase tracking-wider text-neutral-600 font-medium block">Starting from</span>
-                      <span className="text-base font-bold text-neutral-900">
-                        {starterPrice.symbol}{starterPrice.amount}
+                      <span className="text-base font-bold text-neutral-900 font-mono">
+                        <AnimatedCounter
+                          value={`${starterPrice.symbol}${starterPrice.amount}`}
+                          duration={1.5}
+                          delay={(idx % 3) * 100}
+                          threshold={0.15}
+                          once={false}
+                        />
                       </span>
                     </div>
                   ) : (

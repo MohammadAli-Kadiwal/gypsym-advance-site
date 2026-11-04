@@ -41,6 +41,37 @@ export class CmsService implements OnModuleInit {
     }
   }
 
+  private ensureInrPricing(pricing?: any[]): any[] {
+    if (!Array.isArray(pricing)) return [];
+    return pricing.map((tier) => {
+      if (!tier || !Array.isArray(tier.prices)) return tier;
+      const hasInr = tier.prices.some((p: any) => p?.currency === 'INR');
+      if (hasInr) return tier;
+
+      const usd = tier.prices.find((p: any) => p?.currency === 'USD') || tier.prices[0];
+      if (!usd || !usd.amount) return tier;
+
+      const rawNum = parseFloat(String(usd.amount).replace(/[^0-9.]/g, ''));
+      if (isNaN(rawNum)) return tier;
+
+      const inrAmount = Math.round((rawNum * 83) / 1000) * 1000;
+      const hasPlus = String(usd.amount).includes('+');
+
+      return {
+        ...tier,
+        prices: [
+          ...tier.prices,
+          {
+            currency: 'INR',
+            symbol: '₹',
+            amount: inrAmount.toLocaleString('en-IN') + (hasPlus ? '+' : ''),
+            period: usd.period,
+          },
+        ],
+      };
+    });
+  }
+
   // 1. Services
   async getServices(status?: string) {
     const where: any = { deletedAt: null };
@@ -87,7 +118,7 @@ export class CmsService implements OnModuleInit {
         process: mergedMeta.process || [],
         benefits: mergedMeta.benefits || [],
         faqs: mergedMeta.faqs || [],
-        pricing: mergedMeta.pricing || [],
+        pricing: this.ensureInrPricing(mergedMeta.pricing),
         seoMetadata: (s as any).seoMetadata
           ? {
               ...(s as any).seoMetadata,
@@ -144,7 +175,7 @@ export class CmsService implements OnModuleInit {
       process: mergedMeta.process || [],
       benefits: mergedMeta.benefits || [],
       faqs: mergedMeta.faqs || [],
-      pricing: mergedMeta.pricing || [],
+      pricing: this.ensureInrPricing(mergedMeta.pricing),
       seoMetadata: (s as any).seoMetadata
         ? {
             ...(s as any).seoMetadata,
@@ -219,7 +250,7 @@ export class CmsService implements OnModuleInit {
       process: body.process || [],
       benefits: body.benefits || [],
       faqs: body.faqs || [],
-      pricing: body.pricing || [],
+      pricing: this.ensureInrPricing(body.pricing),
     };
 
     await this.prisma.siteSetting.upsert({
@@ -316,7 +347,7 @@ export class CmsService implements OnModuleInit {
       ...(body.process !== undefined && { process: body.process }),
       ...(body.benefits !== undefined && { benefits: body.benefits }),
       ...(body.faqs !== undefined && { faqs: body.faqs }),
-      ...(body.pricing !== undefined && { pricing: body.pricing }),
+      ...(body.pricing !== undefined && { pricing: this.ensureInrPricing(body.pricing) }),
     };
 
     await this.prisma.siteSetting.upsert({

@@ -6,7 +6,7 @@ import { getPageBySlug, getClients, getTeamMembers } from '@/lib/api';
 import { SubpageHero, CredentialItem } from '@/components/ui/subpage-hero';
 import { CtaSection } from '@/components/cms/cta-section';
 import { ClientsTrustedBySection } from '@/components/cms/clients-trusted-by-section';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
 import { JsonLd, buildBreadcrumbsSchema, buildWebPageSchema } from '@/components/seo/json-ld';
@@ -269,7 +269,13 @@ export default async function AboutPage() {
                 <div className="p-6 sm:p-8 rounded-[22px] sm:rounded-[30px] bg-white border border-neutral-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-3 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 text-[#d9287c]">
                     <span className="h-7 w-7 rounded-xl bg-[#d9287c]/10 text-[#d9287c] flex items-center justify-center font-mono text-xs font-bold">
-                      0{idx + 1}
+                      <AnimatedCounter
+                        value={String(idx + 1).padStart(2, '0')}
+                        duration={1.2}
+                        delay={idx * 100}
+                        threshold={0.15}
+                        once={false}
+                      />
                     </span>
                     <h3 className="text-lg font-bold text-neutral-900">{pil.title}</h3>
                   </div>

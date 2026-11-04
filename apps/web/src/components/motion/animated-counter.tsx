@@ -8,10 +8,12 @@ export interface ParsedNumeric {
   suffix: string;
   decimals: number;
   hasCommas: boolean;
+  minIntegerDigits?: number;
   isRange?: boolean;
   rangeSeparator?: string;
   rangeEndValue?: number | null;
   rangeEndDecimals?: number;
+  rangeEndMinIntegerDigits?: number;
 }
 
 /**
@@ -49,16 +51,23 @@ export function parseNumericString(input: string | number): ParsedNumeric {
     const dec1 = num1Raw.includes('.') ? num1Raw.length - num1Raw.indexOf('.') - 1 : 0;
     const dec2 = num2Raw.includes('.') ? num2Raw.length - num2Raw.indexOf('.') - 1 : 0;
 
+    const cleanInt1 = num1Raw.split('.')[0] || '';
+    const minIntegerDigits1 = cleanInt1.startsWith('0') && cleanInt1.length > 1 ? cleanInt1.length : 1;
+    const cleanInt2 = num2Raw.split('.')[0] || '';
+    const minIntegerDigits2 = cleanInt2.startsWith('0') && cleanInt2.length > 1 ? cleanInt2.length : 1;
+
     return {
       prefix,
       value: isNaN(val1) ? null : val1,
       suffix,
       decimals: dec1,
       hasCommas,
+      minIntegerDigits: minIntegerDigits1,
       isRange: true,
       rangeSeparator: rangeSep,
       rangeEndValue: isNaN(val2) ? null : val2,
       rangeEndDecimals: dec2,
+      rangeEndMinIntegerDigits: minIntegerDigits2,
     };
   }
 
@@ -82,6 +91,8 @@ export function parseNumericString(input: string | number): ParsedNumeric {
   const value = parseFloat(cleanNum);
   const decIndex = numRaw.indexOf('.');
   const decimals = decIndex >= 0 ? numRaw.length - decIndex - 1 : 0;
+  const cleanInt = numRaw.split('.')[0] || '';
+  const minIntegerDigits = cleanInt.startsWith('0') && cleanInt.length > 1 ? cleanInt.length : 1;
 
   return {
     prefix,
@@ -89,6 +100,7 @@ export function parseNumericString(input: string | number): ParsedNumeric {
     suffix,
     decimals,
     hasCommas,
+    minIntegerDigits,
   };
 }
 
@@ -98,20 +110,30 @@ export function parseNumericString(input: string | number): ParsedNumeric {
 export function formatCounterNumber(
   num: number,
   decimals: number = 0,
-  hasCommas: boolean = false
+  hasCommas: boolean = false,
+  minIntegerDigits: number = 1
 ): string {
   if (decimals > 0) {
     const fixed = num.toFixed(decimals);
-    if (!hasCommas) return fixed;
     const parts = fixed.split('.');
-    const integerPart = (parts[0] ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    let integerPart = parts[0] ?? '0';
+    if (minIntegerDigits > 1) {
+      integerPart = integerPart.padStart(minIntegerDigits, '0');
+    }
+    if (hasCommas) {
+      integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
     return parts.length > 1 ? `${integerPart}.${parts[1] ?? ''}` : integerPart;
   }
   const rounded = Math.round(num);
-  if (hasCommas) {
-    return rounded.toLocaleString('en-US');
+  let str = String(rounded);
+  if (minIntegerDigits > 1) {
+    str = str.padStart(minIntegerDigits, '0');
   }
-  return String(rounded);
+  if (hasCommas) {
+    return Number(str).toLocaleString('en-US');
+  }
+  return str;
 }
 
 export interface AnimatedCounterProps extends React.HTMLAttributes<HTMLElement> {
@@ -200,7 +222,9 @@ export function AnimatedCounter({
 
     const triggerIfVisible = () => {
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
+      const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+      const isVisible = rect.height > 0 && (visibleHeight / rect.height) >= (threshold ?? 0.1);
+      if (isVisible) {
         setHasStarted(true);
         if (once) {
           observer.disconnect();
@@ -317,11 +341,11 @@ export function AnimatedCounter({
   return (
     <Comp ref={containerRef} className={className} {...rest}>
       {prefix}
-      {formatCounterNumber(currentValue, decimals, hasCommas)}
+      {formatCounterNumber(currentValue, decimals, hasCommas, parsed.minIntegerDigits)}
       {isRange && (
         <>
           {rangeSeparator}
-          {formatCounterNumber(currentEndValue, rangeEndDecimals, hasCommas)}
+          {formatCounterNumber(currentEndValue, rangeEndDecimals, hasCommas, parsed.rangeEndMinIntegerDigits)}
         </>
       )}
       {suffix}

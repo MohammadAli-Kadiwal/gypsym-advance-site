@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Star } from 'lucide-react';
 import { PageSectionDto } from '@/lib/cms-types';
 import { renderTitleWithHighlight } from '@/lib/render-title-highlight';
-import { ScrollReveal, StaggerContainer, RevealItem } from '@/components/motion';
+import { ScrollReveal, StaggerContainer, RevealItem, AnimatedCounter } from '@/components/motion';
 
 export interface OutcomeCardItem {
   id?: string;
@@ -143,7 +143,13 @@ export function ClientOutcomesSection({ section, payload }: ClientOutcomesSectio
                   {/* Big Impact Metric */}
                   <div className="space-y-1">
                     <div className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-sky-600 dark:text-sky-400 tracking-tight leading-none font-mono">
-                      {card.statValue}
+                      <AnimatedCounter
+                        value={card.statValue}
+                        duration={1.6}
+                        delay={idx * 150}
+                        threshold={0.15}
+                        once={false}
+                      />
                     </div>
                     <div className="text-xs sm:text-[13px] text-neutral-500 dark:text-neutral-400 font-medium">
                       {card.statLabel}

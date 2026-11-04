@@ -15,7 +15,7 @@ import { ServiceFaqAccordion } from '@/components/services/service-faq';
 import { CtaSection } from '@/components/cms/cta-section';
 import { PageSectionDto } from '@/lib/cms-types';
 import { SubpageHero } from '@/components/ui/subpage-hero';
-import { ScrollReveal } from '@/components/motion';
+import { ScrollReveal, AnimatedCounter } from '@/components/motion';
 import { JsonLd, buildBreadcrumbsSchema, buildServiceSchema, buildFaqSchema } from '@/components/seo/json-ld';
 import { getSiteUrl, resolveSiteUrl } from '@/lib/site-url';
 
@@ -305,8 +305,14 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 <ScrollReveal key={idx} direction="up" delay={idx * 80} intensity="subtle">
                   <div className="h-full rounded-2xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between shadow-xs relative overflow-hidden group hover:border-neutral-300 transition-colors">
                     <div>
-                      <span className="text-3xl sm:text-4xl font-black text-neutral-200 group-hover:text-neutral-900 transition-colors">
-                        {step.step}
+                      <span className="text-3xl sm:text-4xl font-black text-neutral-200 group-hover:text-neutral-900 transition-colors font-mono">
+                        <AnimatedCounter
+                          value={step.step}
+                          duration={1.2}
+                          delay={idx * 150}
+                          threshold={0.15}
+                          once={false}
+                        />
                       </span>
                       <h3 className="mt-3 text-base sm:text-lg font-bold text-neutral-900">
                         {step.title}
