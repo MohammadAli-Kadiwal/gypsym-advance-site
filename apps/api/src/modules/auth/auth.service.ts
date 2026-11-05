@@ -32,6 +32,39 @@ export class AuthService {
   // In-memory rate limiting and brute force tracking: key -> { count, lockedUntil }
   private readonly failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
 
+  // In-memory cache for fast session verification and WAN DB resilience
+  private readonly sessionCache = new Map<string, { user: any; expiresAt: number }>();
+
+  /**
+   * Helper to retry DB operations against transient network/connection dropouts
+   */
+  private async executeWithRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 300): Promise<T> {
+    let lastError: any;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        lastError = err;
+        const msg = String(err?.message || '').toLowerCase();
+        const isConnError =
+          msg.includes("can't reach database server") ||
+          msg.includes('connection') ||
+          msg.includes('timeout') ||
+          msg.includes('econnrefused') ||
+          msg.includes('socket') ||
+          msg.includes('closed') ||
+          msg.includes('connection_limit');
+
+        if (!isConnError || attempt === retries) {
+          throw err;
+        }
+        this.logger.warn(`Database connection retry attempt ${attempt + 1}/${retries}...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+    throw lastError;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -442,35 +475,47 @@ export class AuthService {
       throw new UnauthorizedException('Authentication token is invalid or expired.');
     }
 
-    // Check session in database
-    const session = await this.prisma.session.findUnique({
-      where: { id: payload.sessionId },
-    });
+    // 1. Check in-memory session cache for fast sub-millisecond response and WAN resilience
+    const cached = this.sessionCache.get(payload.sessionId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.user;
+    }
+
+    // 2. Check session in database with automatic retry
+    const session = await this.executeWithRetry(() =>
+      this.prisma.session.findUnique({
+        where: { id: payload.sessionId },
+      })
+    );
 
     if (!session || session.isRevoked || session.expiresAt.getTime() <= Date.now()) {
+      this.sessionCache.delete(payload.sessionId);
       throw new UnauthorizedException('Session has expired or was revoked. Please log in again.');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true,
+    const user = await this.executeWithRetry(() =>
+      this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: {
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      })
+    );
 
     if (!user || !user.isActive || user.deletedAt) {
+      this.sessionCache.delete(payload.sessionId);
       throw new UnauthorizedException('User account is invalid or suspended.');
     }
 
@@ -487,7 +532,7 @@ export class AuthService {
       permissions.unshift('*');
     }
 
-    return {
+    const validatedUser = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -496,6 +541,14 @@ export class AuthService {
       role: primaryRole,
       permissions,
     };
+
+    // Cache valid session for 20 seconds to prevent hammering remote PostgreSQL on consecutive calls
+    this.sessionCache.set(payload.sessionId, {
+      user: validatedUser,
+      expiresAt: Date.now() + 20 * 1000,
+    });
+
+    return validatedUser;
   }
 
   /**
@@ -506,6 +559,7 @@ export class AuthService {
 
     const payload = this.verifyJwt<{ sessionId: string }>(token);
     if (payload?.sessionId) {
+      this.sessionCache.delete(payload.sessionId);
       await this.prisma.session
         .update({
           where: { id: payload.sessionId },

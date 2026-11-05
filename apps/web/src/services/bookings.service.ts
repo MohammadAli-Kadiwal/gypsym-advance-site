@@ -8,7 +8,11 @@ export interface CreateBookingPayload {
   email: string;
   phone?: string;
   storeUrl?: string;
+  companyName?: string;
+  websiteUrl?: string;
+  serviceInterest?: string;
   notes?: string;
+  utcStartTime?: string;
   recaptchaToken?: string;
 }
 

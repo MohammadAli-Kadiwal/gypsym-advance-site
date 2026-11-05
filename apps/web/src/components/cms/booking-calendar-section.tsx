@@ -342,8 +342,11 @@ export function BookingCalendarSection({ section, payload, contactSettings }: Bo
       fullName: fullName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim() || undefined,
+      companyName: companyName.trim() || undefined,
+      websiteUrl: storeUrl.trim() || undefined,
+      serviceInterest: serviceInterest.trim() || undefined,
       storeUrl: storeUrl.trim() || undefined,
-      notes: compiledNotes || undefined,
+      notes: notes.trim() || compiledNotes || undefined,
       date: selectedDateStr,
       slotTime: selectedSlot.slotTime,
       timezone: selectedTimezone,
@@ -355,6 +358,7 @@ export function BookingCalendarSection({ section, payload, contactSettings }: Bo
       setConfirmedBooking(confirmed || bookingPayload);
       setStep(3);
     } catch (err: any) {
+      console.warn('Booking API call encountered an issue, generating client confirmation:', err);
       // Create local fallback booking confirmation so client is never blocked
       const fallbackNumber = `BK-${selectedDateStr.replace(/-/g, '').slice(0, 6)}-${Math.floor(
         1000 + Math.random() * 9000

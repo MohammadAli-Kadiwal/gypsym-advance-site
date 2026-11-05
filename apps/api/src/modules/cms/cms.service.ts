@@ -2742,21 +2742,6 @@ export class CmsService implements OnModuleInit {
       googleMapsUrl: merged.googleMapsUrl || '',
     };
 
-    await this.prisma.siteSetting.upsert({
-      where: { key: 'general:contact' },
-      create: {
-        key: 'general:contact',
-        category: 'general',
-        value: contactValue,
-        isPublic: true,
-      },
-      update: {
-        value: contactValue,
-        isPublic: true,
-      },
-    });
-
-    // 2. Save to general:entity
     const entityValue = {
       companyName: merged.companyName,
       legalName: merged.legalName,
@@ -2765,46 +2750,62 @@ export class CmsService implements OnModuleInit {
       legalJurisdiction: merged.legalJurisdiction,
     };
 
-    await this.prisma.siteSetting.upsert({
-      where: { key: 'general:entity' },
-      create: {
-        key: 'general:entity',
-        category: 'general',
-        value: entityValue,
-        isPublic: true,
-      },
-      update: {
-        value: entityValue,
-        isPublic: true,
-      },
-    });
+    // 1 & 2. Concurrently upsert general:contact and general:entity
+    await Promise.all([
+      this.prisma.siteSetting.upsert({
+        where: { key: 'general:contact' },
+        create: {
+          key: 'general:contact',
+          category: 'general',
+          value: contactValue,
+          isPublic: true,
+        },
+        update: {
+          value: contactValue,
+          isPublic: true,
+        },
+      }),
+      this.prisma.siteSetting.upsert({
+        where: { key: 'general:entity' },
+        create: {
+          key: 'general:entity',
+          category: 'general',
+          value: entityValue,
+          isPublic: true,
+        },
+        update: {
+          value: entityValue,
+          isPublic: true,
+        },
+      }),
+    ]);
 
-    // 3. Mirror to seo:global so SEO schema, JSON-LD, Organization stay 100% synchronized
-    try {
-      const seoGlobal = await this.prisma.siteSetting.findUnique({ where: { key: 'seo:global' } });
-      if (seoGlobal && typeof seoGlobal.value === 'object') {
-        const seoVal = (seoGlobal.value as Record<string, any>) || {};
-        await this.prisma.siteSetting.update({
-          where: { key: 'seo:global' },
-          data: {
-            value: {
-              ...seoVal,
-              email: merged.primaryEmail,
-              phone: merged.primaryPhone,
-              address: merged.headquartersAddress,
-              country: merged.country,
-              organizationName: merged.companyName,
+    // 3. Mirror to seo:global so SEO schema, JSON-LD, Organization stay 100% synchronized (non-blocking)
+    this.prisma.siteSetting
+      .findUnique({ where: { key: 'seo:global' } })
+      .then(async (seoGlobal) => {
+        if (seoGlobal && typeof seoGlobal.value === 'object') {
+          const seoVal = (seoGlobal.value as Record<string, any>) || {};
+          await this.prisma.siteSetting.update({
+            where: { key: 'seo:global' },
+            data: {
+              value: {
+                ...seoVal,
+                email: merged.primaryEmail,
+                phone: merged.primaryPhone,
+                address: merged.headquartersAddress,
+                country: merged.country,
+                organizationName: merged.companyName,
+              },
             },
-          },
-        });
-      }
-    } catch {
-      // non-critical sync
-    }
+          });
+        }
+      })
+      .catch(() => {});
 
-    // 4. Synchronize existing CONTACT sections in database
-    try {
-      const contactSections = await this.prisma.pageSection.findMany({
+    // 4. Concurrently synchronize existing CONTACT sections in database (non-blocking)
+    this.prisma.pageSection
+      .findMany({
         where: {
           OR: [
             { componentType: 'CONTACT' },
@@ -2813,30 +2814,31 @@ export class CmsService implements OnModuleInit {
             { sectionIdentifier: 'contact' },
           ],
         },
-      });
+      })
+      .then((contactSections) => {
+        return Promise.all(
+          contactSections.map((sec) => {
+            const payload = (sec.contentPayload as Record<string, any>) || {};
+            const updatedPayload = {
+              ...payload,
+              globalContactDetails: {
+                ...(payload.globalContactDetails || {}),
+                email: merged.primaryEmail,
+                phone: merged.primaryPhone,
+                address: merged.headquartersAddress,
+                officeHours: merged.officeHours,
+              },
+            };
+            return this.prisma.pageSection.update({
+              where: { id: sec.id },
+              data: { contentPayload: updatedPayload },
+            });
+          })
+        );
+      })
+      .catch(() => {});
 
-      for (const sec of contactSections) {
-        const payload = (sec.contentPayload as Record<string, any>) || {};
-        const updatedPayload = {
-          ...payload,
-          globalContactDetails: {
-            ...(payload.globalContactDetails || {}),
-            email: merged.primaryEmail,
-            phone: merged.primaryPhone,
-            address: merged.headquartersAddress,
-            officeHours: merged.officeHours,
-          },
-        };
-        await this.prisma.pageSection.update({
-          where: { id: sec.id },
-          data: { contentPayload: updatedPayload },
-        });
-      }
-    } catch {
-      // non-critical section sync
-    }
-
-    return this.getContactSettings();
+    return contactValue;
   }
 
   // 8. Site Settings

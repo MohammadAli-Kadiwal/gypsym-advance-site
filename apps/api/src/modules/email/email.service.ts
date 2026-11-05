@@ -291,7 +291,7 @@ export class EmailService {
       bookingNotificationsEnabled: dto.bookingNotificationsEnabled !== false,
       bookingNotificationRecipients: dto.bookingNotificationRecipients || adminNotificationRecipients,
       bookingNotificationSubject: dto.bookingNotificationSubject || 'New Discovery Call Scheduled',
-      sendAutoReply: Boolean(dto.sendAutoReply),
+      sendAutoReply: dto.sendAutoReply !== undefined ? Boolean(dto.sendAutoReply) : true,
       autoReplySubject: dto.autoReplySubject || 'Thank you for contacting Gypsym Technology',
       autoReplyBody: dto.autoReplyBody || 'Thank you for reaching out. We will review your inquiry shortly.',
     };
@@ -642,28 +642,61 @@ export class EmailService {
 
       // 1. Send confirmation to client
       try {
-        const clientTpl = await this.templatesService.getTemplate('booking_confirmed');
-        if (clientTpl && clientTpl.isActive) {
-          const rendered = this.templatesService.render(clientTpl, {
-            fullName: booking.fullName,
-            businessEmail: booking.email,
-            companyName: booking.companyName || 'Your Organization',
-            date: dateStr,
-            time: timeStr,
-            duration: `${booking.durationMinutes}m Strategy Session`,
-            bookingNumber: booking.bookingNumber,
-            serviceInterest: booking.serviceInterest || 'Enterprise Architecture',
-            meetingLink,
-            rescheduleLink,
-          });
+        let subject = `Discovery Call Confirmed: ${booking.fullName} & Gypsym Advisory`;
+        let html = '';
 
-          await this.sendGenericEmail({
-            to: booking.email,
-            subject: rendered.subject,
-            html: rendered.html,
-          });
-          this.logger.log(`Booking confirmation sent to client ${booking.email}`);
+        try {
+          const clientTpl = await this.templatesService.getTemplate('booking_confirmed');
+          if (clientTpl && clientTpl.isActive) {
+            const rendered = this.templatesService.render(clientTpl, {
+              fullName: booking.fullName,
+              businessEmail: booking.email,
+              companyName: booking.companyName || 'Your Organization',
+              date: dateStr,
+              time: timeStr,
+              duration: `${booking.durationMinutes}m Strategy Session`,
+              bookingNumber: booking.bookingNumber,
+              serviceInterest: booking.serviceInterest || 'Enterprise Architecture',
+              meetingLink,
+              rescheduleLink,
+            });
+            subject = rendered.subject;
+            html = rendered.html;
+          }
+        } catch (tplErr) {
+          this.logger.debug(`Using fallback template for client booking confirmation: ${tplErr}`);
         }
+
+        if (!html) {
+          html = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+              <div style="display: inline-block; padding: 4px 12px; background: rgba(217, 40, 124, 0.08); color: #d9287c; font-size: 11px; font-weight: 700; border-radius: 9999px; text-transform: uppercase; margin-bottom: 12px;">
+                Booking Confirmed • Ref #${booking.bookingNumber}
+              </div>
+              <h2 style="color: #0f172a; margin: 0 0 12px; font-size: 20px; font-weight: 700;">Your Discovery Session is Scheduled</h2>
+              <p style="color: #475569; font-size: 14px; line-height: 1.6;">Hello <strong>${booking.fullName}</strong>,</p>
+              <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+                Thank you for scheduling a strategy consultation with Gypsym Technology. We have reserved your dedicated session for <strong>${booking.companyName || 'your organization'}</strong>.
+              </p>
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <tr><td style="padding: 10px 14px; font-weight: 600; color: #64748b; width: 35%;">Date</td><td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">${dateStr}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: 600; color: #64748b;">Time</td><td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">${timeStr} (${booking.durationMinutes}m)</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: 600; color: #64748b;">Area of Interest</td><td style="padding: 10px 14px; color: #334155;">${booking.serviceInterest || 'General Strategy'}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: 600; color: #64748b;">Meeting Room</td><td style="padding: 10px 14px;"><a href="${meetingLink}" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Open Google Meet Room</a></td></tr>
+              </table>
+              <div style="padding: 12px 16px; background: #f8fafc; border-radius: 8px; font-size: 12px; color: #64748b;">
+                Need to reschedule? <a href="${rescheduleLink}" style="color: #2563eb; text-decoration: underline;">Manage your booking here</a>.
+              </div>
+            </div>
+          `;
+        }
+
+        await this.sendGenericEmail({
+          to: booking.email,
+          subject,
+          html,
+        });
+        this.logger.log(`Booking confirmation sent to client ${booking.email}`);
       } catch (err: any) {
         this.logger.warn(`Failed to send client booking confirmation: ${err?.message}`);
       }
