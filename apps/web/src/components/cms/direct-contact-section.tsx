@@ -216,8 +216,8 @@ export function DirectContactSection({ section, payload, contactSettings }: Dire
 
         {/* ── Footnote / Availability Note ─────────────────────────── */}
         {footnote && (
-          <ScrollReveal direction="up" delay={100}>
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 pt-1">
+          <ScrollReveal direction="up" delay={100} className="text-center">
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 pt-1 text-center max-w-2xl mx-auto">
               {footnote}
             </p>
           </ScrollReveal>

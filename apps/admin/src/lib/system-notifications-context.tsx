@@ -35,7 +35,9 @@ export interface SystemNotificationsContextValue {
   markAsRead: (id: string) => Promise<void>;
   markAsUnread: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  markMultipleAsRead: (ids: string[]) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
+  deleteMultipleNotifications: (ids: string[]) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -262,6 +264,28 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
     notify.success('All notifications marked as read.');
   }, [getStoredSets, notifications]);
 
+  const markMultipleAsRead = React.useCallback(
+    async (ids: string[]) => {
+      if (!ids.length) return;
+      const { readIds } = getStoredSets();
+      const idSet = new Set(ids);
+      ids.forEach((id) => {
+        readIds.add(id);
+        if (id.startsWith('inquiry-')) {
+          const sourceId = id.replace('inquiry-', '');
+          inquiriesService.updateStatus(sourceId, 'READ').catch(() => {});
+        }
+      });
+      localStorage.setItem('gypsym_read_notifications', JSON.stringify(Array.from(readIds)));
+
+      setNotifications((prev) =>
+        prev.map((n) => (idSet.has(n.id) ? { ...n, isRead: true } : n))
+      );
+      notify.success(`${ids.length} notification${ids.length > 1 ? 's' : ''} marked as read.`);
+    },
+    [getStoredSets]
+  );
+
   const deleteNotification = React.useCallback(
     async (id: string) => {
       const { deletedIds } = getStoredSets();
@@ -270,6 +294,20 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
 
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       notify.info('Notification dismissed.');
+    },
+    [getStoredSets]
+  );
+
+  const deleteMultipleNotifications = React.useCallback(
+    async (ids: string[]) => {
+      if (!ids.length) return;
+      const { deletedIds } = getStoredSets();
+      const idSet = new Set(ids);
+      ids.forEach((id) => deletedIds.add(id));
+      localStorage.setItem('gypsym_deleted_notifications', JSON.stringify(Array.from(deletedIds)));
+
+      setNotifications((prev) => prev.filter((n) => !idSet.has(n.id)));
+      notify.info(`${ids.length} notification${ids.length > 1 ? 's' : ''} deleted.`);
     },
     [getStoredSets]
   );
@@ -308,7 +346,9 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
       markAsRead,
       markAsUnread,
       markAllAsRead,
+      markMultipleAsRead,
       deleteNotification,
+      deleteMultipleNotifications,
       refresh: fetchDynamicNotifications,
     }),
     [
@@ -321,7 +361,9 @@ export function SystemNotificationsProvider({ children }: { children: React.Reac
       markAsRead,
       markAsUnread,
       markAllAsRead,
+      markMultipleAsRead,
       deleteNotification,
+      deleteMultipleNotifications,
       fetchDynamicNotifications,
     ]
   );

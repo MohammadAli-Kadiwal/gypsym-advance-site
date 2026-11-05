@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   useSystemNotifications,
   SystemNotificationItem,
@@ -26,6 +27,7 @@ import {
   Phone,
   Building2,
   Send,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Dialog,
@@ -48,7 +50,9 @@ export default function NotificationsAdminPage() {
     markAsRead,
     markAsUnread,
     markAllAsRead,
+    markMultipleAsRead,
     deleteNotification,
+    deleteMultipleNotifications,
     refresh,
   } = useSystemNotifications();
 
@@ -56,6 +60,12 @@ export default function NotificationsAdminPage() {
   const [searchQuery, setSearchQuery] = React.useState<string>('');
   const [isRefreshing, setIsRefreshing] = React.useState<boolean>(false);
   const [inspectItem, setInspectItem] = React.useState<SystemNotificationItem | null>(null);
+
+  // Bulk selection & deletion states
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [confirmBulkDeleteOpen, setConfirmBulkDeleteOpen] = React.useState<boolean>(false);
+  const [confirmFilterDeleteOpen, setConfirmFilterDeleteOpen] = React.useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = React.useState<boolean>(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -109,6 +119,90 @@ export default function NotificationsAdminPage() {
       ).length,
     [notifications]
   );
+
+  // Filtered IDs in current view
+  const filteredIds = React.useMemo(
+    () => filteredNotifications.map((n) => n.id),
+    [filteredNotifications]
+  );
+
+  const isAllSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredIds));
+    }
+  };
+
+  const toggleSelect = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await deleteMultipleNotifications(ids);
+      setSelectedIds(new Set());
+      setConfirmBulkDeleteOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkMarkAsRead = async () => {
+    const ids = Array.from(selectedIds);
+    await markMultipleAsRead(ids);
+  };
+
+  const handleFilterDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteMultipleNotifications(filteredIds);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      setConfirmFilterDeleteOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const currentFilterLabel = React.useMemo(() => {
+    if (searchQuery.trim()) {
+      return `search results for "${searchQuery}"`;
+    }
+    switch (activeTab) {
+      case 'unread':
+        return 'all unread notifications';
+      case 'inquiries':
+        return 'all inquiries';
+      case 'bookings':
+        return 'all discovery call bookings';
+      case 'system':
+        return 'all system & security alerts';
+      default:
+        return 'all notifications';
+    }
+  }, [activeTab, searchQuery]);
 
   return (
     <AdminContentContainer variant="wide" className="space-y-6 pb-24">
@@ -254,9 +348,9 @@ export default function NotificationsAdminPage() {
       </div>
 
       {/* Tabs and Search Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-2 rounded-2xl border border-border shadow-2xs">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-2 rounded-2xl border border-border shadow-2xs">
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
           {[
             { id: 'all', label: 'All', count: notifications.length },
             { id: 'unread', label: 'Unread', count: unreadCount, highlight: unreadCount > 0 },
@@ -289,25 +383,113 @@ export default function NotificationsAdminPage() {
           ))}
         </div>
 
-        {/* Live Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search messages, names..."
-            className="pl-8 h-9 text-xs rounded-xl"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+        {/* Live Search & Filter-wise Delete Option */}
+        <div className="flex items-center gap-2 w-full lg:w-auto">
+          <div className="relative flex-1 lg:w-64">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search messages, names..."
+              className="pl-8 h-9 text-xs rounded-xl"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {filteredNotifications.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmFilterDeleteOpen(true)}
+              className="h-9 px-3 text-xs text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/40 font-semibold gap-1.5 transition-colors shrink-0 cursor-pointer"
+              title={`Delete all notifications matching ${currentFilterLabel}`}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Delete Filtered</span>
+              <span className="sm:hidden">Delete</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-destructive/15 text-destructive font-bold">
+                {filteredNotifications.length}
+              </span>
+            </Button>
           )}
         </div>
       </div>
+
+      {/* Floating / Sticky Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 p-3 px-4 bg-card/95 backdrop-blur border-2 border-primary/40 rounded-2xl shadow-lg transition-all animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={isAllSelected}
+              onCheckedChange={toggleSelectAll}
+              id="bulk-bar-select-all"
+              aria-label="Toggle select all in current view"
+            />
+            <label
+              htmlFor="bulk-bar-select-all"
+              className="text-xs font-bold text-foreground cursor-pointer select-none"
+            >
+              {selectedIds.size} {selectedIds.size === 1 ? 'item' : 'items'} selected
+            </label>
+            <button
+              onClick={clearSelection}
+              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer"
+            >
+              Deselect all
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkMarkAsRead}
+              className="h-8 px-3 text-xs bg-card hover:bg-muted font-medium cursor-pointer"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1.5 text-primary" />
+              Mark as Read
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setConfirmBulkDeleteOpen(true)}
+              className="h-8 px-3 text-xs shadow-2xs font-semibold gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete Selected ({selectedIds.size})</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Select All in View Toolbar (when no bulk selection active) */}
+      {filteredNotifications.length > 0 && selectedIds.size === 0 && (
+        <div className="flex items-center justify-between px-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={isAllSelected}
+              onCheckedChange={toggleSelectAll}
+              id="select-all-filtered-checkbox"
+              aria-label="Select all notifications in current view"
+            />
+            <label
+              htmlFor="select-all-filtered-checkbox"
+              className="cursor-pointer select-none font-medium hover:text-foreground text-xs"
+            >
+              Select all {filteredNotifications.length} in this view
+            </label>
+          </div>
+          <span className="font-mono text-[11px]">
+            Showing {filteredNotifications.length} of {notifications.length}
+          </span>
+        </div>
+      )}
 
       {/* Notifications List */}
       <div className="space-y-3">
@@ -319,12 +501,16 @@ export default function NotificationsAdminPage() {
         ) : filteredNotifications.length > 0 ? (
           filteredNotifications.map((notif) => {
             const isUnread = !notif.isRead;
+            const isSelected = selectedIds.has(notif.id);
             return (
               <Card
                 key={notif.id}
-                className={`p-4 transition-all rounded-2xl border relative overflow-hidden ${
-                  isUnread
-                    ? 'bg-primary/5 border-primary/30 shadow-2xs'
+                onClick={() => toggleSelect(notif.id)}
+                className={`p-4 transition-all rounded-2xl border relative overflow-hidden cursor-pointer select-none ${
+                  isSelected
+                    ? 'border-primary ring-2 ring-primary/30 bg-primary/[0.06] shadow-sm'
+                    : isUnread
+                    ? 'bg-primary/5 border-primary/30 shadow-2xs hover:border-primary/50'
                     : 'bg-card border-border hover:border-primary/40'
                 }`}
               >
@@ -332,7 +518,19 @@ export default function NotificationsAdminPage() {
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
                 )}
 
-                <div className="flex items-start gap-3.5 pl-1">
+                <div className="flex items-start gap-3 pl-1">
+                  {/* Item Selection Checkbox */}
+                  <div
+                    className="flex items-center pt-2.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleSelect(notif.id)}
+                      aria-label={`Select ${notif.title}`}
+                    />
+                  </div>
+
                   {/* Category Icon */}
                   <div
                     className={`rounded-2xl p-2.5 shrink-0 ${
@@ -361,7 +559,10 @@ export default function NotificationsAdminPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4
-                          onClick={() => setInspectItem(notif)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInspectItem(notif);
+                          }}
                           className={`text-sm cursor-pointer hover:underline ${
                             isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/80'
                           }`}
@@ -429,7 +630,10 @@ export default function NotificationsAdminPage() {
                       <div className="flex items-center gap-2">
                         {isUnread ? (
                           <button
-                            onClick={() => markAsRead(notif.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notif.id);
+                            }}
                             className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium transition-colors cursor-pointer"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -437,7 +641,10 @@ export default function NotificationsAdminPage() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => markAsUnread(notif.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsUnread(notif.id);
+                            }}
                             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
                           >
                             <span>Mark as unread</span>
@@ -447,7 +654,10 @@ export default function NotificationsAdminPage() {
                         <span className="text-border">•</span>
 
                         <button
-                          onClick={() => setInspectItem(notif)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInspectItem(notif);
+                          }}
                           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
                         >
                           <Eye className="h-3.5 w-3.5" />
@@ -459,6 +669,7 @@ export default function NotificationsAdminPage() {
                         {notif.link && (
                           <Link
                             href={notif.link}
+                            onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
                           >
                             <span>Open in Studio</span>
@@ -467,7 +678,10 @@ export default function NotificationsAdminPage() {
                         )}
 
                         <button
-                          onClick={() => deleteNotification(notif.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notif.id);
+                          }}
                           className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                           title="Dismiss notification"
                         >
@@ -653,6 +867,86 @@ export default function NotificationsAdminPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Confirmation Dialog: Bulk Delete Selected */}
+      <Dialog open={confirmBulkDeleteOpen} onOpenChange={setConfirmBulkDeleteOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl">
+          <DialogHeader className="space-y-2">
+            <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-base font-bold text-foreground">
+              Delete {selectedIds.size} Selected Notification{selectedIds.size > 1 ? 's' : ''}?
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Are you sure you want to dismiss and delete the <strong className="text-foreground">{selectedIds.size}</strong> selected notification{selectedIds.size > 1 ? 's' : ''}? They will be removed from your notification feed.
+          </p>
+
+          <DialogFooter className="flex items-center justify-end gap-2 pt-4 border-t border-border/50">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => setConfirmBulkDeleteOpen(false)}
+              className="text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={handleBulkDelete}
+              className="text-xs font-semibold gap-1.5 shadow-2xs"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{isDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog: Filter-wise Delete */}
+      <Dialog open={confirmFilterDeleteOpen} onOpenChange={setConfirmFilterDeleteOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl">
+          <DialogHeader className="space-y-2">
+            <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-base font-bold text-foreground">
+              Delete All Notifications in Current View?
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Are you sure you want to delete all <strong className="text-foreground">{filteredNotifications.length}</strong> notification{filteredNotifications.length > 1 ? 's' : ''} currently displayed under <strong className="text-foreground">{currentFilterLabel}</strong>?
+          </p>
+
+          <DialogFooter className="flex items-center justify-end gap-2 pt-4 border-t border-border/50">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => setConfirmFilterDeleteOpen(false)}
+              className="text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={handleFilterDelete}
+              className="text-xs font-semibold gap-1.5 shadow-2xs"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{isDeleting ? 'Deleting...' : `Delete All Filtered (${filteredNotifications.length})`}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminContentContainer>
   );
 }
