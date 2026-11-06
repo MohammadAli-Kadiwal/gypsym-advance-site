@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { notify } from '@/lib/notifications';
 import {
   Sparkles,
   Layers,
@@ -70,7 +71,7 @@ export function DeliveryProcessSettings({ section, onChange }: DeliveryProcessSe
 
   const deleteStep = (index: number) => {
     if (steps.length <= 1) {
-      alert('The delivery process must contain at least one step.');
+      notify.warning('The delivery process must contain at least one step.');
       return;
     }
     const updated = steps.filter((_, i) => i !== index);

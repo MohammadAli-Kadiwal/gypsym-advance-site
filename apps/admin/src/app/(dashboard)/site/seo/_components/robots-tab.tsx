@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import { notify } from '@/lib/notifications';
 import { normalizeErrorMessage } from '@/lib/api';
 import { seoService, RobotsConfigData } from '@/services/seo.service';
@@ -37,6 +38,7 @@ export function RobotsTab() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [showPreview, setShowPreview] = React.useState(false);
+  const [showWarningDialog, setShowWarningDialog] = React.useState(false);
 
   // Path input state for each rule
   const [newAllowPath, setNewAllowPath] = React.useState<{ [ruleIdx: number]: string }>({});
@@ -72,15 +74,7 @@ export function RobotsTab() {
     );
   }, [config.rules]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (hasDangerousDisallowAll) {
-      const confirmed = window.confirm(
-        'CRITICAL SEO WARNING: You are about to block all search engine crawlers from the root URL (Disallow: /). This will remove Gypsym Technology from Google and Bing search results. Are you sure you want to proceed?'
-      );
-      if (!confirmed) return;
-    }
-
+  const executeSaveRobots = async () => {
     try {
       setSaving(true);
       await seoService.updateRobots(config);
@@ -90,6 +84,15 @@ export function RobotsTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasDangerousDisallowAll) {
+      setShowWarningDialog(true);
+      return;
+    }
+    await executeSaveRobots();
   };
 
   const addRule = () => {
@@ -401,6 +404,17 @@ export function RobotsTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Critical SEO Warning Confirmation Dialog */}
+      <ConfirmDialog
+        open={showWarningDialog}
+        onOpenChange={setShowWarningDialog}
+        title="CRITICAL SEO WARNING"
+        description="You are about to block all search engine crawlers from the root URL (Disallow: /). This will remove Gypsym Technology from Google and Bing search results. Are you sure you want to proceed?"
+        confirmLabel="Yes, Block All Crawlers"
+        variant="destructive"
+        onConfirm={executeSaveRobots}
+      />
     </form>
   );
 }

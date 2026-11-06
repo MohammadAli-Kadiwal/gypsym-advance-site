@@ -2708,49 +2708,64 @@ export class CmsService implements OnModuleInit {
   }
 
   async updateContactSettings(data: any): Promise<any> {
-    const current = await this.getContactSettings();
-    const merged = { ...current, ...data };
-
-    const cleanWaNumber = (merged.whatsappNumber || '').replace(/[^0-9]/g, '');
-    if (!merged.whatsappUrl || merged.whatsappUrl.startsWith('https://wa.me/')) {
-      merged.whatsappUrl = cleanWaNumber
-        ? `https://wa.me/${cleanWaNumber}${merged.whatsappMessage ? `?text=${encodeURIComponent(merged.whatsappMessage)}` : ''}`
+    const d = data || {};
+    const primaryEmail = d.primaryEmail || d.email || 'hello@gypsym.com';
+    const primaryPhone = d.primaryPhone || d.phone || '+1 (800) 928-4019';
+    const secondaryPhone = d.secondaryPhone || '';
+    const whatsappNumber = d.whatsappNumber || d.whatsapp || '+91 73397 26403';
+    const whatsappMessage = d.whatsappMessage || "Hi Gypsym team, I'd like to discuss a Shopify project.";
+    const cleanWaNumber = whatsappNumber.replace(/[^0-9]/g, '');
+    let whatsappUrl = d.whatsappUrl;
+    if (!whatsappUrl || whatsappUrl.startsWith('https://wa.me/')) {
+      whatsappUrl = cleanWaNumber
+        ? `https://wa.me/${cleanWaNumber}${whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : ''}`
         : 'https://wa.me/917339726403';
     }
 
-    // 1. Save to general:contact
+    const headquartersAddress = d.headquartersAddress || d.address || '100 Bishopsgate, London EC2N 4AG, United Kingdom';
+    const secondaryAddress = d.secondaryAddress || '';
+    const officeHours = d.officeHours || 'Mon – Fri: 08:00 – 18:00 EST';
+    const timezone = d.timezone || 'UTC';
+    const country = d.country || 'United Kingdom';
+    const googleMapsUrl = d.googleMapsUrl || '';
+    const companyName = d.companyName || 'Gypsym Technology';
+    const legalName = d.legalName || 'Gypsym Global Enterprises Inc.';
+    const tagline = d.tagline || 'Shopify & Shopify Plus Engineering Agency';
+    const legalJurisdiction = d.legalJurisdiction || 'Delaware, United States & London, United Kingdom';
+
+    // 1. Prepare contact and entity values
     const contactValue = {
-      primaryEmail: merged.primaryEmail,
-      email: merged.primaryEmail,
-      phone: merged.primaryPhone,
-      primaryPhone: merged.primaryPhone,
-      secondaryPhone: merged.secondaryPhone || '',
-      whatsappNumber: merged.whatsappNumber,
-      whatsappMessage: merged.whatsappMessage || '',
-      whatsappUrl: merged.whatsappUrl,
-      bookingUrl: merged.bookingUrl || '/book',
-      projectEmail: merged.projectEmail || merged.primaryEmail,
-      advisoryEmail: merged.advisoryEmail || merged.primaryEmail,
-      securityEmail: merged.securityEmail || merged.primaryEmail,
-      supportEmail: merged.supportEmail || merged.primaryEmail,
-      address: merged.headquartersAddress,
-      headquartersAddress: merged.headquartersAddress,
-      secondaryAddress: merged.secondaryAddress || '',
-      officeHours: merged.officeHours || 'Mon – Fri: 08:00 – 18:00 EST',
-      timezone: merged.timezone || 'UTC',
-      country: merged.country || 'United Kingdom',
-      googleMapsUrl: merged.googleMapsUrl || '',
+      primaryEmail,
+      email: primaryEmail,
+      phone: primaryPhone,
+      primaryPhone,
+      secondaryPhone,
+      whatsappNumber,
+      whatsappMessage,
+      whatsappUrl,
+      bookingUrl: d.bookingUrl || '/book',
+      projectEmail: d.projectEmail || primaryEmail,
+      advisoryEmail: d.advisoryEmail || primaryEmail,
+      securityEmail: d.securityEmail || primaryEmail,
+      supportEmail: d.supportEmail || primaryEmail,
+      address: headquartersAddress,
+      headquartersAddress,
+      secondaryAddress,
+      officeHours,
+      timezone,
+      country,
+      googleMapsUrl,
     };
 
     const entityValue = {
-      companyName: merged.companyName,
-      legalName: merged.legalName,
-      tagline: merged.tagline,
-      headquarters: merged.headquartersAddress,
-      legalJurisdiction: merged.legalJurisdiction,
+      companyName,
+      legalName,
+      tagline,
+      headquarters: headquartersAddress,
+      legalJurisdiction,
     };
 
-    // 1 & 2. Concurrently upsert general:contact and general:entity
+    // 2. Concurrently upsert general:contact and general:entity
     await Promise.all([
       this.prisma.siteSetting.upsert({
         where: { key: 'general:contact' },
@@ -2791,11 +2806,11 @@ export class CmsService implements OnModuleInit {
             data: {
               value: {
                 ...seoVal,
-                email: merged.primaryEmail,
-                phone: merged.primaryPhone,
-                address: merged.headquartersAddress,
-                country: merged.country,
-                organizationName: merged.companyName,
+                email: contactValue.primaryEmail,
+                phone: contactValue.primaryPhone,
+                address: contactValue.headquartersAddress,
+                country: contactValue.country,
+                organizationName: entityValue.companyName,
               },
             },
           });
@@ -2823,10 +2838,10 @@ export class CmsService implements OnModuleInit {
               ...payload,
               globalContactDetails: {
                 ...(payload.globalContactDetails || {}),
-                email: merged.primaryEmail,
-                phone: merged.primaryPhone,
-                address: merged.headquartersAddress,
-                officeHours: merged.officeHours,
+                email: contactValue.primaryEmail,
+                phone: contactValue.primaryPhone,
+                address: contactValue.headquartersAddress,
+                officeHours: contactValue.officeHours,
               },
             };
             return this.prisma.pageSection.update({

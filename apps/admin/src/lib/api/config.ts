@@ -44,9 +44,9 @@ export const API_CONFIG = {
     return getApiBaseUrl();
   },
   timeout: {
-    default: 30000, // 30 seconds for standard REST calls
-    upload: 60000,  // 60 seconds for multipart file uploads
-    download: 30000 // 30 seconds for binary downloads
+    default: 45000, // 45 seconds for standard REST calls
+    upload: 90000,  // 90 seconds for multipart file uploads
+    download: 45000 // 45 seconds for binary downloads
   },
   headers: {
     'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatDateTime } from '@/lib/utils';
+import { notify } from '@/lib/notifications';
 import { AdminContentContainer } from '@/components/layout/admin-page';
 
 interface Revision {
@@ -81,7 +82,7 @@ export default function PageRevisionsView() {
   const currentRev: Revision = revisions[0]!;
 
   const handleRollback = (rev: Revision) => {
-    alert(`Successfully rolled back to snapshot ${rev.version}! Active draft updated.`);
+    notify.success(`Successfully rolled back to snapshot ${rev.version}! Active draft updated.`);
     router.push(`/pages/${pageId}`);
   };
 

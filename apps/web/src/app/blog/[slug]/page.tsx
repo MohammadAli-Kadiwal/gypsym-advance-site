@@ -86,12 +86,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       ? post.related
       : otherPosts.slice(0, 3);
 
-  const sections = post.bodyContent?.sections || [
-    {
-      heading: 'Executive Overview',
-      paragraphs: [post.excerpt],
-    },
-  ];
+  const rawBody: any = post.bodyContent;
+  let sections: any[] = [];
+  if (rawBody?.sections && Array.isArray(rawBody.sections) && rawBody.sections.length > 0) {
+    sections = rawBody.sections;
+  } else if (typeof rawBody === 'string' && rawBody.trim()) {
+    sections = parseMarkdownIntoSections(rawBody);
+  } else {
+    sections = [
+      {
+        heading: 'Executive Overview',
+        paragraphs: [post.excerpt],
+      },
+    ];
+  }
 
   // CTA Section
   const rawCtaSection = homePage?.sections?.find(
@@ -154,8 +162,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const postFaqs = (post.faqs && post.faqs.length > 0)
     ? post.faqs
     : ((post.bodyContent as any)?.faqs && (post.bodyContent as any).faqs.length > 0)
-    ? (post.bodyContent as any).faqs
-    : getDefaultBlogFaqs(post.title);
+      ? (post.bodyContent as any).faqs
+      : getDefaultBlogFaqs(post.title);
 
   const faqSchema = buildFaqSchema(
     postFaqs
@@ -179,198 +187,203 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <div className="bg-white dark:bg-neutral-900 rounded-[22px] sm:rounded-[32px] p-6 sm:p-10 md:p-14 border border-neutral-200/70 dark:border-neutral-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
               {/* Breadcrumbs */}
               <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold text-neutral-500 mb-8 overflow-x-auto whitespace-nowrap scrollbar-none">
-              <Link href="/" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                Home
-              </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-            <Link href="/blog" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-              Blog
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-            <span className="text-[#d9287c]">{post.category?.name}</span>
-          </nav>
+                <Link href="/" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  Home
+                </Link>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <Link href="/blog" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  Blog
+                </Link>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="text-[#d9287c]">{post.category?.name}</span>
+              </nav>
 
-          {/* Category Pill & Reading Time */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#fce7ec] text-[#d9287c]">
-              {post.category?.name}
-            </span>
-            <span className="text-xs font-mono text-neutral-500 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              {post.readTime}
-            </span>
-            <span className="text-neutral-300 dark:text-neutral-700">•</span>
-            <span className="text-xs font-mono text-neutral-500 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              {post.publishedDate}
-            </span>
-          </div>
+              {/* Category Pill & Reading Time */}
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#fce7ec] text-[#d9287c]">
+                  {post.category?.name}
+                </span>
+                <span className="text-xs font-mono text-neutral-500 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  {post.readTime}
+                </span>
+                <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                <span className="text-xs font-mono text-neutral-500 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {post.publishedDate}
+                </span>
+              </div>
 
-          {/* Grand Headline (Site's Primary Sans Typography) */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.15]">
-            {post.title}
-          </h1>
+              {/* Grand Headline (Site's Primary Sans Typography) */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.15]">
+                {post.title}
+              </h1>
 
-          {/* Abstract / Excerpt */}
-          <p className="mt-6 text-base sm:text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed border-l-3 border-[#d9287c] pl-4 italic">
-            {post.excerpt}
-          </p>
+              {/* Abstract / Excerpt */}
+              <p className="mt-6 text-base sm:text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed border-l-3 border-[#d9287c] pl-4 italic">
+                {post.excerpt}
+              </p>
 
-          {/* Cover Media Banner */}
-          {post.coverImage && (
-            <div className="mt-8 rounded-[18px] sm:rounded-[24px] overflow-hidden aspect-video relative bg-neutral-950">
-              <img
-                src={post.coverImage}
-                alt={post.title}
-                decoding="async"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+              {/* Cover Media Banner */}
+              {post.coverImage && (
+                <div className="mt-8 rounded-[18px] sm:rounded-[24px] overflow-hidden aspect-video relative bg-neutral-950">
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
 
-          {/* Article Body Content */}
-          <div className="mt-12 space-y-10">
-            {sections.map((section: any, idx: number) => (
-              <section key={idx} className="space-y-5">
-                {section.heading && (
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white leading-snug pt-4 border-t border-neutral-100 dark:border-neutral-800 first:border-0 first:pt-0">
-                    {section.heading}
-                  </h2>
-                )}
+              {/* Article Body Content */}
+              <div className="mt-12 space-y-10">
+                {sections.map((section: any, idx: number) => (
+                  <section key={idx} className="space-y-5">
+                    {section.heading && (
+                      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white leading-snug pt-4 border-t border-neutral-100 dark:border-neutral-800 first:border-0 first:pt-0">
+                        {section.heading.replace(/^#+\s*/, '')}
+                      </h2>
+                    )}
 
-                {section.subheading && (
-                  <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
-                    {section.subheading}
-                  </h3>
-                )}
+                    {section.subheading && (
+                      <h3 className="text-lg sm:text-xl font-bold text-neutral-800 dark:text-neutral-200">
+                        {section.subheading.replace(/^#+\s*/, '')}
+                      </h3>
+                    )}
 
-                {section.paragraphs?.map((p: string, pIdx: number) =>
-                  renderParagraphContent(p, pIdx)
-                )}
+                    {section.paragraphs?.map((p: string, pIdx: number) => {
+                      if (!p || typeof p !== 'string') return null;
+                      const subLines = p.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+                      if (subLines.length > 1) {
+                        return subLines.map((line, lineIdx) => renderParagraphContent(line, pIdx * 1000 + lineIdx));
+                      }
+                      return renderParagraphContent(p.trim(), pIdx);
+                    })}
 
-                {/* Quotation Callout */}
-                {section.quote && (
-                  <div className="my-6 p-6 sm:p-8 rounded-[20px] bg-[#fce7ec] dark:bg-neutral-800/80 border-l-4 border-[#d9287c] relative">
-                    <Quote className="w-8 h-8 text-[#d9287c]/30 absolute top-4 right-4" />
-                    <blockquote className="text-base sm:text-lg font-serif italic text-neutral-900 dark:text-white leading-relaxed">
-                      &ldquo;{section.quote.text}&rdquo;
-                    </blockquote>
-                    {section.quote.citation && (
-                      <div className="mt-3 text-xs font-mono font-bold text-[#d9287c] uppercase tracking-wider">
-                        — {section.quote.citation}
+                    {/* Quotation Callout */}
+                    {section.quote && (
+                      <div className="my-6 p-6 sm:p-8 rounded-[20px] bg-[#fce7ec] dark:bg-neutral-800/80 border-l-4 border-[#d9287c] relative">
+                        <Quote className="w-8 h-8 text-[#d9287c]/30 absolute top-4 right-4" />
+                        <blockquote className="text-base sm:text-lg font-serif italic text-neutral-900 dark:text-white leading-relaxed">
+                          &ldquo;{section.quote.text}&rdquo;
+                        </blockquote>
+                        {section.quote.citation && (
+                          <div className="mt-3 text-xs font-mono font-bold text-[#d9287c] uppercase tracking-wider">
+                            — {section.quote.citation}
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Code Snippet */}
-                {section.codeSnippet && (
-                  <div className="my-6 rounded-[18px] overflow-hidden border border-neutral-800 bg-[#0d1117] shadow-sm">
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] border-b border-neutral-800 text-xs font-mono text-neutral-400">
-                      <span>{section.codeSnippet.language}</span>
-                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Architecture Source</span>
-                    </div>
-                    <pre className="p-4 sm:p-5 overflow-x-auto text-xs sm:text-sm font-mono text-emerald-400 leading-relaxed">
-                      <code>{section.codeSnippet.code}</code>
-                    </pre>
-                  </div>
-                )}
+                    {/* Code Snippet */}
+                    {section.codeSnippet && (
+                      <div className="my-6 rounded-[18px] overflow-hidden border border-neutral-800 bg-[#0d1117] shadow-sm">
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] border-b border-neutral-800 text-xs font-mono text-neutral-400">
+                          <span>{section.codeSnippet.language}</span>
+                          <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Architecture Source</span>
+                        </div>
+                        <pre className="p-4 sm:p-5 overflow-x-auto text-xs sm:text-sm font-mono text-emerald-400 leading-relaxed">
+                          <code>{section.codeSnippet.code}</code>
+                        </pre>
+                      </div>
+                    )}
 
-                {/* Takeaways Callout */}
-                {section.callout && (
-                  <div className="my-6 p-5 sm:p-6 rounded-[18px] bg-[#f3f9e9] dark:bg-emerald-950/20 border border-[#98c22a]/40">
-                    <div className="text-xs font-mono font-bold text-[#98c22a] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4" />
-                      {section.callout.title}
-                    </div>
-                    <p className="text-sm sm:text-base text-neutral-800 dark:text-neutral-200 leading-relaxed">
-                      {section.callout.text}
-                    </p>
-                  </div>
-                )}
+                    {/* Takeaways Callout */}
+                    {section.callout && (
+                      <div className="my-6 p-5 sm:p-6 rounded-[18px] bg-[#f3f9e9] dark:bg-emerald-950/20 border border-[#98c22a]/40">
+                        <div className="text-xs font-mono font-bold text-[#98c22a] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4" />
+                          {section.callout.title}
+                        </div>
+                        <p className="text-sm sm:text-base text-neutral-800 dark:text-neutral-200 leading-relaxed">
+                          {section.callout.text}
+                        </p>
+                      </div>
+                    )}
 
-                {/* Bullet Points */}
-                {section.bulletPoints && section.bulletPoints.length > 0 && (
-                  <ul className="space-y-2.5 my-4">
-                    {section.bulletPoints.map((bp: string, bpIdx: number) => (
-                      <li key={bpIdx} className="flex items-start gap-3 text-sm sm:text-base text-neutral-700 dark:text-neutral-300">
-                        <span className="w-2 h-2 rounded-full bg-[#d9287c] mt-2.5 shrink-0" />
-                        <span>{bp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </div>
-
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-12 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-              <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-3">
-                Architectural Domains
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
-                  >
-                    #{tag}
-                  </span>
+                    {/* Bullet Points */}
+                    {section.bulletPoints && section.bulletPoints.length > 0 && (
+                      <ul className="space-y-2.5 my-4">
+                        {section.bulletPoints.map((bp: string, bpIdx: number) => (
+                          <li key={bpIdx} className="flex items-start gap-3 text-sm sm:text-base text-neutral-700 dark:text-neutral-300">
+                            <span className="w-2 h-2 rounded-full bg-[#d9287c] mt-2.5 shrink-0" />
+                            <span>{bp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* Frequently Asked Questions */}
-          <BlogFaqAccordion faqs={postFaqs} articleTitle={post.title} />
-
-          {/* Author Details & Share Actions Bar (Moved After FAQs) */}
-          <div className="mt-12 pt-6 pb-6 border-y border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              {post.author?.avatar && (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700 shrink-0"
-                />
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="mt-12 pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                  <div className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-3">
+                    Architectural Domains
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
-              <div>
-                <div className="text-sm font-bold text-neutral-900 dark:text-white">
-                  {post.author?.name}
+
+              {/* Frequently Asked Questions */}
+              <BlogFaqAccordion faqs={postFaqs} articleTitle={post.title} />
+
+              {/* Author Details & Share Actions Bar (Moved After FAQs) */}
+              <div className="mt-12 pt-6 pb-6 border-y border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  {post.author?.avatar && (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700 shrink-0"
+                    />
+                  )}
+                  <div>
+                    <div className="text-sm font-bold text-neutral-900 dark:text-white">
+                      {post.author?.name}
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {post.author?.role || 'Chief Technology Officer & Lead Architect'}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {post.author?.role || 'Chief Technology Officer & Lead Architect'}
-                </div>
+
+                <ArticleShareBar title={post.title} slug={post.slug} />
+              </div>
+
+              {/* Back button */}
+              <div className="mt-10">
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-[#d9287c] transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to All Publications
+                </Link>
               </div>
             </div>
+          </article>
 
-            <ArticleShareBar title={post.title} slug={post.slug} />
-          </div>
-
-          {/* Back button */}
-          <div className="mt-10">
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-[#d9287c] transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to All Publications
-            </Link>
-          </div>
+          {/* Right Side: Sticky Sidebar with Auto-type Search & Other Blogs */}
+          <aside className="lg:col-span-4 w-full">
+            <div className="sticky top-28 space-y-6">
+              <BlogSidebar otherPosts={otherPosts} currentSlug={params.slug} />
+            </div>
+          </aside>
         </div>
-      </article>
-
-      {/* Right Side: Sticky Sidebar with Auto-type Search & Other Blogs */}
-      <aside className="lg:col-span-4 w-full">
-        <div className="sticky top-28 space-y-6">
-          <BlogSidebar otherPosts={otherPosts} currentSlug={params.slug} />
-        </div>
-      </aside>
-    </div>
 
         {/* ── Related Publications Grid ── */}
         {relatedPosts.length > 0 && (
@@ -450,10 +463,100 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 }
 
 /**
+ * Parses raw markdown body into structured sections when bodyContent is a string
+ */
+function parseMarkdownIntoSections(markdown: string): Array<{ heading?: string; paragraphs: string[] }> {
+  const sections: Array<{ heading?: string; paragraphs: string[] }> = [];
+  const lines = markdown.split(/\r?\n/);
+  let currentHeading = 'Overview';
+  let currentParagraphs: string[] = [];
+  let buffer: string[] = [];
+
+  const flushBuffer = () => {
+    const text = buffer.join('\n').trim();
+    if (text) {
+      currentParagraphs.push(text);
+    }
+    buffer = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    const trimmed = line.trim();
+
+    if (/^#{1,2}\s+/.test(trimmed)) {
+      flushBuffer();
+      if (currentParagraphs.length > 0) {
+        sections.push({
+          heading: currentHeading,
+          paragraphs: currentParagraphs,
+        });
+        currentParagraphs = [];
+      }
+      currentHeading = trimmed.replace(/^#+\s*/, '').trim();
+    } else if (trimmed === '') {
+      flushBuffer();
+    } else {
+      buffer.push(line);
+    }
+  }
+
+  flushBuffer();
+  if (currentParagraphs.length > 0) {
+    sections.push({
+      heading: currentHeading,
+      paragraphs: currentParagraphs,
+    });
+  }
+
+  return sections.length > 0
+    ? sections
+    : [{ heading: 'Overview', paragraphs: [markdown] }];
+}
+
+/**
  * Renders structured paragraph content including embedded images, blockquotes, lists, and inline styles
  */
 function renderParagraphContent(text: string, pIdx: number) {
   const trimmed = text.trim();
+
+  // 0. Markdown Headings: #, ##, ###, ####, #####, ###### (Direct rendering without #)
+  const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+  if (headingMatch && headingMatch[1] && headingMatch[2]) {
+    const level = headingMatch[1].length;
+    const cleanContent = renderInlineMarkdown(headingMatch[2].trim());
+
+    if (level <= 2) {
+      return (
+        <h2
+          key={pIdx}
+          className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mt-10 mb-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 first:border-0 first:pt-0"
+        >
+          {cleanContent}
+        </h2>
+      );
+    }
+
+    if (level === 3) {
+      return (
+        <h3
+          key={pIdx}
+          className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white mt-8 mb-3 pt-2"
+        >
+          {cleanContent}
+        </h3>
+      );
+    }
+
+    return (
+      <h4
+        key={pIdx}
+        className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white mt-6 mb-2 pt-2"
+      >
+        {cleanContent}
+      </h4>
+    );
+  }
 
   // 1. Markdown Image: ![Alt text](url)
   const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
@@ -493,7 +596,7 @@ function renderParagraphContent(text: string, pIdx: number) {
     );
   }
 
-  // 3. Bullet List: - item
+  // 3. Bullet List: - item or * item
   if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
     return (
       <div key={pIdx} className="flex items-start gap-3 my-2 text-base sm:text-lg text-neutral-700 dark:text-neutral-300">
@@ -503,7 +606,21 @@ function renderParagraphContent(text: string, pIdx: number) {
     );
   }
 
-  // 4. Standard Paragraph with inline formatting (bold, italic, code, links)
+  // 4. Numbered List: 1. item
+  const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+  if (numMatch) {
+    const [, num, itemText] = numMatch;
+    return (
+      <div key={pIdx} className="flex items-start gap-3 my-2 text-base sm:text-lg text-neutral-700 dark:text-neutral-300">
+        <span className="font-mono text-xs font-bold text-[#d9287c] bg-[#d9287c]/10 px-2 py-0.5 rounded-md mt-1 shrink-0">
+          {num}
+        </span>
+        <span className="flex-1">{renderInlineMarkdown(itemText || '')}</span>
+      </div>
+    );
+  }
+
+  // 5. Standard Paragraph with inline formatting (bold, italic, code, links)
   return (
     <p
       key={pIdx}

@@ -123,6 +123,7 @@ export default function EditorialBlogAdminPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
+  const [postToDelete, setPostToDelete] = React.useState<BlogPostRecord | null>(null);
 
   // Form State
   const [formData, setFormData] = React.useState({
@@ -228,7 +229,13 @@ export default function EditorialBlogAdminPage() {
     let contentText = '';
     if (post.bodyContent?.sections) {
       contentText = post.bodyContent.sections
-        .map((s: any) => `${s.heading ? `## ${s.heading}\n\n` : ''}${s.paragraphs?.join('\n\n') || ''}`)
+        .map((s: any) => {
+          const cleanHeading = s.heading ? s.heading.replace(/^#+\s*/, '') : '';
+          const headingLine = cleanHeading ? `## ${cleanHeading}\n\n` : '';
+          const cleanSub = s.subheading ? s.subheading.replace(/^#+\s*/, '') : '';
+          const subHeadingLine = cleanSub ? `### ${cleanSub}\n\n` : '';
+          return `${headingLine}${subHeadingLine}${s.paragraphs?.join('\n\n') || ''}`;
+        })
         .join('\n\n');
     } else if (typeof post.bodyContent === 'string') {
       contentText = post.bodyContent;
@@ -346,7 +353,7 @@ export default function EditorialBlogAdminPage() {
         const line = lines[i] ?? '';
         const trimmed = line.trim();
 
-        if (trimmed.startsWith('## ')) {
+        if (/^#{1,2}\s+/.test(trimmed)) {
           if (buffer.length > 0) {
             flushParagraphs(buffer.join('\n'));
             buffer = [];
@@ -358,7 +365,13 @@ export default function EditorialBlogAdminPage() {
             });
             currentParagraphs = [];
           }
-          currentHeading = trimmed.replace(/^##\s+/, '').trim();
+          currentHeading = trimmed.replace(/^#+\s*/, '').trim();
+        } else if (/^#{3,6}\s+/.test(trimmed)) {
+          if (buffer.length > 0) {
+            flushParagraphs(buffer.join('\n'));
+            buffer = [];
+          }
+          currentParagraphs.push(trimmed);
         } else if (trimmed === '') {
           if (buffer.length > 0) {
             flushParagraphs(buffer.join('\n'));
@@ -448,21 +461,26 @@ export default function EditorialBlogAdminPage() {
     }
   };
 
-  // Delete article
-  const handleDelete = async (post: BlogPostRecord) => {
-    if (!confirm(`Are you sure you want to delete "${post.title}"?`)) return;
+  // Delete article (triggers custom popup confirmation dialog instead of browser alert)
+  const handleDelete = (post: BlogPostRecord) => {
+    setPostToDelete(post);
+  };
+
+  const handleConfirmSingleDelete = async () => {
+    if (!postToDelete) return;
 
     try {
-      await fetchApi(`/cms/blog/${post.id}`, {
+      await fetchApi(`/cms/blog/${postToDelete.id}`, {
         method: 'DELETE',
       });
-      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      setPosts((prev) => prev.filter((p) => p.id !== postToDelete.id));
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        next.delete(post.id);
+        next.delete(postToDelete.id);
         return next;
       });
-      notify.success('The article was moved to archive/deleted.');
+      notify.success(`"${postToDelete.title}" has been deleted.`);
+      setPostToDelete(null);
     } catch (err: any) {
       notify.error(err.message || 'Delete failed');
     }
@@ -1421,6 +1439,17 @@ export default function EditorialBlogAdminPage() {
           </Button>
         </div>
       )}
+
+      {/* Single Article Delete Confirm Dialog (Replaces native browser alert/confirm) */}
+      <ConfirmDialog
+        open={!!postToDelete}
+        onOpenChange={(open) => !open && setPostToDelete(null)}
+        title="Delete Publication?"
+        description={`Are you sure you want to delete "${postToDelete?.title}"? This will permanently remove the article from your website.`}
+        confirmLabel="Delete Publication"
+        variant="destructive"
+        onConfirm={handleConfirmSingleDelete}
+      />
 
       {/* Bulk Delete Confirm Dialog */}
       <ConfirmDialog

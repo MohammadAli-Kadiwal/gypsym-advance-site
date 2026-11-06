@@ -71,6 +71,7 @@ export default function ContactSubmissionsPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = React.useState(false);
   const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
+  const [deleteSubmissionId, setDeleteSubmissionId] = React.useState<string | null>(null);
   const [dossierTarget, setDossierTarget] = React.useState<BriefingData | null>(null);
 
   const loadSubmissions = React.useCallback(async () => {
@@ -127,16 +128,21 @@ export default function ContactSubmissionsPage() {
     }
   };
 
-  // Delete submission
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this submission record?')) return;
+  // Delete submission (using popup confirmation dialog instead of browser alert)
+  const handleDelete = (id: string) => {
+    setDeleteSubmissionId(id);
+  };
+
+  const confirmSingleDeleteSubmission = async () => {
+    if (!deleteSubmissionId) return;
     try {
-      await fetchApi(`/inquiries/${id}`, { method: 'DELETE' });
-      setItems((prev) => prev.filter((item) => item.id !== id));
-      if (selectedSubmission?.id === id) {
+      await fetchApi(`/inquiries/${deleteSubmissionId}`, { method: 'DELETE' });
+      setItems((prev) => prev.filter((item) => item.id !== deleteSubmissionId));
+      if (selectedSubmission?.id === deleteSubmissionId) {
         setSelectedSubmission(null);
       }
       notify.success('Submission record deleted.');
+      setDeleteSubmissionId(null);
     } catch {
       notify.error('Unable to delete submission.');
     }
@@ -772,6 +778,19 @@ export default function ContactSubmissionsPage() {
           if (!open) setDossierTarget(null);
         }}
         data={dossierTarget}
+      />
+
+      {/* ── Single Submission Delete Confirm Dialog ──────────── */}
+      <ConfirmDialog
+        open={Boolean(deleteSubmissionId)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteSubmissionId(null);
+        }}
+        title="Delete Submission Record?"
+        description="Are you sure you want to permanently delete this contact inquiry record? This action cannot be undone."
+        confirmLabel="Delete Record"
+        variant="destructive"
+        onConfirm={confirmSingleDeleteSubmission}
       />
     </AdminContentContainer>
   );

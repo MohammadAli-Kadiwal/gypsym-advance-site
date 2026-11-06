@@ -177,7 +177,7 @@ export function BookingCalendarSection({ section, payload, contactSettings }: Bo
   const [companyName, setCompanyName] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [storeUrl, setStoreUrl] = React.useState('');
-  const [serviceInterest, setServiceInterest] = React.useState('Custom Shopify Plus Storefront');
+  const [serviceInterest, setServiceInterest] = React.useState('New Shopify Plus Store');
   const [notes, setNotes] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -867,14 +867,14 @@ export function BookingCalendarSection({ section, payload, contactSettings }: Bo
                           <select
                             value={serviceInterest}
                             onChange={(e) => setServiceInterest(e.target.value)}
-                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all"
+                            className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg bg-[#f4f3ef] dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none focus:ring-1.5 focus:ring-[#d9287c]/50 text-neutral-900 dark:text-white text-xs transition-all cursor-pointer"
                           >
-                            <option value="Custom Shopify Plus Storefront">Custom Shopify Plus Storefront</option>
-                            <option value="Headless Hydrogen & Next.js">Headless Hydrogen & Next.js</option>
-                            <option value="Sub-Second Mobile Speed Optimization">Sub-Second Speed & Web Vitals</option>
-                            <option value="Checkout Extensibility & Funnel CRO">Checkout CRO & Extensibility</option>
-                            <option value="24/7 Senior Engineering Retainer">24/7 Senior Retainer</option>
-                            <option value="General Technical Consultation">General Technical Consultation</option>
+                            <option value="New Shopify Plus Store">New Shopify Plus Store</option>
+                            <option value="Custom Theme Development">Custom Theme Development</option>
+                            <option value="Conversion Rate Optimisation">Conversion Rate Optimisation</option>
+                            <option value="Shopify Migration">Shopify Migration</option>
+                            <option value="Ongoing Retainer Support">Ongoing Retainer Support</option>
+                            <option value="Other / General Enquiry">Other / General Enquiry</option>
                           </select>
                         </div>
                       </div>

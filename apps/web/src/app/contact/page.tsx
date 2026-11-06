@@ -172,7 +172,7 @@ export default async function ContactPage() {
           {
             id: 'cf-service',
             name: 'serviceInterest',
-            label: 'What Can We Help With?',
+            label: 'Area of Interest',
             type: 'select',
             placeholder: 'Select a service...',
             required: false,

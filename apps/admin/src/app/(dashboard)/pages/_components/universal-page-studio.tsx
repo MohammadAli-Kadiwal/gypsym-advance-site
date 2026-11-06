@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { ConfirmDialog } from '@/components/crud/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -73,6 +74,7 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
   const [newComponentType, setNewComponentType] = React.useState('FEATURE_GRID');
   const [newIdentifier, setNewIdentifier] = React.useState('');
   const [newTitle, setNewTitle] = React.useState('');
+  const [sectionToDelete, setSectionToDelete] = React.useState<UniversalSection | null>(null);
 
   // ── Load Page ──
   const loadData = React.useCallback(async () => {
@@ -200,13 +202,17 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
     });
   };
 
-  // ── Delete Section ──
-  const handleDeleteSection = async (sec: UniversalSection) => {
-    if (!confirm(`Are you sure you want to remove section "${sec.sectionIdentifier}"?`)) return;
+  // ── Delete Section (using popup confirmation dialog instead of browser alert)
+  const handleDeleteSection = (sec: UniversalSection) => {
+    setSectionToDelete(sec);
+  };
 
-    if (!sec.id.startsWith('local-')) {
+  const confirmDeleteSection = async () => {
+    if (!sectionToDelete) return;
+
+    if (!sectionToDelete.id.startsWith('local-')) {
       try {
-        await fetchApi(`/sections/${sec.id}`, { method: 'DELETE' });
+        await fetchApi(`/sections/${sectionToDelete.id}`, { method: 'DELETE' });
         notify.success('Section deleted from database.');
       } catch (err: any) {
         notify.error(err?.message || 'Failed to delete section');
@@ -214,7 +220,8 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
       }
     }
 
-    setSections(sections.filter((s) => s.id !== sec.id));
+    setSections(sections.filter((s) => s.id !== sectionToDelete.id));
+    setSectionToDelete(null);
   };
 
   // ── Save All ──
@@ -516,6 +523,19 @@ export function UniversalPageStudio({ pageId, slug, onBack }: UniversalPageStudi
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Section Confirm Dialog */}
+      <ConfirmDialog
+        open={Boolean(sectionToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setSectionToDelete(null);
+        }}
+        title="Remove Section?"
+        description={`Are you sure you want to remove section "${sectionToDelete?.sectionIdentifier}"? This will remove the section layout from this page.`}
+        confirmLabel="Remove Section"
+        variant="destructive"
+        onConfirm={confirmDeleteSection}
+      />
     </div>
   );
 }
