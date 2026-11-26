@@ -190,8 +190,8 @@ export function CapabilitiesSection({ section }: CapabilitiesSectionProps) {
                     src={imageUrl}
                     alt={imageAlt}
                     fill
+                    sizes="(max-width: 1024px) 100vw, 480px"
                     className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-                    sizes="(max-width: 1024px) 100vw, 40vw"
                     priority={false}
                   />
                 </div>

@@ -64,7 +64,7 @@ export function HeroSection({ section }: HeroSectionProps) {
               loop
               muted
               playsInline
-              preload="auto"
+              preload="metadata"
               poster={bg.desktopImageUrl}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none scale-105 animate-in fade-in duration-700"
             >
@@ -76,6 +76,7 @@ export function HeroSection({ section }: HeroSectionProps) {
               alt="Hero Background"
               fill
               priority
+              quality={85}
               className="object-cover object-center scale-105 animate-in fade-in duration-1000"
               sizes="100vw"
             />

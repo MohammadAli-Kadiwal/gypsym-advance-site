@@ -11,9 +11,9 @@ export function getSiteUrl(): string {
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ) {
-    return 'http://localhost:3000';
+    return 'http://localhost:3002';
   }
-  return 'https://gypsym.com';
+  return 'https://www.gypsym.com';
 }
 
 export function getAdminUrl(): string {
@@ -25,7 +25,7 @@ export function getAdminUrl(): string {
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ) {
-    return 'http://localhost:3001';
+    return 'http://localhost:3003/admin';
   }
-  return 'https://admin.gypsym.com';
+  return 'https://www.gypsym.com/admin';
 }

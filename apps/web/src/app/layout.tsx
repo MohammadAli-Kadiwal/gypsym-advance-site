@@ -1,9 +1,32 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-serif',
+  weight: ['400'],
+  style: ['normal', 'italic'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
+  weight: ['400', '500', '600'],
+});
 
 const SearchModal = dynamic(
   () => import('@/components/search-modal').then((mod) => mod.SearchModal),
@@ -145,17 +168,11 @@ export default async function RootLayout({
   const isSvg = rawFavicon.includes('svg') || rawFavicon.startsWith('data:image/svg');
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" type={isSvg ? 'image/svg+xml' : 'image/x-icon'} href={rawFavicon} />
         <link rel="shortcut icon" href={rawFavicon} />
         <link rel="apple-touch-icon" href={rawFavicon} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -168,7 +185,7 @@ export default async function RootLayout({
         <ScriptInjector settings={scriptSettings} />
       </head>
       <body
-        className="min-h-screen flex flex-col justify-between bg-[#f4f3ef] text-neutral-900 antialiased selection:bg-lime-200"
+        className={`min-h-screen flex flex-col justify-between bg-[#f4f3ef] font-sans text-neutral-900 antialiased selection:bg-lime-200`}
         suppressHydrationWarning
       >
         <ThemeProvider defaultTheme="light">

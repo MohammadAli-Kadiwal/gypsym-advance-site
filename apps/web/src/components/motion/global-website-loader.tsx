@@ -62,7 +62,7 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
     };
 
     const startTime = performance.now();
-    const duration = 380; // Ultra-fast 380ms high-tech progression
+    const duration = 200; // Ultra-fast 200ms lightweight progression
     let animFrame: number;
     let isDone = false;
 
@@ -88,8 +88,8 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
           setIsExiting(true);
           setTimeout(() => {
             setShouldRender(false);
-          }, 180);
-        }, 80);
+          }, 120);
+        }, 40);
       }
     };
 
@@ -104,9 +104,9 @@ export function GlobalWebsiteLoader({ brand }: GlobalWebsiteLoaderProps) {
           sessionStorage.setItem('gypsym_intro_shown', 'true');
         } catch {}
         setIsExiting(true);
-        setTimeout(() => setShouldRender(false), 120);
+        setTimeout(() => setShouldRender(false), 80);
       }
-    }, 600);
+    }, 320);
 
     return () => {
       cancelAnimationFrame(animFrame);

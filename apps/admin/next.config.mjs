@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (process.env.NODE_ENV === 'production' ? '/admin' : '');
+
 const nextConfig = {
+  ...(basePath ? { basePath } : {}),
   output: process.env.NEXT_OUTPUT_STANDALONE === 'true' || process.platform !== 'win32' ? 'standalone' : undefined,
   reactStrictMode: true,
   poweredByHeader: false,

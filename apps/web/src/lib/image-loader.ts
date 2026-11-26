@@ -48,6 +48,13 @@ export default function imageLoader({ src, width, quality }: ImageLoaderProps): 
     }
   }
 
+  // High-Efficiency Local WebP Auto-Route for compressed assets
+  if (typeof src === 'string' && (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png'))) {
+    if (src.startsWith('/images/') || src.startsWith('/uploads/') || src.startsWith('/og-')) {
+      return src.replace(/\.(jpe?g|png)$/i, '.webp');
+    }
+  }
+
   // Static local assets (e.g., /logo.png, /placeholder.webp)
   return src;
 }

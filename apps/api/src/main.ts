@@ -12,6 +12,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cors from 'cors';
+import compression from 'compression';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
@@ -40,8 +41,9 @@ async function bootstrap() {
   const logger = app.get(Logger);
   app.useLogger(logger);
 
-  // Security Headers
+  // Security & Performance Middleware
   app.use(helmet());
+  app.use(compression());
 
   // CORS with strict whitelist validation + dev LAN IP support
   const defaultLocalOrigins = [
